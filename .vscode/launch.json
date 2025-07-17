@@ -1,0 +1,92 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'cirro'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=cirro",
+                    "--package=cirro"
+                ],
+                "filter": {
+                    "name": "cirro",
+                    "kind": "bin"
+                }
+            },
+            "args": [
+                "collect",
+                "client-cert",
+                "-c",
+                "31af3612-7016-418b-bb03-fc9a97d4a2b0",
+                "-t",
+                "bishopfox.com",
+                "-p",
+                "/home/ubuntu/.ssh/mamdev.pem",
+                "--debug"
+            ],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in executable 'cirro'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bin=cirro",
+                    "--package=cirro"
+                ],
+                "filter": {
+                    "name": "cirro",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'cirro-ingest'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=cirro-ingest",
+                    "--package=cirro-ingest"
+                ],
+                "filter": {
+                    "name": "cirro-ingest",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in executable 'cirro-ingest'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bin=cirro-ingest",
+                    "--package=cirro-ingest"
+                ],
+                "filter": {
+                    "name": "cirro-ingest",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        }
+    ]
+}

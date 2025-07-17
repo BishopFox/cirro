@@ -1,0 +1,20 @@
+services:
+  cirro-neo4j:
+    build:
+      context: .
+      dockerfile: Dockerfile.neo4j
+    image: cirro-neo4j:latest
+    container_name: cirro-neo4j
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:7473:7473"   # HTTPS
+      - "127.0.0.1:7687:7687"   # Bolt
+
+  cirro-neodash:
+    image: neo4jlabs/neodash:latest
+    container_name: cirro-neodash
+    restart: unless-stopped
+    depends_on:
+      - cirro-neo4j
+    ports:
+      - "127.0.0.1:5005:5005"

@@ -1,0 +1,17 @@
+pub mod constants;
+pub mod ingestor;
+
+pub mod arm_processors;
+pub mod automation_processors;
+pub mod azurearc_processors;
+pub mod cognitiveservices_processors;
+pub mod communication_processors;
+pub mod compute_processors;
+pub mod container_processors;
+pub mod enrichment_processors;
+pub mod graph_processors;
+pub mod hybridcompute_processors;
+pub mod identity_processors;
+pub mod keyvault_processors;
+pub mod network_processors;
+pub mod storage_processors;
