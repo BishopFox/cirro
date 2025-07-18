@@ -63,31 +63,31 @@ impl CirroIngestor {
 
             WITH obj, row WHERE row.properties.ipConfigurations IS NOT NULL
                 UNWIND row.properties.ipConfigurations AS ipconfig
-                MERGE (ip:IpConfig {id: toLower(ipconfig.id)})
-                SET ip += {
+                MERGE (ipconnode:IPConfig {id: ipconfig.id})
+                SET ipconnode += {
                     name: ipconfig.name,
                     type: ipconfig.type,
                     privateIPAddress: ipconfig.properties.privateIPAddress,
                     privateIPAddressVersion: ipconfig.properties.privateIPAddressVersion,
                     privateIPAllocationMethod: ipconfig.properties.privateIPAllocationMethod
                 }
-                MERGE (obj)-[:HAS_IPCONFIG]->(ip)
+                MERGE (obj)-[:HAS_CONFIG]->(ipconnode)
                 
-                MERGE (subnet:Subnet {id: toLower(ipconfig.properties.subnet.id)})
-                MERGE (subnet)-[:HAS_IP]->(ip)
+                MERGE (subnet:Subnet {id: ipconfig.properties.subnet.id})
+                MERGE (subnet)-[:CONTAINS]->(ipconnode)
 
-                WITH obj, row, ipconfig WHERE ipconfig.properties.publicIPAddress IS NOT NULL
-                    MERGE (pubip:ArmResource {id: toLower(ipconfig.properties.publicIPAddress.id)})
+                WITH obj, row, ipconnode, ipconfig WHERE ipconfig.properties.publicIPAddress IS NOT NULL
+                    MERGE (pubip:ArmResource {id: ipconfig.properties.publicIPAddress.id})
                     SET pubip:PublicIPAddress
-                    MERGE (ip)-[:HAS_IP]->(pubip)
-            
+                    MERGE (ipconnode)-[:HAS_IP]->(pubip)
+
             WITH obj, row WHERE row.properties.virtualMachine.id IS NOT NULL
-                MERGE (vm:ArmResource {id: toLower(row.properties.virtualMachine.id)})
+                MERGE (vm:ArmResource {id: row.properties.virtualMachine.id})
                 SET vm:VirtualMachine
                 MERGE (vm)-[:HAS_NIC]->(obj) 
             
             WITH obj, row WHERE row.properties.networkSecurityGroup IS NOT NULL
-                MERGE (nsg:ArmResource {id: toLower(row.properties.networkSecurityGroup.id)})
+                MERGE (nsg:ArmResource {id: row.properties.networkSecurityGroup.id})
                 SET nsg:NSG
                 MERGE (obj)-[:HAS_NSG]->(nsg)
         "#;

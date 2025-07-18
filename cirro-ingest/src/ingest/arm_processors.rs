@@ -594,7 +594,7 @@ impl CirroIngestor {
                     UNWIND $batch AS row
                     MERGE (o:GraphObject {id: row.properties.principalId})
                     WITH o, row
-                        MATCH (r:ArmResource {id: row.properties.scope})
+                        MATCH (r:ArmResource {id: toLower(row.properties.scope)})
                         CALL apoc.merge.relationship(o, row.roleName, {}, {}, r) YIELD rel
                         SET rel += {
                             id : row.id,
@@ -617,7 +617,7 @@ impl CirroIngestor {
                 r#"
                     UNWIND $batch AS row
                     MATCH (o:GraphObject {id: row.properties.principalId})
-                    MATCH (r:ArmResource {id: row.properties.scope})
+                    MATCH (r:ArmResource {id: toLower(row.properties.scope)})
                     CALL merge.relationship(o, row.roleName, {}, {
                         description : row.description,
                         roleName : row.roleName,
