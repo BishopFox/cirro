@@ -221,19 +221,110 @@ impl CirroIngestor {
 
     async fn post_process(&mut self) -> Result<(), CirroIngestError> {
         debug!("Running post-processing merge query");
-        let post_process_query = &self.constants.post_process_merge_query;
-        debug!("Executing query: {}", post_process_query);
+
         let _ = self
             .graph
-            .run(query(post_process_query))
+            .run(query(
+                r#"MATCH (n)
+                WHERE n.id IS NOT NULL
+                SET n.id = toLower(n.id)
+                WITH n
+                WHERE n.type IS NOT NULL
+                SET n.type = toLower(n.type)"#,
+            ))
             .await
             .map_err(|e| {
-                CirroIngestError::DatabaseError(format!(
-                    "Failed to run post-processing merge query: {}",
-                    e
-                ))
+                CirroIngestError::DatabaseError(format!("Failed to assert lowercase IDs: {}", e))
             })?;
 
+        match self.graph_type {
+            GraphType::Neo4j => {
+                // Merge all nodes with the same ID
+                debug!("Merging nodes with the same ID in Neo4j");
+                let _ = self
+                    .graph
+                    .run(query(
+                        r#" MATCH (n)
+                        WITH n.id AS id, COLLECT(n) AS nodesToMerge
+                        WHERE id IS NOT NULL AND size(nodesToMerge) > 1
+                        CALL apoc.refactor.mergeNodes(nodesToMerge, {properties: "override", mergeRels:true, preserveExistingSelfRels: true})
+                        YIELD node
+                        RETURN count(*);"#,
+                    ))
+                    .await
+                    .map_err(|e| {
+                        CirroIngestError::DatabaseError(format!(
+                            "Failed to run post-processing merge query: {}",
+                            e
+                        ))
+                    })?;
+                // Merge relationships with the same label from the same node
+                debug!("Merging relationships with the same label in Neo4j");
+                let _ = self
+                    .graph
+                    .run(query(
+                        r#"MATCH (a)-[r]->(b)
+                        WITH a, b, type(r) AS relType, collect(r) AS rels
+                        WHERE size(rels) > 1
+                        CALL apoc.refactor.mergeRelationships((rels, {properties: "combine"}))
+                        YIELD node
+                        RETURN count(*);"#,
+                    ))
+                    .await
+                    .map_err(|e| {
+                        CirroIngestError::DatabaseError(format!(
+                            "Failed to run post-processing merge relationships query: {}",
+                            e
+                        ))
+                    })?;
+            }
+            GraphType::Memgraph => {
+                // Merge all nodes with the same ID
+                debug!("Merging nodes with the same ID in Memgraph");
+                let _ = self
+                    .graph
+                    .run(query(
+                        r#"MATCH (n)
+                        WITH n.id AS id, COLLECT(n) AS nodesToMerge
+                        WHERE id IS NOT NULL AND size(nodesToMerge) > 1
+                        CALL refactor.merge_nodes(nodesToMerge, {properties: "override", mergeRels:true})
+                        YIELD node
+                        RETURN count(*);"#,
+                    ))
+                    .await
+                    .map_err(|e| {
+                        CirroIngestError::DatabaseError(format!(
+                            "Failed to run post-processing merge query: {}",
+                            e
+                        ))
+                    })?;
+                // Merge relationships with the same label from the same node
+                debug!("Merging relationships with the same label in Memgraph");
+                let _ = self
+                    .graph
+                    .run(query(
+                        r#"MATCH (a)-[r]->(b)
+                        WHERE id(a) <> id(b)  // ❗ skip self-loops
+                        WITH a, b, type(r) AS rel_type, collect(r) AS rels
+                        WHERE size(rels) > 1
+                        CALL {
+                        WITH rels
+                        WITH rels[0] AS keeper, rels[1..] AS duplicates
+                        UNWIND duplicates AS d
+                            SET keeper += d
+                            DELETE d
+                        RETURN keeper
+                        }"#,
+                    ))
+                    .await
+                    .map_err(|e| {
+                        CirroIngestError::DatabaseError(format!(
+                            "Failed to run post-processing merge relationships query: {}",
+                            e
+                        ))
+                    })?;
+            }
+        }
         Ok(())
     }
 }
