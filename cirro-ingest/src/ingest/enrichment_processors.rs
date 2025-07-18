@@ -80,10 +80,10 @@ impl CirroIngestor {
                             }
 
                             // Add the resource group ID to the new Value
-                            new_value
-                                .as_object_mut()
-                                .unwrap()
-                                .insert("resource_id".to_string(), Value::String(resource_id));
+                            new_value.as_object_mut().unwrap().insert(
+                                "resource_id".to_string(),
+                                Value::String(resource_id.to_lowercase()),
+                            );
                             new_value
                         })
                     })
@@ -120,7 +120,7 @@ impl CirroIngestor {
         Ok(())
     }
 
-    /// Process container registries
+    /// Process storage account keys enrichment
     pub async fn process_enrich_storage_keys(&self) -> Result<(), CirroIngestError> {
         let module_name = "storage_account_keys";
         let properties = vec!["/keys"];

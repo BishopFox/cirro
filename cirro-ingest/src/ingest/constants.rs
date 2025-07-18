@@ -25,7 +25,7 @@ impl CypherConstants {
                 create_index_query: "CREATE INDEX {}_id IF NOT EXISTS FOR (n: {}) ON (n.id)"
                     .to_string(), // Neo4j creates indexes automatically with constraints
                 post_process_merge_query: r#"MATCH (n)
-	WITH lower(n.id) AS id, COLLECT(n) AS nodesToMerge
+	WITH n, lower(n.id) AS id, COLLECT(n) AS nodesToMerge
 	WHERE id IS NOT NULL AND size(nodesToMerge) > 1
 	CALL apoc.refactor.mergeNodes(nodesToMerge, {mergeRels:true})
 	YIELD node

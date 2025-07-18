@@ -63,7 +63,7 @@ impl CirroIngestor {
 
             WITH obj, row WHERE row.properties.ipConfigurations IS NOT NULL
                 UNWIND row.properties.ipConfigurations AS ipconfig
-                MERGE (ip:IpConfig {id: ipconfig.id})
+                MERGE (ip:IpConfig {id: toLower(ipconfig.id)})
                 SET ip += {
                     name: ipconfig.name,
                     type: ipconfig.type,
@@ -73,21 +73,21 @@ impl CirroIngestor {
                 }
                 MERGE (obj)-[:HAS_IPCONFIG]->(ip)
                 
-                MERGE (subnet:Subnet {id: ipconfig.properties.subnet.id})
+                MERGE (subnet:Subnet {id: toLower(ipconfig.properties.subnet.id)})
                 MERGE (subnet)-[:HAS_IP]->(ip)
 
                 WITH obj, row, ipconfig WHERE ipconfig.properties.publicIPAddress IS NOT NULL
-                    MERGE (pubip:ArmResource {id: ipconfig.properties.publicIPAddress.id})
+                    MERGE (pubip:ArmResource {id: toLower(ipconfig.properties.publicIPAddress.id)})
                     SET pubip:PublicIPAddress
                     MERGE (ip)-[:HAS_IP]->(pubip)
             
             WITH obj, row WHERE row.properties.virtualMachine.id IS NOT NULL
-                MERGE (vm:ArmResource {id: row.properties.virtualMachine.id})
+                MERGE (vm:ArmResource {id: toLower(row.properties.virtualMachine.id)})
                 SET vm:VirtualMachine
                 MERGE (vm)-[:HAS_NIC]->(obj) 
             
             WITH obj, row WHERE row.properties.networkSecurityGroup IS NOT NULL
-                MERGE (nsg:ArmResource {id: row.properties.networkSecurityGroup.id})
+                MERGE (nsg:ArmResource {id: toLower(row.properties.networkSecurityGroup.id)})
                 SET nsg:NSG
                 MERGE (obj)-[:HAS_NSG]->(nsg)
         "#;

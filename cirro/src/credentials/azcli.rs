@@ -3,7 +3,7 @@ use async_trait::async_trait;
 use log::{debug, info};
 use std::sync::Arc;
 use tokio::sync::RwLock;
-
+use which::which;
 pub struct AzureCliCredential {
     /// The tenant ID for the Azure CLI credential
     pub tenant_id: Option<String>,
@@ -31,9 +31,14 @@ impl AuthCredential for AzureCliCredential {
             args.push(t);
         }
 
-        debug!("Running az command: az {}", args.join(" "));
-        let output = tokio::process::Command::new("az")
+        let az_cmd = which("az").unwrap_or_else(|_| {
+            panic!("Azure CLI (az) command not found. Please install Azure CLI to use AzureCliCredential.");
+        });
+
+        debug!("Running az command: {:?} {}", az_cmd, args.join(" "));
+        let output = tokio::process::Command::new(az_cmd)
             .args(&args)
+            .envs(std::env::vars())
             .output()
             .await
             .map_err(|e| AuthError::ProcessError(e))?;

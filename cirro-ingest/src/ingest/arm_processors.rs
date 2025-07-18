@@ -387,10 +387,10 @@ impl CirroIngestor {
                                 }
                             }
                             // Add the subscription ID to the new Value
-                            new_value
-                                .as_object_mut()
-                                .unwrap()
-                                .insert("subscriptionId".to_string(), Value::String(sub_id));
+                            new_value.as_object_mut().unwrap().insert(
+                                "subscriptionId".to_string(),
+                                Value::String(sub_id.to_lowercase()),
+                            );
                             new_value
                         })
                     })
@@ -536,11 +536,11 @@ impl CirroIngestor {
                                     }
                                 }
                             }
-                            // Add the subscription ID to the new Value
-                            new_value
-                                .as_object_mut()
-                                .unwrap()
-                                .insert("resourcegroup_id".to_string(), Value::String(rg_id));
+                            // Add the resource group ID to the new Value
+                            new_value.as_object_mut().unwrap().insert(
+                                "resourcegroup_id".to_string(),
+                                Value::String(rg_id.to_lowercase()),
+                            );
                             new_value
                         })
                     })

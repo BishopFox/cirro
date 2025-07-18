@@ -383,7 +383,7 @@ async fn enumerate_subscription(
         let collector_clone = collector.clone();
         async move {
             let _ = collector_clone
-                .write_value_to_db("roleAssignments".into(), role_id.into(), role_data)
+                .write_value_to_db("roleAssignments".into(), role_id.to_lowercase(), role_data)
                 .await;
         }
         .await;
@@ -516,8 +516,8 @@ async fn enumerate_subscription(
         tasks.push(async move {
             let _ = collector_clone
                 .write_arm_resource_to_db(
-                    rg_id.clone(),
-                    format!("/subscriptions/{}", subscription_id.to_string()),
+                    rg_id.clone().to_lowercase(),
+                    format!("/subscriptions/{}", subscription_id.to_lowercase()),
                     rg_id.clone(),
                     resource_type,
                     rg_data,
@@ -591,7 +591,7 @@ async fn enumerate_resourcegroup(
         let collector_clone = collector.clone();
         async move {
             let _ = collector_clone
-                .write_value_to_db("roleAssignments".into(), role_id.into(), role_data)
+                .write_value_to_db("roleAssignments".into(), role_id.to_lowercase(), role_data)
                 .await;
         }
         .await;
@@ -655,9 +655,9 @@ async fn enumerate_resourcegroup(
                     // Write the resource to the database
                     let _ = collector_clone
                         .write_arm_resource_to_db(
-                            resource_id.to_string(),
-                            subscription_id.to_string(),
-                            rg_id.to_string(),
+                            resource_id.to_string().to_lowercase(),
+                            subscription_id.to_string().to_lowercase(),
+                            rg_id.to_string().to_lowercase(),
                             resource_type.to_string(),
                             value_clone,
                         )
@@ -705,7 +705,7 @@ pub async fn enumerate_arm(collector: Arc<Collector>) -> Result<(), CirroError> 
         let collector_clone = collector.clone();
         async move {
             let _ = collector_clone
-                .write_value_to_db("tenants".into(), tenant_id.into(), tenant_data)
+                .write_value_to_db("tenants".into(), tenant_id.to_lowercase(), tenant_data)
                 .await;
         }
         .await;
@@ -739,7 +739,7 @@ pub async fn enumerate_arm(collector: Arc<Collector>) -> Result<(), CirroError> 
             let _ = collector_clone
                 .write_value_to_db(
                     "subscriptions".into(),
-                    subscription_id.into(),
+                    subscription_id.to_lowercase(),
                     subscription_data,
                 )
                 .await;
