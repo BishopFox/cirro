@@ -2,6 +2,7 @@
 description = "Ingestion tool for cirro"
 edition = "2024"
 name = "cirro-ingest"
+repository = "https://github.com/bishopfox/cirro"
 version = "0.1.0"
 
 [dependencies]

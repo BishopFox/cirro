@@ -3,6 +3,7 @@ authors = ["Leron Gray <daddycocoaman@gmail.com>"]
 description = "A CLI tool for graphing Azure and Entra ID data"
 edition = "2024"
 name = "cirro"
+repository = "https://github.com/bishopfox/cirro"
 version = "0.1.0"
 
 [dependencies]
