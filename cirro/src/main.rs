@@ -182,14 +182,13 @@ pub struct EnrichmentFlags {
     /// Gather storage account keys
     #[arg(long, action = clap::ArgAction::SetTrue)]
     storage_keys: bool,
+    // /// Gather storage account containers and blobs with authentication
+    // #[arg(long, action = clap::ArgAction::SetTrue)]
+    // storage_blobs: bool,
 
-    /// Gather storage account containers and blobs with authentication
-    #[arg(long, action = clap::ArgAction::SetTrue)]
-    storage_blobs: bool,
-
-    /// Gather storage account containers and blobs without authentication
-    #[arg(long, action = clap::ArgAction::SetTrue)]
-    storage_blobs_anon: bool,
+    // /// Gather storage account containers and blobs without authentication
+    // #[arg(long, action = clap::ArgAction::SetTrue)]
+    // storage_blobs_anon: bool,
 }
 
 #[tokio::main]
