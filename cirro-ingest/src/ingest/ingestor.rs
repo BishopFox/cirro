@@ -192,6 +192,8 @@ impl CirroIngestor {
             |ingestor| Box::pin(CirroIngestor::process_public_ip_addresses(ingestor)),
             |ingestor| Box::pin(CirroIngestor::process_restore_point_collections(ingestor)),
             |ingestor| Box::pin(CirroIngestor::process_snapshots(ingestor)),
+            |ingestor| Box::pin(CirroIngestor::process_sql_servers(ingestor)),
+            |ingestor| Box::pin(CirroIngestor::process_sql_databases(ingestor)),
             |ingestor| Box::pin(CirroIngestor::process_ssh_public_keys(ingestor)),
             |ingestor| Box::pin(CirroIngestor::process_storage_accounts(ingestor)),
             |ingestor| Box::pin(CirroIngestor::process_user_assigned_identities(ingestor)),

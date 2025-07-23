@@ -2,7 +2,7 @@ use crate::errors::CirroIngestError;
 use crate::ingest::ingestor::CirroIngestor;
 
 impl CirroIngestor {
-    /// Process storage accounts
+    /// Process azure arc sql servers
     pub async fn process_azurearc_sql_servers(&self) -> Result<(), CirroIngestError> {
         let resource_type = "microsoft.azurearcdata/sqlserverinstances";
         let properties = vec!["/id", "/properties"];
@@ -35,4 +35,30 @@ impl CirroIngestor {
             .await?;
         Ok(())
     }
+
+    // Process azure arc sql server db
+    // Disabled for now
+    // https://github.com/memgraph/mage/issues/642
+    // pub async fn process_azurearc_sql_database(&self) -> Result<(), CirroIngestError> {
+    //     let resource_type = "microsoft.azurearcdata/sqlserverinstances/databases";
+    //     let properties = vec!["/id", "/properties"];
+
+    //     let node_insert_query = r#"
+    //     UNWIND $batch AS row
+    //     MERGE (obj:ArmResource {id: row.id})
+    //     SET obj:AzureArcSqlDB
+    //     SET obj += {
+    //         dataFileSizeMB: row.properties.dataFileSizeMB
+    //         databaseCreationDate: row.properties.databaseCreationDate
+    //         lastDatabaseUploadTime: row.properties.lastDatabaseUploadTime
+    //         state: row.properties.state
+
+    //     WITH obj, row, split(row.id, '/')[7] AS instance_id
+    //         WITH obj, row, text.join(instance_id,
+
+    //     }
+    //     "#;
+
+    //     Ok(())
+    // }
 }

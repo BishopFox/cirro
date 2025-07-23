@@ -9,7 +9,7 @@ services:
     environment:
       - MEMGRAPH_USER=cirro
       - MEMGRAPH_PASSWORD=cirro
- 
+
   lab:
     image: memgraph/lab:latest
     container_name: memgraph-lab
@@ -20,3 +20,12 @@ services:
     environment:
       - QUICK_CONNECT_MG_HOST=memgraph
       - QUICK_CONNECT_MG_PORT=7687
+
+  neodash:
+    image: neo4jlabs/neodash:latest
+    container_name: neodash
+    restart: unless-stopped
+    depends_on:
+      - memgraph
+    ports:
+      - "5005:5005"

@@ -14,4 +14,6 @@ pub mod hybridcompute_processors;
 pub mod identity_processors;
 pub mod keyvault_processors;
 pub mod network_processors;
+pub mod sql_processors;
 pub mod storage_processors;
+pub mod web_processors;

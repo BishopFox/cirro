@@ -15,7 +15,7 @@ impl CirroIngestor {
                 clientId: row.properties.clientId,
                 tenantId: row.properties.tenantId
             }
-            MERGE (o:GraphObject {id: row.properties.clientId})
+            MERGE (o:GraphObject {appId: row.properties.clientId})
             MERGE (obj)-[:HAS_IDENTITY]->(o)
         "#;
 
