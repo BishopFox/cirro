@@ -5,7 +5,7 @@ services:
     ports:
       - "7687:7687"
       - "7444:7444"
-    command: ["--log-level=TRACE"]
+    command: ["--log-level=TRACE", "--schema-info-enabled"]
     environment:
       - MEMGRAPH_USER=cirro
       - MEMGRAPH_PASSWORD=cirro

@@ -1,5 +1,5 @@
 [workspace]
-members = ["cirro", "cirro-ingest"]
+members = ["src/cirro", "src/cirro-ingest"]
 resolver = "3"
 
 [profile.release]

@@ -1,6 +1,7 @@
-# Cirro
+<p align='center'><img src='docs/logo.png' alt='logo' height="400"/><br>
+</p>
 
-A powerful CLI tool for graphing Azure and Entra ID data. Cirro enables security researchers and penetration testers to collect, analyze, and visualize Azure cloud environments and Entra ID relationships through graph databases.
+Cirro is a tool that enables security researchers and penetration testers to collect, analyze, and visualize Azure cloud environments and Entra ID relationships through graph databases.
 
 ## Features
 
@@ -76,24 +77,21 @@ cirro collect access-token --token <ACCESS_TOKEN>
 
 ### 2. Data Ingestion
 
-Both Neo4j and Memgraph are supported as graph database backends. Set up your preferred database before ingesting data. After collecting data, ingest it into your graph database:
+Both Neo4j and Memgraph are supported as graph database backends. Set up your preferred database before ingesting data. There are two docker-compose files in the [tools](/tools/) directory to assist with containerized databases. `cirro-ingest` defaults to Neo4j configurations but you might consider using Memgraph for faster ingestion and performance.
+
+After collecting data, ingest it into your graph database:
 
 #### Neo4j
 ```bash
-cirro-ingest --file cirro_output.db \
-  --graph-type neo4j \
-  --server bolt://localhost:7687 \
-  --user neo4j \
-  --password password
+cirro-ingest --file cirro_output.db
 ```
 
 #### Memgraph
 ```bash
 cirro-ingest --file cirro_output.db \
   --graph-type memgraph \
-  --server bolt://localhost:7687 \
-  --user memgraph \
-  --password memgraph
+  --user cirro \
+  --password cirro
 ```
 
 ## Collection Modes
@@ -159,10 +157,6 @@ Enable debug logging for detailed information:
 cirro collect azcli --debug
 cirro-ingest --file cirro_output.db --debug
 ```
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
 
