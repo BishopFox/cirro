@@ -23,7 +23,8 @@ impl CirroIngestor {
             WITH obj, row WHERE row.properties.accessPolicies IS NOT NULL
                 UNWIND row.properties.accessPolicies AS policy
                 MERGE (p:GraphObject {id: policy.objectId})
-                MERGE (obj)-[r:HAS_POLICY]->(p)
+                MERGE (p)-[r:HAS_POLICY]->(obj)
+
                 SET r += {
                     certificates: policy.permissions.certificates,
                     keys: policy.permissions.keys,

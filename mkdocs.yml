@@ -1,0 +1,151 @@
+# yaml-language-server: $schema=https://squidfunk.github.io/mkdocs-material/schema.json
+
+site_name: Cirro Documentation
+site_url: https://cirro.dev
+repo_url: https://github.com/bishopfox/cirro
+theme:
+  name: material
+  logo: assets/images/favicon.png
+  icon:
+    repo: fontawesome/brands/github-alt
+  font:
+    code: Roboto Mono
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: black
+      accent: light blue
+      toggle:
+        icon: material/weather-night  
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: black
+      accent: light blue
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  features:
+    - navigation.indexes
+    - navigation.instant
+    - navigation.instant.prefetch
+    - navigation.path
+    - navigation.sections
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - search.suggest
+    - toc.integrate
+markdown_extensions: 
+  - attr_list
+  - md_in_html
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji 
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+nav:
+  - Home: index.md
+  - Architecture: architecture.md
+  - Usage:
+      - Quick Start: usage/quick-start.md
+      - Cirro: usage/cirro.md
+      - Cirro-Ingest: usage/cirro-ingest.md
+  - Nodes and Edges:
+      - Graph Nodes: 
+        - analysis/graph-nodes/graph-nodes.md
+        - analysis/graph-nodes/graph-user.md
+        - analysis/graph-nodes/graph-group.md
+        - analysis/graph-nodes/graph-application.md
+        - analysis/graph-nodes/graph-service-principal.md
+        - analysis/graph-nodes/graph-device.md
+        - analysis/graph-nodes/graph-role.md
+        - analysis/graph-nodes/graph-administrative-unit.md
+      - ARM Nodes:
+        - analysis/arm-nodes.md
+        - Automation:
+          - analysis/arm-nodes/automation/automation-account.md
+        - Azure Arc:
+          - analysis/arm-nodes/azurearc/azure-arc-sql-server.md
+        - Azure Core:
+          - analysis/arm-nodes/azure-core/tenant.md
+          - analysis/arm-nodes/azure-core/subscription.md
+          - analysis/arm-nodes/azure-core/resource-group.md
+        - Cognitive Services:
+          - analysis/arm-nodes/cognitiveservices/cognitive-services-account.md
+        - Communication:
+          - analysis/arm-nodes/communication/communication-services.md
+        - Compute:
+          - analysis/arm-nodes/compute/virtual-machine.md
+          - analysis/arm-nodes/compute/disk.md
+          - analysis/arm-nodes/compute/snapshot.md
+          - analysis/arm-nodes/compute/availability-set.md
+          - analysis/arm-nodes/compute/restore-point-collection.md
+          - analysis/arm-nodes/compute/ssh-public-key.md
+          - analysis/arm-nodes/compute/vm-extension.md
+        - Container:
+          - analysis/arm-nodes/container/container-registry.md
+        - Hybrid Compute:
+          - analysis/arm-nodes/hybridcompute/hybrid-machine.md
+          - analysis/arm-nodes/hybridcompute/hybrid-ip-address.md
+          - analysis/arm-nodes/hybridcompute/hybrid-extension.md
+        - Identity:
+          - analysis/arm-nodes/identity/user-assigned-identity.md
+        - Key Vault:
+          - analysis/arm-nodes/keyvault/keyvault.md
+        - Network:
+          - analysis/arm-nodes/network/virtual-network.md
+          - analysis/arm-nodes/network/network-interface.md
+          - analysis/arm-nodes/network/public-ip-address.md
+          - analysis/arm-nodes/network/nsg.md
+          - analysis/arm-nodes/network/dns-zone.md
+          - analysis/arm-nodes/network/subnet.md
+          - analysis/arm-nodes/network/ip-config.md
+          - analysis/arm-nodes/network/nsg-rule.md
+        - SQL:
+          - analysis/arm-nodes/sql/sql-server.md
+          - analysis/arm-nodes/sql/sql-database.md
+        - Storage:
+          - analysis/arm-nodes/storage/storage-account.md
+          - analysis/arm-nodes/storage/classic-storage-account.md
+        - Web:
+          - analysis/arm-nodes/web/placeholder.md
+      - Additional Nodes: 
+        - analysis/additional-nodes.md
+        - analysis/additional-nodes/client-secret.md
+        - analysis/additional-nodes/certificate.md
+        - analysis/additional-nodes/ip-config.md
+        - analysis/additional-nodes/nsg-rule.md
+        - analysis/additional-nodes/subnet.md
+      - Edges:
+        - RBAC:
+          - analysis/edges/rbac-roles.md
+        - analysis/edges/authenticates.md
+        - analysis/edges/connected-to.md
+        - analysis/edges/contains.md
+        - analysis/edges/has-blob.md
+        - analysis/edges/has-container.md
+        - analysis/edges/has-db.md
+        - analysis/edges/has-disk.md
+        - analysis/edges/has-key.md
+        - analysis/edges/has-nic.md
+        - analysis/edges/has-nsg.md
+        - analysis/edges/has-policy.md
+        - analysis/edges/has-role.md
+        - analysis/edges/has-rule.md
+        - analysis/edges/hosts.md
+        - analysis/edges/manages.md
+        - analysis/edges/member-of.md
+        - analysis/edges/owns.md
+        - analysis/edges/registered-owner.md
+        - analysis/edges/registered-user.md
+        - analysis/edges/represented-by.md
+        - analysis/edges/uses.md
+  - Dashboard: analysis/dashboard.md
+  - Getting Help: getting-help.md
