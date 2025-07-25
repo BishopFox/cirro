@@ -1,8 +1,21 @@
 name: docs-deploy
 on:
   push:
+    paths:
+      - "docs/**"
+      - "mkdocs.yml"
+      - ".github/workflows/docs-deploy.yml"
     branches:
       - main
+  pull_request:
+    paths:
+      - "docs/**"
+      - "mkdocs.yml"
+      - ".github/workflows/docs-deploy.yml"
+    branches:
+      - main
+    types: [closed]
+
 permissions:
   contents: write
 jobs:
