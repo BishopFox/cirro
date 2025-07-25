@@ -49,3 +49,4 @@ rust-project.json
 
 *.bin
 neo4j/
+site/
