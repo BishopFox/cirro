@@ -18,16 +18,16 @@ The Cirro NeoDash dashboard provides multiple pages focused on different aspects
 
 ## Getting Started
 
-### Prerequisites
+!!! tip "Prerequisites"
 
-1. **Neo4j/Memgraph Database** with Cirro data loaded
-2. **NeoDash** deployed and accessible
-3. **Network connectivity** between user and database
+    1. **Neo4j/Memgraph Database** with Cirro data loaded
+    2. **NeoDash** deployed and accessible
+    3. **Network connectivity** between user and database
 
 ### Loading the Dashboard
 
 1. Import the dashboard configuration from `tools/neodash_config.json`
-2. Configure the Neo4j connection settings
+2. Configure the database connection settings
 3. Verify data connectivity and refresh the reports
 
 ## Dashboard Pages
@@ -36,9 +36,6 @@ The Cirro NeoDash dashboard provides multiple pages focused on different aspects
 
 This page focuses on identifying users with administrative privileges in Entra ID.
 
-#### Global Administrators
-
-Identifies all users with Global Administrator roles, both through direct assignment and group inheritance.
 
 ```cypher
 // Direct Role Assignment

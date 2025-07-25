@@ -7,27 +7,9 @@
 <div class="grid" markdown>
 
 <div class="card" markdown>
-**:material-rocket-launch: [Quick Start](quick-start.md)**
+**:material-rocket-launch: [Quick Start](usage/quick-start.md)**
 
 Get up and running with Cirro in minutes. Install, collect, and analyze your first Azure environment.
-</div>
-
-<div class="card" markdown>
-**:material-feature-search: [Key Features](features.md)**
-
-Explore Cirro's powerful data collection, authentication, and graph database capabilities.
-</div>
-
-<div class="card" markdown>
-**:material-floor-plan: [Architecture](architecture.md)**
-
-Understand how Cirro's two-stage architecture works and how data flows through the system.
-</div>
-
-<div class="card" markdown>
-**:material-account-group: [Use Cases](use-cases.md)**
-
-Discover how security professionals use Cirro for penetration testing, research, and compliance.
 </div>
 
 </div>

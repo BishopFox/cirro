@@ -8,22 +8,10 @@ The `cirro` command-line tool is the primary data collection component that gath
 cirro <COMMAND> <AUTH_MODE> [OPTIONS]
 ```
 
-## Commands
-
-### `collect`
-
-Collect data from Azure and Microsoft Graph APIs.
+## Collection Mode
 
 ```bash
 cirro collect <AUTH_MODE> [OPTIONS]
-```
-
-### `enrich`
-
-Enrich data in the database with additional information.
-
-```bash
-cirro enrich <AUTH_MODE> [OPTIONS]
 ```
 
 ## Authentication Modes
@@ -34,7 +22,6 @@ Authenticate using a pre-obtained access token.
 
 ```bash
 cirro collect access-token --token <TOKEN> [OPTIONS]
-cirro enrich access-token --token <TOKEN> [OPTIONS]
 ```
 
 **Arguments:**
@@ -53,7 +40,6 @@ Authenticate using Azure CLI credentials.
 
 ```bash
 cirro collect azcli [OPTIONS]
-cirro enrich azcli [OPTIONS]
 ```
 
 **Options:**
@@ -71,7 +57,6 @@ Authenticate using a client secret.
 
 ```bash
 cirro collect client-secret --client-id <ID> --client-secret <SECRET> --tenant-id <TENANT> [OPTIONS]
-cirro enrich client-secret --client-id <ID> --client-secret <SECRET> --tenant-id <TENANT> [OPTIONS]
 ```
 
 **Arguments:**
@@ -93,7 +78,6 @@ Authenticate using a client certificate.
 
 ```bash
 cirro collect client-cert --client-id <ID> --certificate <CERT_PATH> --tenant-id <TENANT> [OPTIONS]
-cirro enrich client-cert --client-id <ID> --certificate <CERT_PATH> --tenant-id <TENANT> [OPTIONS]
 ```
 
 **Arguments:**
@@ -115,7 +99,6 @@ Authenticate using username and password.
 
 ```bash
 cirro collect user-pass --upn <UPN> --password <PASSWORD> [OPTIONS]
-cirro enrich user-pass --upn <UPN> --password <PASSWORD> [OPTIONS]
 ```
 
 **Arguments:**
@@ -167,12 +150,16 @@ Enables detailed debug logging for troubleshooting.
 
 When using the `enrich` command, additional flags are available:
 
+!!! warning "Enrichment Flags"
+
+    Enrichment flags must be placed directly after the enrich command but before the authentication mode, as shown below.
+
 ### `--storage-keys`
 
 Gather storage account keys during enrichment.
 
 ```bash
-cirro enrich azcli --storage-keys
+cirro enrich --storage-keys azcli 
 ```
 
 ## Examples
@@ -225,18 +212,14 @@ cirro collect azcli --cloud china
 ### Data Enrichment
 
 ```bash
-# Basic enrichment
-cirro enrich azcli
-
 # Enrichment with storage keys
-cirro enrich azcli --storage-keys
+cirro enrich --storage-keys azcli 
 
 # Enrichment with client secret
-cirro enrich client-secret \
+cirro enrich --storage-keys client-secret \
   --client-id "app-id-here" \
   --client-secret "secret-here" \
   --tenant-id "tenant-id-here" \
-  --storage-keys
 ```
 
 ### Output and Debugging

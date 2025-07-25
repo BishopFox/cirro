@@ -68,8 +68,6 @@ cirro-ingest --file cirro_output.db \
 After completing the quick start:
 
 1. **Explore Your Data**: Use your graph database's query interface to explore the collected data
-2. **Learn Query Patterns**: Check out our [query examples](examples.md) for common analysis patterns
+2. **Learn Query Patterns**: Check out our [dashboard examples](../analysis/dashboard.md) for common analysis patterns
 3. **Set Up Visualization**: Configure dashboards and visualizations for your specific use case
 4. **Advanced Features**: Explore data enrichment and custom collection options
-
-For detailed installation and configuration instructions, see the [Installation Guide](installation.md).

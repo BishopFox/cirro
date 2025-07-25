@@ -127,7 +127,6 @@ nav:
         - RBAC:
           - analysis/edges/rbac-roles.md
         - analysis/edges/authenticates.md
-        - analysis/edges/connected-to.md
         - analysis/edges/contains.md
         - analysis/edges/has-blob.md
         - analysis/edges/has-container.md
