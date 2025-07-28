@@ -601,10 +601,10 @@ impl CirroIngestor {
                             description : row.description,
                             roleName : row.roleName,
                             roleType : row.roleType,
-                            actions : row.permissions.actions,
-                            notActions : row.permissions.notActions,
-                            dataActions : row.permissions.dataActions,
-                            notDataActions : row.permissions.notDataActions
+                            actions : row.permissions[0].actions,
+                            notActions : row.permissions[0].notActions,
+                            dataActions : row.permissions[0].dataActions,
+                            notDataActions : row.permissions[0].notDataActions
                         }
                 "#
             }

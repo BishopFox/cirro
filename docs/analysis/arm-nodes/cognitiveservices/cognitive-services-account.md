@@ -2,7 +2,7 @@
 
 Represents Azure Cognitive Services accounts.
 
-**Labels:** `:ArmResource:CognitiveServicesAccount`
+**Labels:** `:ArmResource:CognitiveServices`
 
 **Properties:**
 

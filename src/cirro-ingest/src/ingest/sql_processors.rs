@@ -46,7 +46,7 @@ impl CirroIngestor {
                 maxSizeBytes: row.properties.maxSizeBytes,
                 status: row.properties.status
             }
-
+            WITH obj, row WHERE row.managedBy IS NOT NULL
             MERGE (s:ArmResource {id: toLower(row.managedBy)})
             MERGE (s)-[:HAS_DB]->(obj)
         "#;

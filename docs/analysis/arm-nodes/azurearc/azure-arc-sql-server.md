@@ -1,8 +1,8 @@
-# AzureArcSqlServer
+# ArcSqlServer
 
 Represents Azure Arc-enabled SQL server instances.
 
-**Labels:** `:ArmResource:AzureArcSqlServer`
+**Labels:** `:ArmResource:ArcSqlServer`
 
 **Properties:**
 

@@ -1,8 +1,8 @@
-# DNSZone
+# DnsZone
 
 Represents DNS zones.
 
-**Labels:** `:ArmResource:DNSZone`
+**Labels:** `:ArmResource:DnsZone`
 
 **Properties:**
 

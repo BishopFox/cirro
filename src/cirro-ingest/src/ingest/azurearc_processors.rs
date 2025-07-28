@@ -10,7 +10,7 @@ impl CirroIngestor {
         let node_insert_query = r#"
             UNWIND $batch AS row
             MERGE (obj:ArmResource {id: row.id})
-            SET obj:AzureArcSqlServer
+            SET obj:ArcSqlServer
             SET obj += {
                 azureDefenderStatus: row.properties.azureDefenderStatus,
                 collation: row.properties.collation,

@@ -128,6 +128,9 @@ impl CirroIngestor {
                 })?;
             }
         }
+        // Start stopwatch to measure the time taken for the entire ingestion process
+        let start_time = std::time::Instant::now();
+        debug!("Ingestion started at: {:?}", start_time);
 
         if self.graph_type == GraphType::Memgraph {
             debug!("Setting storage mode to IN_MEMORY_ANALYTICAL for Memgraph");
@@ -148,6 +151,10 @@ impl CirroIngestor {
 
         info!("Running final post-processing merge query");
         self.post_process().await?;
+
+        // Calculate the total time taken for the ingestion process
+        let duration = start_time.elapsed();
+        info!("Cirro ingestion process completed in: {:.2?}", duration);
 
         Ok(())
     }
@@ -224,21 +231,6 @@ impl CirroIngestor {
     async fn post_process(&mut self) -> Result<(), CirroIngestError> {
         debug!("Running post-processing merge query");
 
-        let _ = self
-            .graph
-            .run(query(
-                r#"MATCH (n)
-                WHERE n.id IS NOT NULL
-                SET n.id = toLower(n.id)
-                WITH n
-                WHERE n.type IS NOT NULL
-                SET n.type = toLower(n.type)"#,
-            ))
-            .await
-            .map_err(|e| {
-                CirroIngestError::DatabaseError(format!("Failed to assert lowercase IDs: {}", e))
-            })?;
-
         match self.graph_type {
             GraphType::Neo4j => {
                 // Merge all nodes with the same ID
@@ -247,11 +239,13 @@ impl CirroIngestor {
                     .graph
                     .run(query(
                         r#" MATCH (n)
-                        WITH n.id AS id, COLLECT(n) AS nodesToMerge
+                        WITH toLower(n.id) AS id, COLLECT(n) AS nodesToMerge
                         WHERE id IS NOT NULL AND size(nodesToMerge) > 1
                         CALL apoc.refactor.mergeNodes(nodesToMerge, {properties: "override", mergeRels:true, preserveExistingSelfRels: true})
                         YIELD node
-                        RETURN count(*);"#,
+                        SET node.id = id
+                        SET node.type = toLower(node.type)
+                        RETURN count(node);"#,
                     ))
                     .await
                     .map_err(|e| {
@@ -268,9 +262,9 @@ impl CirroIngestor {
                         r#"MATCH (a)-[r]->(b)
                         WITH a, b, type(r) AS relType, collect(r) AS rels
                         WHERE size(rels) > 1
-                        CALL apoc.refactor.mergeRelationships((rels, {properties: "combine"}))
-                        YIELD node
-                        RETURN count(*);"#,
+                        CALL apoc.refactor.mergeRelationships(rels, {properties: "combine"})
+                        YIELD rel
+                        RETURN count(rel);"#,
                     ))
                     .await
                     .map_err(|e| {
@@ -287,7 +281,24 @@ impl CirroIngestor {
                     .graph
                     .run(query(
                         r#"MATCH (n)
-                        WITH n.id AS id, COLLECT(n) AS nodesToMerge
+                WHERE n.id IS NOT NULL
+                SET n.id = toLower(n.id)
+                WITH n
+                WHERE n.type IS NOT NULL
+                SET n.type = toLower(n.type)"#,
+                    ))
+                    .await
+                    .map_err(|e| {
+                        CirroIngestError::DatabaseError(format!(
+                            "Failed to assert lowercase IDs: {}",
+                            e
+                        ))
+                    })?;
+                let _ = self
+                    .graph
+                    .run(query(
+                        r#"MATCH (n)
+                        WITH toLower(n.id) AS id, COLLECT(n) AS nodesToMerge
                         WHERE id IS NOT NULL AND size(nodesToMerge) > 1
                         CALL refactor.merge_nodes(nodesToMerge, {properties: "override", mergeRels:true})
                         YIELD node

@@ -6,6 +6,11 @@
     - Running Neo4j or Memgraph instance
     - Appropriate permissions for target Azure environment
 
+!!! warning
+
+    - Neo4j requires [APOC plugin](https://neo4j.com/docs/apoc/current/)
+    - Memgraph requires [MAGE plugin](https://memgraph.com/docs/advanced-algorithms/install-mage)
+  
 ## Install Cirro
 
 === "Shell Script (Unix/Linux/macOS)"
