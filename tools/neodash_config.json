@@ -2,13 +2,49 @@
   "title": "Cirro Dashboard",
   "version": "2.4",
   "settings": {
-    "pagenumber": 1,
+    "pagenumber": 0,
     "editable": true,
     "fullscreenEnabled": false,
-    "parameters": {},
+    "parameters": {
+      "neodash_custom_query": "",
+      "neodash_custom_query_display": ""
+    },
     "theme": "light"
   },
   "pages": [
+    {
+      "title": "Graph Details",
+      "reports": [
+        {
+          "id": "5bba4f7e-451f-4bfe-87d2-485911393d9c",
+          "title": "Number of Nodes",
+          "query": "MATCH (n) RETURN COUNT (n)\n\n\n",
+          "width": 4,
+          "height": 2,
+          "x": 0,
+          "y": 0,
+          "type": "value",
+          "selection": {},
+          "settings": {
+            "monospace": true
+          },
+          "schema": []
+        },
+        {
+          "id": "416d24d3-88fc-4810-97d8-52e975957a65",
+          "title": "Number of Edges",
+          "query": "MATCH ()-[r]->() RETURN DISTINCT COUNT(r)\n\n\n",
+          "width": 4,
+          "height": 2,
+          "x": 0,
+          "y": 2,
+          "type": "value",
+          "selection": {},
+          "settings": {},
+          "schema": []
+        }
+      ]
+    },
     {
       "title": "Entra ID Admins",
       "reports": [
@@ -16,16 +52,16 @@
           "id": "67159f3b-fe20-41d4-bcea-427f1a662087",
           "title": "Other Active Entra ID Roles",
           "query": "// 1. Direct Role Assignment\nMATCH (o:GraphObject)-[:HAS_ROLE]->(g:GraphRole)\nWHERE NOT g.displayName =~ 'Global Administrator|User Administrator|Cloud Application Administrator|Authentication Policy Administrator|Exchange Administrator|Helpdesk Administrator|Privileged Authentication Administrator'\nRETURN \n  o.displayName AS MemberName,\n  o.userPrincipalName AS UPN,\n  labels(o)[1] AS Type,\n  null AS GroupName, \n  g.displayName AS RoleName\n\nUNION\n\n// 2. Group-Inherited Role Assignment\nMATCH (o:GraphObject)-[:MEMBER_OF*..]->(group:GraphGroup)-[:HAS_ROLE]->(g:GraphRole)\nWHERE NOT g.displayName =~ 'Global Administrator|User Administrator|Cloud Application Administrator|Authentication Policy Administrator|Exchange Administrator|Helpdesk Administrator|Privileged Authentication Administrator'\nRETURN \n  o.displayName AS MemberName,\n  o.userPrincipalName AS UPN,\n  labels(o)[1] AS Type,\n  group.displayName AS GroupName, \n  g.displayName AS RoleName\n",
-          "width": 10,
+          "width": 20,
           "height": 6,
           "x": 0,
-          "y": 6,
+          "y": 11,
           "type": "table",
           "selection": {},
           "settings": {
             "compact": true,
             "refreshButtonEnabled": true,
-            "refreshRate": 60,
+            "refreshRate": 0,
             "wrapContent": true,
             "allowDownload": true,
             "downloadImageEnabled": true,
@@ -37,14 +73,14 @@
           "id": "18dd5adc-1f9b-4615-9657-89ac75663bc3",
           "title": "Global Administrators",
           "query": "// 1. Direct Role Assignment\nMATCH (o:GraphObject)-[:HAS_ROLE]->(g:GraphRole)\nWHERE g.displayName = \"Global Administrator\"\nRETURN \n  o.displayName AS MemberName,\n  o.userPrincipalName AS UPN,\n  labels(o)[1] AS Type,\n  null AS GroupName, \n  g.displayName AS RoleName\n\nUNION\n\n// 2. Group-Inherited Role Assignment\nMATCH (o:GraphObject)-[:MEMBER_OF*1..]->(group:GraphObject)-[:HAS_ROLE]->(g:GraphRole)\nWHERE g.displayName = \"Global Administrator\"\nRETURN \n  o.displayName AS MemberName,\n  o.userPrincipalName AS UPN,\n  labels(o)[1] AS Type,\n  group.displayName AS GroupName, \n  g.displayName AS RoleName\n\n\n",
-          "width": 10,
-          "height": 6,
+          "width": 20,
+          "height": 5,
           "x": 0,
           "y": 0,
           "type": "table",
           "selection": {},
           "settings": {
-            "refreshRate": 60,
+            "refreshRate": 0,
             "compact": true,
             "allowDownload": true,
             "downloadImageEnabled": true,
@@ -57,16 +93,16 @@
           "id": "95bc9433-4ca2-4754-a1ce-98eb8eb1867b",
           "title": "Privileged Administrator Roles",
           "query": "// 1. Direct Role Assignment\nMATCH (o:GraphObject)-[:HAS_ROLE]->(g:GraphRole)\nWHERE g.displayName =~ 'Global Administrator|User Administrator|Cloud Application Administrator|Authentication Policy Administrator|Exchange Administrator|Helpdesk Administrator|Privileged Authentication Administrator'\nRETURN \n  o.displayName AS MemberName,\n  o.userPrincipalName AS UPN,\n  labels(o)[1] AS Type,\n  null AS GroupName, \n  g.displayName AS RoleName\n\nUNION\n\n// 2. Group-Inherited Role Assignment\nMATCH (o:GraphObject)-[:MEMBER_OF*..]->(group:GraphGroup)-[:HAS_ROLE]->(g:GraphRole)\nWHERE g.displayName =~ 'Global Administrator|User Administrator|Cloud Application Administrator|Authentication Policy Administrator|Exchange Administrator|Helpdesk Administrator|Privileged Authentication Administrator'\nRETURN \n  o.displayName AS MemberName,\n  o.userPrincipalName AS UPN,\n  labels(o)[1] AS Type,\n  group.displayName AS GroupName, \n  g.displayName AS RoleName\n\n\n",
-          "width": 12,
+          "width": 20,
           "height": 6,
-          "x": 10,
-          "y": 0,
+          "x": 0,
+          "y": 5,
           "type": "table",
           "selection": {},
           "settings": {
             "refreshButtonEnabled": true,
             "downloadImageEnabled": true,
-            "refreshRate": 60,
+            "refreshRate": 0,
             "compact": true,
             "wrapContent": true,
             "allowDownload": true,
@@ -82,18 +118,18 @@
           "id": "af7dc0df-7591-4873-8fc7-09bdee5c7172",
           "title": "Dynamic Groups Without Membership Check",
           "query": "MATCH (n:GraphGroup)\nWHERE n.membershipRule IS NOT NULL AND NOT n.membershipRule CONTAINS \"user.userType\"\nRETURN n.displayName, n.membershipRuleProcessingState, n.membershipRule\n\n",
-          "width": 23,
+          "width": 20,
           "height": 8,
           "x": 0,
-          "y": 4,
+          "y": 5,
           "type": "table",
           "selection": {},
           "settings": {
             "fullscreenEnabled": true,
-            "refreshRate": 60,
+            "refreshRate": 0,
             "allowDownload": true,
             "refreshButtonEnabled": true,
-            "wrapContent": true,
+            "wrapContent": false,
             "compact": true,
             "columnWidthsType": "Relative (%)",
             "columnWidths": "[1, 1, 10]"
@@ -103,7 +139,7 @@
           "id": "80ce4dc4-2594-4d2b-8745-9cba2fd4c1d5",
           "title": "Group Ownership",
           "query": "MATCH (o:GraphObject)-[:OWNS]->(t:GraphGroup)\nRETURN \n  labels(o)[1] AS OwnerType,\n  o.displayName AS Owner,\n  o.userPrincipalName AS UPN,\n  t.displayName AS OwnedName",
-          "width": 17,
+          "width": 11,
           "height": 4,
           "x": 0,
           "y": 0,
@@ -113,25 +149,25 @@
             "refreshButtonEnabled": true,
             "fullscreenEnabled": true,
             "downloadImageEnabled": true,
-            "refreshRate": 60,
+            "refreshRate": 0,
             "compact": true,
-            "wrapContent": true,
+            "wrapContent": false,
             "allowDownload": true
           }
         },
         {
           "id": "5490b9a9-1ccc-4e8a-b705-ce79676cb0f4",
           "title": "Circular Group Membership",
-          "query": "MATCH p=(a:GraphGroup)-[:MEMBER_OF*2..]->(b:GraphGroup)\nWHERE a.id = b.id\nRETURN p\n",
-          "width": 6,
+          "query": "MATCH p=(a:GraphGroup)-[:MEMBER_OF*5..]->(b:GraphGroup)\nWHERE a.id = b.id\nRETURN p\n",
+          "width": 9,
           "height": 4,
-          "x": 17,
+          "x": 11,
           "y": 0,
           "type": "graph",
           "selection": {},
           "settings": {
             "refreshButtonEnabled": true,
-            "refreshRate": 60,
+            "refreshRate": 0,
             "nodeColorScheme": "dark2",
             "fullscreenEnabled": true
           },
@@ -153,7 +189,7 @@
           "type": "table",
           "selection": {},
           "settings": {
-            "refreshRate": 60,
+            "refreshRate": 0,
             "compact": true,
             "wrapContent": true,
             "allowDownload": true,
@@ -170,7 +206,7 @@
         {
           "id": "5417988c-7f66-4a14-a53e-4dfcaf6eda34",
           "title": "Secrets and Certs",
-          "query": "MATCH (a:GraphApplication|GraphServicePrincipal)\nMATCH (s:ClientSecret|Certificate)-[:AUTHENTICATES]->(a)\nRETURN\n  a.id AS Id,\n  a.displayName AS DisplayName,\n  labels(s)[0] AS CredType,\n  s.displayName AS CredName,\n  s.hint AS ClientSecretHint,\n  s.type AS CertificateType,\n  s.thumbprint AS CertificateThumbprint,\n  s.startDateTime AS CertificateStartTime,\n  s.endDateTime AS CertificateEndTime\n  \n  \n  \n\n\n",
+          "query": "MATCH (a:GraphApplication|GraphServicePrincipal)\nMATCH (s:ClientSecret|Certificate)-[:AUTHENTICATES]->(a)\nRETURN\n  a.appId AS appId,\n  a.displayName AS DisplayName,\n  labels(s)[0] AS CredType,\n  s.displayName AS CredName,\n  s.hint AS ClientSecretHint,\n  s.type AS CertificateType,\n  s.thumbprint AS CertificateThumbprint,\n  s.startDateTime AS CertificateStartTime,\n  s.endDateTime AS CertificateEndTime\n  \n  \n  \n\n\n",
           "width": 22,
           "height": 5,
           "x": 0,
@@ -180,7 +216,7 @@
           "settings": {
             "refreshButtonEnabled": true,
             "fullscreenEnabled": true,
-            "refreshRate": 60,
+            "refreshRate": 0,
             "compact": true,
             "wrapContent": true,
             "allowDownload": true
@@ -188,8 +224,8 @@
         },
         {
           "id": "56a918f8-7dbf-43cd-9097-de2578fb52f5",
-          "title": "Managed Identities",
-          "query": "MATCH (o:ArmResource)-[r:HAS_IDENTITY]->(i:GraphServicePrincipal)-[p]->(a:ArmResource)\nWHERE p.roleName IS NOT NULL\nRETURN\n  o.id AS ArmResource,\n  o.name AS Name,\n  p.roleName AS RoleName,\n  a.name AS ResourceName,\n  a.id AS ResourceId\n  \n\n\n",
+          "title": "Managed Identity Role Assignments",
+          "query": "MATCH (o:ArmResource)-[r:HAS_IDENTITY]->(i:GraphServicePrincipal)-[p]->(a:ArmResource)\nWHERE p.roleName IS NOT NULL\nRETURN\n  o.id AS ArmResource,\n  o.name AS Name,\n  p.roleName AS RoleName,\n  labels(a)[1] AS Type,\n  a.name AS ResourceName,\n  a.id AS ResourceId\n  \n\n\n",
           "width": 22,
           "height": 6,
           "x": 0,
@@ -203,7 +239,9 @@
             "allowDownload": true,
             "rightClickToExpandNodes": true,
             "compact": true,
-            "wrapContent": true
+            "wrapContent": true,
+            "columnWidths": "[2,1,1,1,2]",
+            "refreshRate": 0
           },
           "schema": []
         }
@@ -226,12 +264,291 @@
             "refreshButtonEnabled": true,
             "fullscreenEnabled": true,
             "downloadImageEnabled": true,
-            "refreshRate": 60,
+            "refreshRate": 0,
             "compact": true,
             "wrapContent": false,
             "allowDownload": true,
             "columnWidths": "[1,2,1,1,4]"
           }
+        }
+      ]
+    },
+    {
+      "title": "Entra ID Guests",
+      "reports": [
+        {
+          "id": "bd192c01-5024-4ddc-8b68-ac9454d8bd9a",
+          "title": "Entra ID Guests",
+          "query": "// Pattern: Find privilege escalation paths\nMATCH path = (g:GraphUser)\nWHERE g.userType = \"Guest\"\nRETURN\n  g.id AS id,\n  g.mail AS email,\n  g.userPrincipalName AS UPN,\n  g.refreshTokensValidFromDateTime AS RefreshTokenValidDate\n\n\n",
+          "width": 23,
+          "height": 9,
+          "x": 0,
+          "y": 0,
+          "type": "table",
+          "selection": {},
+          "settings": {
+            "compact": true,
+            "wrapContent": true,
+            "allowDownload": true,
+            "downloadImageEnabled": true,
+            "fullscreenEnabled": true
+          }
+        }
+      ]
+    },
+    {
+      "title": "Entra ID Privilege Escalation",
+      "reports": [
+        {
+          "id": "a76d4df8-71b8-4928-b4ef-28bf8aebc5cc",
+          "title": "Entra ID Member Privilege Escalation (Users)",
+          "query": "// Pattern: Find privilege escalation paths\nMATCH path = (start:GraphUser)-[*1..5]->(end:GraphRole)\nWHERE start.userType = \"Member\" AND end.displayName CONTAINS \"Administrator\"\nRETURN path\n\n",
+          "width": 10,
+          "height": 6,
+          "x": 0,
+          "y": 0,
+          "type": "graph",
+          "selection": {
+            "GraphObject": "displayName",
+            "GraphUser": "displayName",
+            "GraphRole": "displayName",
+            "Subscription": "displayName",
+            "ArmResource": "displayName",
+            "ResourceGroup": "name",
+            "AutomationAccount": "name",
+            "GraphServicePrincipal": "displayName"
+          },
+          "settings": {},
+          "schema": [
+            [
+              "GraphObject",
+              "refreshTokensValidFromDateTime",
+              "mail",
+              "surname",
+              "displayName",
+              "givenName",
+              "securityIdentifier",
+              "userType",
+              "id",
+              "userPrincipalName",
+              "accountEnabled",
+              "mailNickname",
+              "roleTemplateId",
+              "description",
+              "country",
+              "city",
+              "jobTitle",
+              "companyName",
+              "mobilePhone",
+              "officeLocation",
+              "state",
+              "department",
+              "servicePrincipalType",
+              "alternativeNames",
+              "servicePrincipalNames",
+              "appId",
+              "replyUrls"
+            ],
+            [
+              "GraphUser",
+              "refreshTokensValidFromDateTime",
+              "mail",
+              "surname",
+              "displayName",
+              "givenName",
+              "securityIdentifier",
+              "userType",
+              "id",
+              "userPrincipalName",
+              "accountEnabled",
+              "mailNickname",
+              "country",
+              "city",
+              "jobTitle",
+              "companyName",
+              "mobilePhone",
+              "officeLocation",
+              "state",
+              "department"
+            ],
+            [
+              "GraphRole",
+              "roleTemplateId",
+              "displayName",
+              "description",
+              "id"
+            ],
+            [
+              "Subscription",
+              "displayName",
+              "tenantId",
+              "state",
+              "id",
+              "subscriptionId",
+              "authorizationSource"
+            ],
+            [
+              "ArmResource",
+              "displayName",
+              "tenantId",
+              "state",
+              "id",
+              "subscriptionId",
+              "authorizationSource",
+              "name",
+              "location",
+              "type",
+              "lastModifiedTime",
+              "creationTime",
+              "tags"
+            ],
+            [
+              "ResourceGroup",
+              "name",
+              "location",
+              "id",
+              "type"
+            ],
+            [
+              "AutomationAccount",
+              "lastModifiedTime",
+              "creationTime",
+              "name",
+              "location",
+              "id",
+              "type",
+              "tags"
+            ],
+            [
+              "GraphServicePrincipal",
+              "servicePrincipalType",
+              "alternativeNames",
+              "displayName",
+              "servicePrincipalNames",
+              "appId",
+              "replyUrls",
+              "id",
+              "accountEnabled"
+            ]
+          ]
+        },
+        {
+          "id": "62bfdcf7-fa70-472f-bf2a-ec8dcf613164",
+          "title": "Entra ID Guest User Privilege Escalation",
+          "query": "// Pattern: Find privilege escalation paths\nMATCH path = (start:GraphUser)-[*1..5]->(end:GraphRole)\nWHERE NOT start.userType = \"Member\" AND end.displayName CONTAINS \"Administrator\"\nOPTIONAL MATCH (start)-[*1..5]->(end:ArmResource)\nRETURN path\n\n\n",
+          "width": 10,
+          "height": 6,
+          "x": 10,
+          "y": 0,
+          "type": "graph",
+          "selection": {
+            "GraphObject": "displayName",
+            "GraphUser": "displayName",
+            "Subscription": "displayName",
+            "ArmResource": "displayName",
+            "ResourceGroup": "name",
+            "AutomationAccount": "name",
+            "GraphServicePrincipal": "id",
+            "GraphRole": "displayName"
+          },
+          "settings": {
+            "fullscreenEnabled": true,
+            "downloadImageEnabled": true
+          },
+          "schema": [
+            [
+              "GraphObject",
+              "creationType",
+              "refreshTokensValidFromDateTime",
+              "mail",
+              "displayName",
+              "securityIdentifier",
+              "userType",
+              "id",
+              "userPrincipalName",
+              "accountEnabled",
+              "mailNickname",
+              "servicePrincipalType",
+              "alternativeNames",
+              "servicePrincipalNames",
+              "appId",
+              "replyUrls",
+              "roleTemplateId",
+              "description"
+            ],
+            [
+              "GraphUser",
+              "creationType",
+              "refreshTokensValidFromDateTime",
+              "mail",
+              "displayName",
+              "securityIdentifier",
+              "userType",
+              "id",
+              "userPrincipalName",
+              "accountEnabled",
+              "mailNickname"
+            ],
+            [
+              "Subscription",
+              "displayName",
+              "tenantId",
+              "state",
+              "id",
+              "subscriptionId",
+              "authorizationSource"
+            ],
+            [
+              "ArmResource",
+              "displayName",
+              "tenantId",
+              "state",
+              "id",
+              "subscriptionId",
+              "authorizationSource",
+              "name",
+              "location",
+              "type",
+              "lastModifiedTime",
+              "creationTime",
+              "tags"
+            ],
+            [
+              "ResourceGroup",
+              "name",
+              "location",
+              "id",
+              "type"
+            ],
+            [
+              "AutomationAccount",
+              "lastModifiedTime",
+              "creationTime",
+              "name",
+              "location",
+              "id",
+              "type",
+              "tags"
+            ],
+            [
+              "GraphServicePrincipal",
+              "servicePrincipalType",
+              "alternativeNames",
+              "displayName",
+              "servicePrincipalNames",
+              "appId",
+              "replyUrls",
+              "id",
+              "accountEnabled"
+            ],
+            [
+              "GraphRole",
+              "roleTemplateId",
+              "displayName",
+              "description",
+              "id"
+            ]
+          ]
         }
       ]
     },
@@ -303,7 +620,7 @@
           "id": "0fc66fbf-9693-42cf-902d-b47420195e1b",
           "title": "Direct Key Vault Permissions",
           "query": "MATCH (n:GraphObject)-[r]->(v:KeyVault)\nRETURN \n  n.id as id,\n  labels(n)[0] as type,\n  n.displayName as displayName,\n  r.roleName AS roleName,\n  v.id AS vaultId",
-          "width": 23,
+          "width": 13,
           "height": 5,
           "x": 0,
           "y": 0,
@@ -325,7 +642,7 @@
           "id": "258f9b8c-c8a8-4746-a18b-446a9653397d",
           "title": "Transitive Key Vault Paths",
           "query": "MATCH (n:GraphObject)-[r*1..5]->(v:KeyVault)\nWHERE ANY(rel IN r WHERE rel.roleType IS NOT NULL)\nRETURN \n  n.id AS id, \n  labels(n)[0] AS type, \n  n.displayName AS displayName, \n  v.id AS vaultId,  \n  [rel IN r | \n    type(rel) + \"->\" + coalesce(endNode(rel).displayName, endNode(rel).name, \"Unnamed\")\n  ] AS relationshipTypesWithDirection",
-          "width": 23,
+          "width": 13,
           "height": 4,
           "x": 0,
           "y": 5,
@@ -340,6 +657,18 @@
             "allowDownload": true,
             "columnWidths": "[1,1,1,1,4,4]"
           }
+        },
+        {
+          "id": "2f8c7840-4a5b-4199-95da-705c2680b069",
+          "title": "",
+          "query": "\n\n\n",
+          "width": 11,
+          "height": 9,
+          "x": 13,
+          "y": 0,
+          "type": "table",
+          "selection": {},
+          "settings": {}
         }
       ]
     },
@@ -403,8 +732,10 @@
             "allowDownload": true,
             "backgroundColor": "white",
             "downloadImageEnabled": true,
-            "refreshRate": 5,
-            "wrapContent": true
+            "refreshRate": 0,
+            "wrapContent": true,
+            "refreshButtonEnabled": true,
+            "fullscreenEnabled": true
           }
         }
       ]
