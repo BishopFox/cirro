@@ -3,6 +3,8 @@
 
 Cirro is a tool that enables security researchers and penetration testers to collect, analyze, and visualize Azure cloud environments and Entra ID relationships through graph databases.
 
+You can check out the [Documentation](https://crispy-adventure-qre5p1k.pages.github.io/) for more info.
+
 ## Features
 
 - **Multi-source Data Collection**: Gather data from both Azure Resource Manager (ARM) APIs and Microsoft Graph APIs

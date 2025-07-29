@@ -147,4 +147,5 @@ nav:
         - analysis/edges/represented-by.md
         - analysis/edges/uses.md
   - Dashboard: analysis/dashboard.md
+  - FAQ: faq.md
   - Getting Help: getting-help.md
