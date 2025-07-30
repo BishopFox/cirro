@@ -17,3 +17,4 @@ Represents Azure tenants - the top-level organizational units in Azure.
 
 **Relationships:**
 - `CONTAINS` → Subscription
+- `ASSOCIATED_WITH` → GraphOrg (bidirectional)

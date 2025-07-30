@@ -257,6 +257,10 @@ impl CirroIngestor {
                 tenantCategory : row.tenantCategory,
                 tenantType : row.tenantType
             }
+
+            MERGE (o:GraphOrg {id: row.tenantId})
+            MERGE (o)-[:ASSOCIATED_WITH]->(t)
+            MERGE (t)-[:ASSOCIATED_WITH]->(o)
         "#;
 
         self.process_arm_resource("tenants", node_insert_query, properties)

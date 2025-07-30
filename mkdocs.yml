@@ -66,6 +66,7 @@ nav:
         - analysis/graph-nodes/graph-service-principal.md
         - analysis/graph-nodes/graph-device.md
         - analysis/graph-nodes/graph-role.md
+        - analysis/graph-nodes/graph-org.md
         - analysis/graph-nodes/graph-administrative-unit.md
       - ARM Nodes:
         - analysis/arm-nodes.md
@@ -123,10 +124,12 @@ nav:
         - analysis/additional-nodes/ip-config.md
         - analysis/additional-nodes/nsg-rule.md
         - analysis/additional-nodes/subnet.md
+        - analysis/additional-nodes/verified-domain.md
       - Edges:
         - RBAC:
           - analysis/edges/rbac-roles.md
         - analysis/edges/authenticates.md
+        - analysis/edges/associated-with.md
         - analysis/edges/contains.md
         - analysis/edges/has-blob.md
         - analysis/edges/has-container.md
@@ -146,6 +149,7 @@ nav:
         - analysis/edges/registered-user.md
         - analysis/edges/represented-by.md
         - analysis/edges/uses.md
+        - analysis/edges/verified-domain.md
   - Dashboard: analysis/dashboard.md
   - FAQ: faq.md
   - Getting Help: getting-help.md

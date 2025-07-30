@@ -91,6 +91,35 @@ Represents authentication credential relationships.
 
 **Properties:** None
 
+### ASSOCIATED_WITH
+
+Represents bidirectional associations between related entities.
+
+**Direction:** `(tenant) -[:ASSOCIATED_WITH]-> (graphOrg)` and `(graphOrg) -[:ASSOCIATED_WITH]-> (tenant)`
+
+**Description:** Creates a bidirectional link between Azure tenant information (from ARM API) and organizational details (from Microsoft Graph API).
+
+**Common Patterns:**
+- Tenants are associated with their Graph organizations
+- Graph organizations are associated with their corresponding tenants
+
+**Properties:** None
+
+### VERIFIED_DOMAIN
+
+Represents domain verification relationships.
+
+**Direction:** `(graphOrg) -[:VERIFIED_DOMAIN]-> (verifiedDomain)`
+
+**Description:** Indicates that an Azure AD organization has verified ownership of a domain.
+
+**Common Patterns:**
+- Organizations have multiple verified domains
+- Default domains are used for new user creation
+- Initial domains are automatically created with tenants
+
+**Properties:** None
+
 ## Azure Resource Manager Relationships
 
 ### CONTAINS

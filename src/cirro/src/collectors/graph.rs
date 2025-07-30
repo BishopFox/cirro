@@ -78,6 +78,7 @@ pub async fn enumerate_graph(collector: Arc<Collector>) -> Result<(), CirroError
 
     // Create all enumerators with their configurations
     let enumerators = vec![
+        GraphObject::new("organization", "", None),
         GraphObject::new("users", "$top=999", None),
         GraphObject::new(
             "groups",

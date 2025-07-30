@@ -531,4 +531,52 @@ impl CirroIngestor {
 
         Ok(())
     }
+
+    /// Processes graph organizations
+    pub async fn process_graph_organizations(&self) -> Result<(), CirroIngestError> {
+        let properties = vec![
+            "/id",
+            "/businessPhones",
+            "/createdDateTime",
+            "/displayName",
+            "/modifiedDateTime",
+            "/onPremisesLastSyncDateTime",
+            "/onPremisesSyncEnabled",
+            "/tenantType",
+            "/verifiedDomains",
+        ];
+
+        let node_insert_query = r#"
+            UNWIND $batch as row
+            WITH row
+                MERGE (obj:GraphOrg {id: row.id})
+                SET obj += {
+                    businessPhones: row.businessPhones,
+                    createdDateTime: row.createdDateTime,
+                    displayName: row.displayName,
+                    modifiedDateTime: row.modifiedDateTime,
+                    onPremisesLastSyncDateTime: row.onPremisesLastSyncDateTime,
+                    onPremisesSyncEnabled: row.onPremisesSyncEnabled,
+                    tenantType: row.tenantType
+                }
+                MERGE (tenant:Tenant {id: '/tenants/' + row.id})
+                MERGE (obj)-[:ASSOCIATED_WITH]->(tenant)
+                MERGE (tenant)-[:ASSOCIATED_WITH]->(obj)
+
+            WITH obj, row
+                UNWIND row.verifiedDomains as domain
+                MERGE (d:VerifiedDomain {name: domain.name})
+                SET d += {
+                    isDefault: domain.isDefault,
+                    isInitial: domain.isInitial,
+                    type: domain.type
+                }
+                MERGE (obj)-[:VERIFIED_DOMAIN]->(d)
+
+        "#;
+        self.process_graph_objects("organization", node_insert_query, properties)
+            .await?;
+
+        Ok(())
+    }
 }

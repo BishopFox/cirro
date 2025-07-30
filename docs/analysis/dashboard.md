@@ -32,6 +32,39 @@ The Cirro NeoDash dashboard provides multiple pages focused on different aspects
 
 ## Dashboard Pages
 
+### Entra ID Organizations
+
+This page focuses on analyzing Azure AD organization structure and domain verification.
+
+#### Organization Overview
+
+Shows basic information about Azure AD organizations and their associated tenants.
+
+```cypher
+MATCH (org:GraphOrg)-[:ASSOCIATED_WITH]->(tenant:Tenant)
+RETURN 
+  org.displayName AS OrganizationName,
+  org.tenantType AS TenantType,
+  tenant.tenantId AS TenantId,
+  tenant.countryCode AS CountryCode,
+  org.onPremisesSyncEnabled AS SyncEnabled
+```
+
+#### Verified Domains Analysis
+
+Analyzes the verified domains for each organization.
+
+```cypher
+MATCH (org:GraphOrg)-[:VERIFIED_DOMAIN]->(domain:VerifiedDomain)
+RETURN 
+  org.displayName AS OrganizationName,
+  domain.name AS DomainName,
+  domain.isDefault AS IsDefault,
+  domain.isInitial AS IsInitial,
+  domain.type AS DomainType
+ORDER BY org.displayName, domain.isDefault DESC
+```
+
 ### Entra ID Admins
 
 This page focuses on identifying users with administrative privileges in Entra ID.
