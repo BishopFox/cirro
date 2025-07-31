@@ -178,6 +178,7 @@ impl CirroIngestor {
             |ingestor| Box::pin(CirroIngestor::process_graph_groups(ingestor)),
             |ingestor| Box::pin(CirroIngestor::process_graph_roles(ingestor)),
             |ingestor| Box::pin(CirroIngestor::process_graph_organizations(ingestor)),
+            |ingestor| Box::pin(CirroIngestor::process_graph_policies(ingestor)),
             |ingestor| Box::pin(CirroIngestor::process_tenants(ingestor)),
             |ingestor| Box::pin(CirroIngestor::process_subscriptions(ingestor)),
             |ingestor| Box::pin(CirroIngestor::process_resource_groups(ingestor)),

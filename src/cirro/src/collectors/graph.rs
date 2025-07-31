@@ -79,13 +79,19 @@ pub async fn enumerate_graph(collector: Arc<Collector>) -> Result<(), CirroError
     // Create all enumerators with their configurations
     let enumerators = vec![
         GraphObject::new("organization", "", None),
-        GraphObject::new("users", "$top=999", None),
+        GraphObject::new("policies/authorizationPolicy", "", None),
+        GraphObject::new(
+            "users",
+            "$top=999",
+            Some(HashMap::from([("memberOf".into(), vec!["/id".into()])])),
+        ),
         GraphObject::new(
             "groups",
             "$top=999",
             Some(HashMap::from([
                 ("members".into(), vec!["/id".into()]),
                 ("owners".into(), vec!["/id".into()]),
+                ("memberOf".into(), vec!["/id".into()]),
             ])),
         ),
         GraphObject::new(
@@ -96,7 +102,14 @@ pub async fn enumerate_graph(collector: Arc<Collector>) -> Result<(), CirroError
         GraphObject::new(
             "servicePrincipals",
             "$top=999",
-            Some(HashMap::from([("owners".into(), vec!["/id".into()])])),
+            Some(HashMap::from([
+                ("owners".into(), vec!["/id".into()]),
+                ("memberOf".into(), vec!["/id".into()]),
+                (
+                    "appRoleAssignedTo".into(),
+                    vec!["/principalId".into(), "/appRoleId".into()],
+                ),
+            ])),
         ),
         GraphObject::new(
             "devices",
@@ -104,6 +117,7 @@ pub async fn enumerate_graph(collector: Arc<Collector>) -> Result<(), CirroError
             Some(HashMap::from([
                 ("registeredOwners".into(), vec!["/id".into()]),
                 ("registeredUsers".into(), vec!["/id".into()]),
+                ("memberOf".into(), vec!["/id".into()]),
             ])),
         ),
         GraphObject::new(
@@ -154,7 +168,9 @@ pub async fn enumerate_graph(collector: Arc<Collector>) -> Result<(), CirroError
     let errors: Vec<_> = results.into_iter().filter_map(|r| r.err()).collect();
     if !errors.is_empty() {
         error!("Graph enumeration completed with {} errors", errors.len());
-        return Err(CirroError::MultipleErrors(errors));
+
+        // Originally returned errors here. Feeling it out.
+        //return Err(CirroError::MultipleErrors(errors));
     }
 
     Ok(())
@@ -272,17 +288,43 @@ async fn query_objects(
                     }
                 }
 
-                // Get the ID from the object
-                let id = value_clone
-                    .get("id")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or("unknown_id")
-                    .to_string();
+                let id: String;
+                let table: String;
+
+                if resource_type.starts_with("policies/") {
+                    // Special handling for policies
+                    // Get the ID from the object
+                    let policy_type = value_clone
+                        .get("id")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("unknown_id")
+                        .to_string();
+
+                    let tenant_id = collector_clone
+                        .msgraph_credential
+                        .as_ref()
+                        .get_token()
+                        .await?
+                        .get_claims()?
+                        .tid
+                        .unwrap_or_else(|| "unknown_tenant".to_string());
+
+                    id = format!("{}_{}", tenant_id, policy_type);
+                    table = "policies".to_string();
+                } else {
+                    // Get the ID from the object
+                    id = value_clone
+                        .get("id")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("unknown_id")
+                        .to_string();
+                    table = resource_type.clone();
+                };
 
                 // Prepare and send the DB write message - this happens regardless of whether
                 // properties were expanded, but we have better logging if they were
                 let _ = &collector_clone
-                    .write_value_to_db(resource_type.clone(), id.clone(), value_clone)
+                    .write_value_to_db(table, id.clone(), value_clone)
                     .await;
 
                 Ok(())
@@ -372,9 +414,10 @@ pub async fn expand_object(
             if !values.is_empty() {
                 // Extract only the specific fields based on json_pointer
                 for value in values {
-                    for pointer in json_pointer {
-                        // Use the pointer to get the value (typically "/id" for IDs)
-                        if let Some(expanded_value) = value.pointer(pointer) {
+                    // If there is only one value, use it directly in an array
+                    // Otherwise, push a map into all_expanded_values
+                    if json_pointer.len() == 1 {
+                        if let Some(expanded_value) = value.pointer(&json_pointer[0]) {
                             debug!(
                                 "Expanded value for {}/{}/{}: {}",
                                 resource_type, object_id, property, expanded_value
@@ -382,6 +425,21 @@ pub async fn expand_object(
                             // Clone the value to avoid borrowing issues
                             all_expanded_values.push(expanded_value.clone());
                         }
+                    } else {
+                        let mut expanded_map = serde_json::Map::new();
+                        for pointer in json_pointer {
+                            if let Some(expanded_value) = value.pointer(pointer) {
+                                debug!(
+                                    "Expanded value for {}/{}/{}: {}",
+                                    resource_type, object_id, property, expanded_value
+                                );
+                                expanded_map.insert(
+                                    pointer.trim_start_matches('/').to_string(),
+                                    expanded_value.clone(),
+                                );
+                            }
+                        }
+                        all_expanded_values.push(serde_json::Value::Object(expanded_map));
                     }
                 }
             }

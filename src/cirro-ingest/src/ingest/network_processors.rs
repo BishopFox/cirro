@@ -61,25 +61,29 @@ impl CirroIngestor {
                 dnsServers: row.properties.dnsSettings.dnsServers
             }
 
-            WITH obj, row WHERE row.properties.ipConfigurations IS NOT NULL
-                UNWIND row.properties.ipConfigurations AS ipconfig
-                MERGE (ipconnode:IPConfig {id: ipconfig.id})
-                SET ipconnode += {
-                    name: ipconfig.name,
-                    type: ipconfig.type,
-                    privateIPAddress: ipconfig.properties.privateIPAddress,
-                    privateIPAddressVersion: ipconfig.properties.privateIPAddressVersion,
-                    privateIPAllocationMethod: ipconfig.properties.privateIPAllocationMethod
-                }
-                MERGE (obj)-[:HAS_CONFIG]->(ipconnode)
-                
-                MERGE (subnet:Subnet {id: ipconfig.properties.subnet.id})
-                MERGE (subnet)-[:CONTAINS]->(ipconnode)
+            WITH obj, row
+                CALL {
+                    WITH obj, row
+                    UNWIND coalesce(row.properties.ipConfigurations, []) AS ipconfig
+                    MERGE (ipconnode:IPConfig {id: ipconfig.id})
+                    SET ipconnode += {
+                        name: ipconfig.name,
+                        type: ipconfig.type,
+                        privateIPAddress: ipconfig.properties.privateIPAddress,
+                        privateIPAddressVersion: ipconfig.properties.privateIPAddressVersion,
+                        privateIPAllocationMethod: ipconfig.properties.privateIPAllocationMethod
+                    }
+                    MERGE (obj)-[:HAS_CONFIG]->(ipconnode)
+                    
+                    MERGE (subnet:Subnet {id: ipconfig.properties.subnet.id})
+                    MERGE (subnet)-[:CONTAINS]->(ipconnode)
 
-                WITH obj, row, ipconnode, ipconfig WHERE ipconfig.properties.publicIPAddress IS NOT NULL
-                    MERGE (pubip:ArmResource {id: ipconfig.properties.publicIPAddress.id})
-                    SET pubip:PublicIPAddress
-                    MERGE (ipconnode)-[:HAS_IP]->(pubip)
+                    WITH obj, row, ipconnode, ipconfig WHERE ipconfig.properties.publicIPAddress IS NOT NULL
+                        MERGE (pubip:ArmResource {id: ipconfig.properties.publicIPAddress.id})
+                        SET pubip:PublicIPAddress
+                        MERGE (ipconnode)-[:HAS_IP]->(pubip)
+                    RETURN count(*) AS _
+                }
 
             WITH obj, row WHERE row.properties.virtualMachine.id IS NOT NULL
                 MERGE (vm:ArmResource {id: row.properties.virtualMachine.id})
@@ -107,49 +111,57 @@ impl CirroIngestor {
             MERGE (obj:ArmResource {id: row.id})
             SET obj:NSG
 
-            WITH obj, row WHERE row.properties.defaultSecurityRules IS NOT NULL
-                UNWIND row.properties.securityRules AS rule
-                MERGE (r:NSGRule {id: rule.id})
-                SET r += {
-                    name: rule.name,
-                    type: rule.type,
-                    access: rule.properties.access,
-                    description: rule.properties.description,
-                    destinationAddressPrefix: rule.properties.destinationAddressPrefix,
-                    destinationAddressPrefixes: rule.properties.destinationAddressPrefixes,
-                    destinationPortRange: rule.properties.destinationPortRange,
-                    destinationPortRanges: rule.properties.destinationPortRanges,
-                    direction: rule.properties.direction,
-                    priority: rule.properties.priority,
-                    protocol: rule.properties.protocol,
-                    sourceAddressPrefix: rule.properties.sourceAddressPrefix,
-                    sourceAddressPrefixes: rule.properties.sourceAddressPrefixes,
-                    sourcePortRange: rule.properties.sourcePortRange,
-                    sourcePortRanges: rule.properties.sourcePortRanges
+            WITH obj, row
+                CALL {
+                    WITH obj, row
+                    UNWIND coalesce(row.properties.defaultSecurityRules, []) AS rule
+                    MERGE (r:NSGRule {id: rule.id})
+                    SET r += {
+                        name: rule.name,
+                        type: rule.type,
+                        access: rule.properties.access,
+                        description: rule.properties.description,
+                        destinationAddressPrefix: rule.properties.destinationAddressPrefix,
+                        destinationAddressPrefixes: rule.properties.destinationAddressPrefixes,
+                        destinationPortRange: rule.properties.destinationPortRange,
+                        destinationPortRanges: rule.properties.destinationPortRanges,
+                        direction: rule.properties.direction,
+                        priority: rule.properties.priority,
+                        protocol: rule.properties.protocol,
+                        sourceAddressPrefix: rule.properties.sourceAddressPrefix,
+                        sourceAddressPrefixes: rule.properties.sourceAddressPrefixes,
+                        sourcePortRange: rule.properties.sourcePortRange,
+                        sourcePortRanges: rule.properties.sourcePortRanges
+                    }
+                    MERGE (obj)-[:HAS_RULE]->(r)
+                    RETURN count(*) AS _
                 }
-                MERGE (obj)-[:HAS_RULE]->(r)
             
-            WITH obj, row WHERE row.properties.securityRules IS NOT NULL
-                UNWIND row.properties.securityRules AS rule
-                MERGE (r:NSGRule {id: rule.id})
-                SET r += {
-                    name: rule.name,
-                    type: rule.type,
-                    access: rule.properties.access,
-                    description: rule.properties.description,
-                    destinationAddressPrefix: rule.properties.destinationAddressPrefix,
-                    destinationAddressPrefixes: rule.properties.destinationAddressPrefixes,
-                    destinationPortRange: rule.properties.destinationPortRange,
-                    destinationPortRanges: rule.properties.destinationPortRanges,
-                    direction: rule.properties.direction,
-                    priority: rule.properties.priority,
-                    protocol: rule.properties.protocol,
-                    sourceAddressPrefix: rule.properties.sourceAddressPrefix,
-                    sourceAddressPrefixes: rule.properties.sourceAddressPrefixes,
-                    sourcePortRange: rule.properties.sourcePortRange,
-                    sourcePortRanges: rule.properties.sourcePortRanges
+            WITH obj, row
+                CALL {
+                    WITH obj, row
+                    UNWIND coalesce(row.properties.securityRules, []) AS rule
+                    MERGE (r:NSGRule {id: rule.id})
+                    SET r += {
+                        name: rule.name,
+                        type: rule.type,
+                        access: rule.properties.access,
+                        description: rule.properties.description,
+                        destinationAddressPrefix: rule.properties.destinationAddressPrefix,
+                        destinationAddressPrefixes: rule.properties.destinationAddressPrefixes,
+                        destinationPortRange: rule.properties.destinationPortRange,
+                        destinationPortRanges: rule.properties.destinationPortRanges,
+                        direction: rule.properties.direction,
+                        priority: rule.properties.priority,
+                        protocol: rule.properties.protocol,
+                        sourceAddressPrefix: rule.properties.sourceAddressPrefix,
+                        sourceAddressPrefixes: rule.properties.sourceAddressPrefixes,
+                        sourcePortRange: rule.properties.sourcePortRange,
+                        sourcePortRanges: rule.properties.sourcePortRanges
+                    }
+                    MERGE (obj)-[:HAS_RULE]->(r)
+                    RETURN count(*) AS _
                 }
-                MERGE (obj)-[:HAS_RULE]->(r)
         "#;
 
         self.process_specific_arm_resource(resource_type, node_insert_query, properties)
@@ -170,17 +182,21 @@ impl CirroIngestor {
                 addressPrefixes: row.properties.addressSpace.addressPrefixes
             }
 
-            WITH obj, row WHERE row.properties.subnets IS NOT NULL
-                UNWIND row.properties.subnets AS subnet
-                MERGE (s:Subnet {id: subnet.id})
-                SET s += {
-                    name: subnet.name,
-                    type: subnet.type,
-                    addressPrefix: subnet.properties.addressPrefix,
-                    privateEndpointNetworkPolicies: subnet.properties.privateEndpointNetworkPolicies,
-                    privateLinkServiceNetworkPolicies: subnet.properties.privateLinkServiceNetworkPolicies
+            WITH obj, row
+                CALL {
+                    WITH obj, row
+                    UNWIND coalesce(row.properties.subnets, []) AS subnet
+                    MERGE (s:Subnet {id: subnet.id})
+                    SET s += {
+                        name: subnet.name,
+                        type: subnet.type,
+                        addressPrefix: subnet.properties.addressPrefix,
+                        privateEndpointNetworkPolicies: subnet.properties.privateEndpointNetworkPolicies,
+                        privateLinkServiceNetworkPolicies: subnet.properties.privateLinkServiceNetworkPolicies
+                    }
+                    MERGE (obj)-[:HAS_SUBNET]->(s)
+                    RETURN count(*) AS _
                 }
-                MERGE (obj)-[:HAS_SUBNET]->(s)
         "#;
 
         self.process_specific_arm_resource(resource_type, node_insert_query, properties)

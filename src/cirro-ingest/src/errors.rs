@@ -32,4 +32,7 @@ pub enum CirroIngestError {
 
     #[error("Neo4j error: {0}")]
     Neo4jError(#[from] neo4rs::Error),
+
+    #[error("Invalid data: {0}")]
+    InvalidData(String),
 }

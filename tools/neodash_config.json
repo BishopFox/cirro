@@ -9,7 +9,10 @@
       "neodash_custom_query": "",
       "neodash_custom_query_display": ""
     },
-    "theme": "light"
+    "theme": "light",
+    "disableRowLimiting": true,
+    "downloadImageEnabled": true,
+    "resizing": "all"
   },
   "pages": [
     {
@@ -26,7 +29,9 @@
           "type": "value",
           "selection": {},
           "settings": {
-            "monospace": true
+            "monospace": true,
+            "refreshButtonEnabled": true,
+            "refreshRate": 10
           },
           "schema": []
         },
@@ -40,8 +45,63 @@
           "y": 2,
           "type": "value",
           "selection": {},
-          "settings": {},
+          "settings": {
+            "refreshButtonEnabled": true,
+            "refreshRate": 10,
+            "monospace": true
+          },
           "schema": []
+        }
+      ]
+    },
+    {
+      "title": "Organizations",
+      "reports": [
+        {
+          "id": "e03a797d-089b-42dd-a2d2-1197e0f7a590",
+          "title": "Organizations",
+          "query": "\nMATCH (org:GraphOrg)-[:ASSOCIATED_WITH]->(tenant:Tenant)\nRETURN \n  org.displayName AS OrganizationName,\n  org.tenantType AS TenantType,\n  tenant.tenantId AS TenantId,\n  tenant.countryCode AS CountryCode,\n  org.onPremisesSyncEnabled AS SyncEnabled,\n  org.onPremisesLastSyncDateTime AS LastSyncDate\n\n\n",
+          "width": 22,
+          "height": 4,
+          "x": 0,
+          "y": 0,
+          "type": "table",
+          "selection": {},
+          "settings": {}
+        },
+        {
+          "id": "4c62ce7d-f05a-4849-8643-3e999997e492",
+          "title": "Organization Domains",
+          "query": "MATCH (org:GraphOrg)-[:VERIFIED_DOMAIN]->(domain:VerifiedDomain)\nRETURN \n  org.displayName AS OrganizationName,\n  org.id AS TenantId,\n  domain.name AS DomainName,\n  domain.isDefault AS IsDefault,\n  domain.isInitial AS IsInitial,\n  domain.type AS DomainType\nORDER BY org.displayName, domain.isDefault DESC\n\n\n",
+          "width": 22,
+          "height": 6,
+          "x": 0,
+          "y": 4,
+          "type": "table",
+          "selection": {},
+          "settings": {
+            "transposed": false
+          }
+        },
+        {
+          "id": "9e706d2d-42de-45e8-8d28-6df61f30ae66",
+          "title": "Authorization Policies",
+          "query": "\nMATCH (o:GraphOrg)-[:HAS_POLICY]->(p:GraphPolicy{type:\"authorizationpolicy\"})\nRETURN\n  o.id AS OrgId,\n  o.displayName AS OrgName,\n  p.allowEmailVerifiedUsersToJoinOrganization AS allowEmailVerifiedUsersToJoinOrganization,\n  p.allowInvitesFrom AS allowInvitesFrom,\n  p.allowUserConsentForRiskyApps AS allowUserConsentForRiskyApps,\n  p.allowedToSignUpEmailBasedSubscriptions AS allowedToSignUpEmailBasedSubscriptions,\n  p.allowedToUseSSPR AS allowedToUseSSPR,\n  p.blockMsolPowerShell AS blockMsolPowerShell,\n  p.allowedToCreateApps AS allowedToCreateApps,\n  p.allowedToCreateSecurityGroups AS allowedToCreateSecurityGroups,\n  p.allowedToCreateTenants AS allowedToCreateTenants,\n  p.allowedToReadBitlockerKeysForOwnedDevice AS allowedToReadBitlockerKeysForOwnedDevice,\n  p.allowedToReadOtherUsers AS allowedToReadOtherUsers",
+          "width": 22,
+          "height": 4,
+          "x": 0,
+          "y": 10,
+          "type": "table",
+          "selection": {},
+          "settings": {
+            "refreshButtonEnabled": true,
+            "fullscreenEnabled": true,
+            "downloadImageEnabled": true,
+            "compact": true,
+            "wrapContent": true,
+            "allowDownload": true,
+            "transposed": true
+          }
         }
       ]
     },
@@ -61,7 +121,6 @@
           "settings": {
             "compact": true,
             "refreshButtonEnabled": true,
-            "refreshRate": 0,
             "wrapContent": true,
             "allowDownload": true,
             "downloadImageEnabled": true,
@@ -80,7 +139,6 @@
           "type": "table",
           "selection": {},
           "settings": {
-            "refreshRate": 0,
             "compact": true,
             "allowDownload": true,
             "downloadImageEnabled": true,
@@ -102,7 +160,6 @@
           "settings": {
             "refreshButtonEnabled": true,
             "downloadImageEnabled": true,
-            "refreshRate": 0,
             "compact": true,
             "wrapContent": true,
             "allowDownload": true,
@@ -116,20 +173,19 @@
       "reports": [
         {
           "id": "af7dc0df-7591-4873-8fc7-09bdee5c7172",
-          "title": "Dynamic Groups Without Membership Check",
-          "query": "MATCH (n:GraphGroup)\nWHERE n.membershipRule IS NOT NULL AND NOT n.membershipRule CONTAINS \"user.userType\"\nRETURN n.displayName, n.membershipRuleProcessingState, n.membershipRule\n\n",
+          "title": "Dynamic Groups",
+          "query": "MATCH (n:GraphGroup)\nWHERE n.membershipRule IS NOT NULL\nRETURN \n  n.displayName AS DisplayName, \n  n.membershipRuleProcessingState AS ProcessingState, \n  n.membershipRule AS Rule,\n  n.membershipRule CONTAINS \"user.userType\" AS MembershipCheck",
           "width": 20,
           "height": 8,
           "x": 0,
-          "y": 5,
+          "y": 9,
           "type": "table",
           "selection": {},
           "settings": {
             "fullscreenEnabled": true,
-            "refreshRate": 0,
             "allowDownload": true,
             "refreshButtonEnabled": true,
-            "wrapContent": false,
+            "wrapContent": true,
             "compact": true,
             "columnWidthsType": "Relative (%)",
             "columnWidths": "[1, 1, 10]"
@@ -139,17 +195,16 @@
           "id": "80ce4dc4-2594-4d2b-8745-9cba2fd4c1d5",
           "title": "Group Ownership",
           "query": "MATCH (o:GraphObject)-[:OWNS]->(t:GraphGroup)\nRETURN \n  labels(o)[1] AS OwnerType,\n  o.displayName AS Owner,\n  o.userPrincipalName AS UPN,\n  t.displayName AS OwnedName",
-          "width": 11,
-          "height": 4,
+          "width": 20,
+          "height": 5,
           "x": 0,
-          "y": 0,
+          "y": 4,
           "type": "table",
           "selection": {},
           "settings": {
             "refreshButtonEnabled": true,
             "fullscreenEnabled": true,
             "downloadImageEnabled": true,
-            "refreshRate": 0,
             "compact": true,
             "wrapContent": false,
             "allowDownload": true
@@ -159,9 +214,9 @@
           "id": "5490b9a9-1ccc-4e8a-b705-ce79676cb0f4",
           "title": "Circular Group Membership",
           "query": "MATCH p=(a:GraphGroup)-[:MEMBER_OF*5..]->(b:GraphGroup)\nWHERE a.id = b.id\nRETURN p\n",
-          "width": 9,
+          "width": 20,
           "height": 4,
-          "x": 11,
+          "x": 0,
           "y": 0,
           "type": "graph",
           "selection": {},
@@ -172,6 +227,72 @@
             "fullscreenEnabled": true
           },
           "schema": []
+        },
+        {
+          "id": "b6f10283-b0e4-411b-8d28-b26f6c9cd23b",
+          "title": "Dynamic Groups with Outbound Relationships",
+          "query": "MATCH p=(n:GraphGroup{membershipRuleProcessingState:\"On\"})-[]->() \nRETURN p\n\n\n",
+          "width": 20,
+          "height": 6,
+          "x": 0,
+          "y": 17,
+          "type": "graph",
+          "selection": {
+            "GraphObject": "id",
+            "GraphGroup": "displayName",
+            "GraphServicePrincipal": "id"
+          },
+          "settings": {
+            "refreshButtonEnabled": true,
+            "fullscreenEnabled": true,
+            "downloadImageEnabled": true,
+            "allowDownload": true
+          },
+          "schema": [
+            [
+              "GraphObject",
+              "displayName",
+              "groupTypes",
+              "id",
+              "membershipRule",
+              "membershipRuleProcessingState",
+              "organizationId",
+              "securityEnabled",
+              "accountEnabled",
+              "alternativeNames",
+              "appId",
+              "appOwnerOrganizationId",
+              "publisherName",
+              "replyUrls",
+              "servicePrincipalNames",
+              "servicePrincipalType",
+              "visibility"
+            ],
+            [
+              "GraphGroup",
+              "displayName",
+              "groupTypes",
+              "id",
+              "membershipRule",
+              "membershipRuleProcessingState",
+              "organizationId",
+              "securityEnabled",
+              "visibility"
+            ],
+            [
+              "GraphServicePrincipal",
+              "accountEnabled",
+              "alternativeNames",
+              "appId",
+              "appOwnerOrganizationId",
+              "displayName",
+              "id",
+              "publisherName",
+              "replyUrls",
+              "servicePrincipalNames",
+              "servicePrincipalType"
+            ]
+          ]
         }
       ]
     },
@@ -196,6 +317,21 @@
             "fullscreenEnabled": true,
             "refreshButtonEnabled": true,
             "downloadImageEnabled": true
+          }
+        },
+        {
+          "id": "cdd4071d-b885-4d0b-a415-9b0adbadc77e",
+          "title": "Devices with Multiple Registered Users/Owners",
+          "query": "MATCH (d:GraphDevice)\nWHERE d.accountEnabled = true\nOPTIONAL MATCH (o)-[r:REGISTERED_USER|REGISTERED_OWNER]->(d)\nWITH d, collect(DISTINCT o) AS users, collect(DISTINCT TYPE(r)) AS relTypes\nWHERE size(users) > 1\nUNWIND users AS o\nWITH d, o,\n     CASE\n       WHEN \"REGISTERED_USER\" IN relTypes AND \"REGISTERED_OWNER\" IN relTypes THEN \"REGISTERED_USER | REGISTERED_OWNER\"\n       WHEN \"REGISTERED_USER\" IN relTypes THEN \"REGISTERED_USER\"\n       WHEN \"REGISTERED_OWNER\" IN relTypes THEN \"REGISTERED_OWNER\"\n       ELSE null\n     END AS RelationshipType\nRETURN\n  o.userPrincipalName AS UPN,\n  RelationshipType,\n  d.deviceId AS DeviceId,\n  d.displayName AS DeviceName,\n  d.profileType AS ProfileType,\n  d.trustType AS TrustType,\n  d.isCompliant AS Compliant,\n  d.operatingSystem AS OS,\n  d.operatingSystemVersion AS OSVersion",
+          "width": 23,
+          "height": 4,
+          "x": 0,
+          "y": 9,
+          "type": "table",
+          "selection": {},
+          "settings": {
+            "refreshButtonEnabled": true,
+            "allowDownload": true
           }
         }
       ]
@@ -244,6 +380,25 @@
             "refreshRate": 0
           },
           "schema": []
+        },
+        {
+          "id": "a2fffd64-9294-4db4-b4a6-dd81fff8d469",
+          "title": "App Roles",
+          "query": "MATCH (o:GraphObject)-[r:APPROLE]->(t:GraphObject)\nWHERE r.isEnabled = true\nUNWIND t.replyUrls AS replyUrl\nRETURN\n  o.id AS id,\n  o.displayName AS displayName,\n  r.displayName AS appRoleName,\n  t.displayName AS appName,\n  replyUrl\n\n\n",
+          "width": 22,
+          "height": 8,
+          "x": 0,
+          "y": 11,
+          "type": "table",
+          "selection": {},
+          "settings": {
+            "fullscreenEnabled": true,
+            "refreshButtonEnabled": true,
+            "compact": true,
+            "allowDownload": true,
+            "wrapContent": true,
+            "downloadImageEnabled": true
+          }
         }
       ]
     },
@@ -279,11 +434,11 @@
         {
           "id": "bd192c01-5024-4ddc-8b68-ac9454d8bd9a",
           "title": "Entra ID Guests",
-          "query": "// Pattern: Find privilege escalation paths\nMATCH path = (g:GraphUser)\nWHERE g.userType = \"Guest\"\nRETURN\n  g.id AS id,\n  g.mail AS email,\n  g.userPrincipalName AS UPN,\n  g.refreshTokensValidFromDateTime AS RefreshTokenValidDate\n\n\n",
+          "query": "// Pattern: Find privilege escalation paths\nMATCH path = (g:GraphUser)\nWHERE g.userPrincipalName CONTAINS \"#EXT#\"\nRETURN\n  g.id AS id,\n  g.mail AS email,\n  g.userPrincipalName AS UPN,\n  g.refreshTokensValidFromDateTime AS RefreshTokenValidDate\n\n\n",
           "width": 23,
           "height": 9,
           "x": 0,
-          "y": 0,
+          "y": 1,
           "type": "table",
           "selection": {},
           "settings": {
@@ -291,7 +446,8 @@
             "wrapContent": true,
             "allowDownload": true,
             "downloadImageEnabled": true,
-            "fullscreenEnabled": true
+            "fullscreenEnabled": true,
+            "refreshButtonEnabled": true
           }
         }
       ]
@@ -312,130 +468,130 @@
             "GraphObject": "displayName",
             "GraphUser": "displayName",
             "GraphRole": "displayName",
-            "Subscription": "displayName",
-            "ArmResource": "displayName",
-            "ResourceGroup": "name",
+            "ArmResource": "name",
             "AutomationAccount": "name",
-            "GraphServicePrincipal": "displayName"
+            "GraphServicePrincipal": "id",
+            "Subscription": "id",
+            "ResourceGroup": "name"
           },
           "settings": {},
           "schema": [
             [
               "GraphObject",
-              "refreshTokensValidFromDateTime",
-              "mail",
-              "surname",
+              "accountEnabled",
               "displayName",
               "givenName",
-              "securityIdentifier",
-              "userType",
               "id",
-              "userPrincipalName",
-              "accountEnabled",
+              "mail",
               "mailNickname",
-              "roleTemplateId",
+              "refreshTokensValidFromDateTime",
+              "securityIdentifier",
+              "surname",
+              "userPrincipalName",
+              "userType",
               "description",
-              "country",
+              "roleTemplateId",
+              "alternativeNames",
+              "appId",
+              "replyUrls",
+              "servicePrincipalNames",
+              "servicePrincipalType",
               "city",
-              "jobTitle",
               "companyName",
+              "country",
+              "department",
+              "jobTitle",
               "mobilePhone",
               "officeLocation",
-              "state",
-              "department",
-              "servicePrincipalType",
-              "alternativeNames",
-              "servicePrincipalNames",
-              "appId",
-              "replyUrls"
+              "state"
             ],
             [
               "GraphUser",
-              "refreshTokensValidFromDateTime",
-              "mail",
-              "surname",
+              "accountEnabled",
               "displayName",
               "givenName",
-              "securityIdentifier",
-              "userType",
               "id",
-              "userPrincipalName",
-              "accountEnabled",
+              "mail",
               "mailNickname",
-              "country",
+              "refreshTokensValidFromDateTime",
+              "securityIdentifier",
+              "surname",
+              "userPrincipalName",
+              "userType",
               "city",
-              "jobTitle",
               "companyName",
+              "country",
+              "department",
+              "jobTitle",
               "mobilePhone",
               "officeLocation",
-              "state",
-              "department"
+              "state"
             ],
             [
               "GraphRole",
-              "roleTemplateId",
-              "displayName",
               "description",
-              "id"
-            ],
-            [
-              "Subscription",
               "displayName",
-              "tenantId",
-              "state",
               "id",
-              "subscriptionId",
-              "authorizationSource"
+              "roleTemplateId"
             ],
             [
               "ArmResource",
-              "displayName",
-              "tenantId",
-              "state",
-              "id",
-              "subscriptionId",
-              "authorizationSource",
-              "name",
-              "location",
-              "type",
-              "lastModifiedTime",
               "creationTime",
-              "tags"
-            ],
-            [
-              "ResourceGroup",
-              "name",
-              "location",
               "id",
-              "type"
+              "lastModifiedTime",
+              "location",
+              "name",
+              "tags",
+              "type",
+              "authorizationSource",
+              "displayName",
+              "state",
+              "subscriptionId",
+              "tenantId"
             ],
             [
               "AutomationAccount",
-              "lastModifiedTime",
               "creationTime",
-              "name",
-              "location",
               "id",
-              "type",
-              "tags"
+              "lastModifiedTime",
+              "location",
+              "name",
+              "tags",
+              "type"
             ],
             [
               "GraphServicePrincipal",
-              "servicePrincipalType",
+              "accountEnabled",
               "alternativeNames",
-              "displayName",
-              "servicePrincipalNames",
               "appId",
-              "replyUrls",
+              "displayName",
               "id",
-              "accountEnabled"
+              "replyUrls",
+              "servicePrincipalNames",
+              "servicePrincipalType"
+            ],
+            [
+              "Subscription",
+              "authorizationSource",
+              "displayName",
+              "id",
+              "state",
+              "subscriptionId",
+              "tenantId"
+            ],
+            [
+              "ResourceGroup",
+              "id",
+              "location",
+              "name",
+              "type"
             ]
           ]
         },
         {
           "id": "62bfdcf7-fa70-472f-bf2a-ec8dcf613164",
           "title": "Entra ID Guest User Privilege Escalation",
-          "query": "// Pattern: Find privilege escalation paths\nMATCH path = (start:GraphUser)-[*1..5]->(end:GraphRole)\nWHERE NOT start.userType = \"Member\" AND end.displayName CONTAINS \"Administrator\"\nOPTIONAL MATCH (start)-[*1..5]->(end:ArmResource)\nRETURN path\n\n\n",
+          "query": "// Pattern: Find privilege escalation paths\nMATCH path = (start:GraphUser)-[*1..5]->(end:GraphRole)\nWHERE start.userPrincipalName CONTAINS \"#EXT#\"\nOPTIONAL MATCH (start)-[*1..5]->(end:ArmResource)\nRETURN path\n\n\n",
           "width": 10,
           "height": 6,
           "x": 10,
@@ -444,12 +600,12 @@
           "selection": {
             "GraphObject": "displayName",
             "GraphUser": "displayName",
-            "Subscription": "displayName",
-            "ArmResource": "displayName",
+            "GraphRole": "displayName",
+            "Subscription": "id",
+            "ArmResource": "name",
             "ResourceGroup": "name",
             "AutomationAccount": "name",
-            "GraphServicePrincipal": "id",
-            "GraphRole": "displayName"
+            "GraphServicePrincipal": "id"
           },
           "settings": {
             "fullscreenEnabled": true,
@@ -458,95 +614,95 @@
           "schema": [
             [
               "GraphObject",
-              "creationType",
-              "refreshTokensValidFromDateTime",
-              "mail",
-              "displayName",
-              "securityIdentifier",
-              "userType",
-              "id",
-              "userPrincipalName",
               "accountEnabled",
+              "creationType",
+              "displayName",
+              "id",
+              "mail",
               "mailNickname",
-              "servicePrincipalType",
+              "refreshTokensValidFromDateTime",
+              "securityIdentifier",
+              "userPrincipalName",
+              "userType",
+              "description",
+              "roleTemplateId",
               "alternativeNames",
-              "servicePrincipalNames",
               "appId",
               "replyUrls",
-              "roleTemplateId",
-              "description"
+              "servicePrincipalNames",
+              "servicePrincipalType"
             ],
             [
               "GraphUser",
-              "creationType",
-              "refreshTokensValidFromDateTime",
-              "mail",
-              "displayName",
-              "securityIdentifier",
-              "userType",
-              "id",
-              "userPrincipalName",
               "accountEnabled",
-              "mailNickname"
+              "creationType",
+              "displayName",
+              "id",
+              "mail",
+              "mailNickname",
+              "refreshTokensValidFromDateTime",
+              "securityIdentifier",
+              "userPrincipalName",
+              "userType"
+            ],
+            [
+              "GraphRole",
+              "description",
+              "displayName",
+              "id",
+              "roleTemplateId"
             ],
             [
               "Subscription",
+              "authorizationSource",
               "displayName",
-              "tenantId",
-              "state",
               "id",
+              "state",
               "subscriptionId",
-              "authorizationSource"
+              "tenantId"
             ],
             [
               "ArmResource",
-              "displayName",
-              "tenantId",
-              "state",
-              "id",
-              "subscriptionId",
               "authorizationSource",
-              "name",
+              "displayName",
+              "id",
+              "state",
+              "subscriptionId",
+              "tenantId",
               "location",
+              "name",
               "type",
-              "lastModifiedTime",
               "creationTime",
+              "lastModifiedTime",
               "tags"
             ],
             [
               "ResourceGroup",
-              "name",
-              "location",
               "id",
+              "location",
+              "name",
               "type"
             ],
             [
               "AutomationAccount",
-              "lastModifiedTime",
               "creationTime",
-              "name",
-              "location",
               "id",
-              "type",
-              "tags"
+              "lastModifiedTime",
+              "location",
+              "name",
+              "tags",
+              "type"
             ],
             [
               "GraphServicePrincipal",
-              "servicePrincipalType",
+              "accountEnabled",
               "alternativeNames",
-              "displayName",
-              "servicePrincipalNames",
               "appId",
-              "replyUrls",
-              "id",
-              "accountEnabled"
-            ],
-            [
-              "GraphRole",
-              "roleTemplateId",
               "displayName",
-              "description",
-              "id"
+              "id",
+              "replyUrls",
+              "servicePrincipalNames",
+              "servicePrincipalType"
             ]
           ]
         }
@@ -559,7 +715,7 @@
           "id": "cdd57a45-a48f-45b3-a451-e71534ccc5c3",
           "title": "Direct Permissions to Subscriptions",
           "query": "MATCH (o)-[r]->(s:Subscription)\nWHERE r.roleName is NOT NULL\nRETURN\n  o.displayName AS displayName,\n  o.userPrincipalName AS UPN,\n  r.roleName AS role,\n  s.subscriptionId AS Id,\n  s.displayName AS Name  ",
-          "width": 9,
+          "width": 21,
           "height": 7,
           "x": 0,
           "y": 0,
@@ -567,7 +723,7 @@
           "selection": {},
           "settings": {
             "refreshButtonEnabled": true,
-            "refreshRate": 60,
+            "refreshRate": 0,
             "fullscreenEnabled": true,
             "compact": true,
             "allowDownload": true
@@ -577,10 +733,10 @@
           "id": "fea006ef-7128-4e65-a951-208e344bfd53",
           "title": "Direct Permissions to Resource Groups",
           "query": "MATCH (o)-[r]->(g:ResourceGroup)\nMATCH (s:Subscription)-[c]->(g)\nWHERE r.roleName is NOT NULL\nRETURN\n  o.displayName,\n  o.userPrincipalName AS UPN,\n  r.roleName,\n  g.name AS RgName,\n  s.displayName AS SubName\n",
-          "width": 12,
+          "width": 21,
           "height": 7,
-          "x": 9,
-          "y": 0,
+          "x": 0,
+          "y": 7,
           "type": "table",
           "selection": {},
           "settings": {
@@ -594,11 +750,11 @@
         {
           "id": "eb4079da-3e73-4b67-9f30-670c7917afd9",
           "title": "Direct Permissions to Resources",
-          "query": "MATCH (o)-[r]->(a:ArmResource)\nMATCH (s:Subscription)-[]->(g:ResourceGroup)-[]->(a)\nWHERE r.roleName is NOT NULL\nRETURN\n  o.userPrincipalName AS UPN,\n  r.roleName AS RoleName,\n  a.name AS Name,\n  a.type AS Type,\n  g.name AS RgName,\n  s.displayName AS SubName\n\n\n\n",
+          "query": "MATCH (o)-[r]->(a:ArmResource)\nMATCH (s:Subscription)-[]->(g:ResourceGroup)-[]->(a)\nWHERE r.roleName is NOT NULL\nRETURN\n  o.displayName AS UPN,\n  r.roleName AS RoleName,\n  a.name AS Name,\n  a.type AS Type,\n  g.name AS RgName,\n  s.displayName AS SubName\n\n\n\n",
           "width": 21,
           "height": 8,
           "x": 0,
-          "y": 7,
+          "y": 15,
           "type": "table",
           "selection": {},
           "settings": {
@@ -620,7 +776,7 @@
           "id": "0fc66fbf-9693-42cf-902d-b47420195e1b",
           "title": "Direct Key Vault Permissions",
           "query": "MATCH (n:GraphObject)-[r]->(v:KeyVault)\nRETURN \n  n.id as id,\n  labels(n)[0] as type,\n  n.displayName as displayName,\n  r.roleName AS roleName,\n  v.id AS vaultId",
-          "width": 13,
+          "width": 24,
           "height": 5,
           "x": 0,
           "y": 0,
@@ -642,8 +798,8 @@
           "id": "258f9b8c-c8a8-4746-a18b-446a9653397d",
           "title": "Transitive Key Vault Paths",
           "query": "MATCH (n:GraphObject)-[r*1..5]->(v:KeyVault)\nWHERE ANY(rel IN r WHERE rel.roleType IS NOT NULL)\nRETURN \n  n.id AS id, \n  labels(n)[0] AS type, \n  n.displayName AS displayName, \n  v.id AS vaultId,  \n  [rel IN r | \n    type(rel) + \"->\" + coalesce(endNode(rel).displayName, endNode(rel).name, \"Unnamed\")\n  ] AS relationshipTypesWithDirection",
-          "width": 13,
-          "height": 4,
+          "width": 24,
+          "height": 5,
           "x": 0,
           "y": 5,
           "type": "table",
@@ -657,18 +813,6 @@
             "allowDownload": true,
             "columnWidths": "[1,1,1,1,4,4]"
           }
-        },
-        {
-          "id": "2f8c7840-4a5b-4199-95da-705c2680b069",
-          "title": "",
-          "query": "\n\n\n",
-          "width": 11,
-          "height": 9,
-          "x": 13,
-          "y": 0,
-          "type": "table",
-          "selection": {},
-          "settings": {}
         }
       ]
     },
@@ -679,7 +823,7 @@
           "id": "dbf3117e-b845-45c8-939e-ba2474a2cd0e",
           "title": "Storage Accounts with Public Network Access Enabled",
           "query": "MATCH (n:StorageAccount) \nWHERE n.allowBlobPublicAccess = true AND n.publicNetworkAccess = \"Enabled\" \nRETURN n.id AS id, n.name AS name, n.supportsHttpsTrafficOnly as httpsOnly\n\n\n",
-          "width": 9,
+          "width": 23,
           "height": 6,
           "x": 0,
           "y": 0,
@@ -699,8 +843,8 @@
           "query": "MATCH (s:StorageAccount)-[:HAS_KEY]->(k:StorageAccountKey)\nRETURN\n   s.name as StorageName,\n   k.name as KeyName,\n   k.value as KeyValue",
           "width": 7,
           "height": 6,
-          "x": 9,
-          "y": 0,
+          "x": 0,
+          "y": 6,
           "type": "table",
           "selection": {},
           "settings": {
@@ -722,7 +866,7 @@
           "title": "Virtual Machines with Public IPs",
           "query": "MATCH (vm:VirtualMachine)-[:HAS_NIC]->(ni:NetworkInterface)-[:HAS_NSG]->(:NSG)-[:HAS_RULE]-(rule:NSGRule)\nWHERE rule.access = \"Allow\" AND NOT toLower(rule.type) CONTAINS \"defaultsecurityrules\"\nOPTIONAL MATCH (ni)-[:HAS_IPCONFIG]->(ipcon:IpConfiguration)-[:HAS_IP]->(ip:PublicIPAddress)\nOPTIONAL MATCH (vn:VirtualNetwork)-[:CONTAINS]->(sub:Subnet)-[:CONTAINS]->(ipcon)\nWITH DISTINCT vm,  rule, vn, sub,\n     COLLECT(DISTINCT ipcon.privateIPAddress) AS privateIps, \n     COLLECT(DISTINCT ip.ipAddress) AS publicIps,\n     COLLECT(DISTINCT rule.sourceAddressPrefix) AS sourceAddressPrefix,\n     COLLECT(DISTINCT rule.sourcePortRange) AS sourcePorts,\n     COLLECT(DISTINCT rule.sourcePortRanges) AS sourcePortRanges,\n     COLLECT(DISTINCT rule.destinationAddressPrefix) as destinationAddressPrefix,\n     COLLECT(DISTINCT rule.destinationPortRange) AS destinationPorts,\n     COLLECT(DISTINCT rule.destinationPortRanges) AS destinationPortRanges\nRETURN vm.name AS name,\n       vm.os AS os,\n       rule.name AS ruleName,\n       rule.access AS access,\n       rule.direction AS direction,\n       vn.name AS virtualNetworkName,\n       sub.addressPrefix as addressPrefix,\n       privateIps[0] AS privateIp, \n       publicIps[0] AS publicIP,\n       sourceAddressPrefix,\n       rule.sourceAddressPrefixes AS sourceAddressPrefixes,\n       sourcePorts,\n       sourcePortRanges,\n       destinationAddressPrefix,\n       rule.destinationAddressPrefixes AS destinationAddressPrefixes,\n       destinationPorts,\n       destinationPortRanges",
           "width": 24,
-          "height": 4,
+          "height": 9,
           "x": 0,
           "y": 0,
           "type": "table",
@@ -737,6 +881,176 @@
             "refreshButtonEnabled": true,
             "fullscreenEnabled": true
           }
+        }
+      ]
+    },
+    {
+      "title": "ScoutSuite Summary",
+      "reports": [
+        {
+          "id": "90655555-d871-4b29-953a-74815f5395ae",
+          "title": "Guest Users",
+          "query": "// Pattern: Find privilege escalation paths\nMATCH path = (g:GraphUser)\nWHERE g.userPrincipalName CONTAINS \"#EXT#\"\nRETURN\n  g.id AS id,\n  g.mail AS email,\n  g.userPrincipalName AS UPN,\n  g.refreshTokensValidFromDateTime AS RefreshTokenValidDate\n\n\n\n\n",
+          "width": 14,
+          "height": 5,
+          "x": 0,
+          "y": 0,
+          "type": "table",
+          "selection": {},
+          "settings": {
+            "refreshButtonEnabled": true,
+            "allowDownload": true,
+            "compact": true
+          }
+        },
+        {
+          "id": "fb6dac11-6558-418e-8fba-451b035c9736",
+          "title": "Guest Users With Privileges",
+          "query": "// Pattern: Find privilege escalation paths\nMATCH path = (start:GraphUser)-[*1..5]->(end:GraphRole)\nWHERE start.userPrincipalName CONTAINS \"#EXT#\"\nOPTIONAL MATCH (start)-[*1..5]->(end:ArmResource)\nRETURN path\n\n\n",
+          "width": 9,
+          "height": 5,
+          "x": 14,
+          "y": 0,
+          "type": "graph",
+          "selection": {
+            "GraphObject": "userPrincipalName",
+            "GraphUser": "displayName",
+            "GraphRole": "displayName",
+            "Subscription": "id",
+            "ArmResource": "name",
+            "ResourceGroup": "name",
+            "AutomationAccount": "name",
+            "GraphServicePrincipal": "id"
+          },
+          "settings": {
+            "allowDownload": true,
+            "downloadImageEnabled": true,
+            "refreshButtonEnabled": true,
+            "fullscreenEnabled": true
+          },
+          "schema": [
+            [
+              "GraphObject",
+              "accountEnabled",
+              "creationType",
+              "displayName",
+              "id",
+              "mail",
+              "mailNickname",
+              "refreshTokensValidFromDateTime",
+              "securityIdentifier",
+              "userPrincipalName",
+              "userType",
+              "description",
+              "roleTemplateId",
+              "alternativeNames",
+              "appId",
+              "replyUrls",
+              "servicePrincipalNames",
+              "servicePrincipalType"
+            ],
+            [
+              "GraphUser",
+              "accountEnabled",
+              "creationType",
+              "displayName",
+              "id",
+              "mail",
+              "mailNickname",
+              "refreshTokensValidFromDateTime",
+              "securityIdentifier",
+              "userPrincipalName",
+              "userType"
+            ],
+            [
+              "GraphRole",
+              "description",
+              "displayName",
+              "id",
+              "roleTemplateId"
+            ],
+            [
+              "Subscription",
+              "authorizationSource",
+              "displayName",
+              "id",
+              "state",
+              "subscriptionId",
+              "tenantId"
+            ],
+            [
+              "ArmResource",
+              "authorizationSource",
+              "displayName",
+              "id",
+              "state",
+              "subscriptionId",
+              "tenantId",
+              "location",
+              "name",
+              "type",
+              "creationTime",
+              "lastModifiedTime",
+              "tags"
+            ],
+            [
+              "ResourceGroup",
+              "id",
+              "location",
+              "name",
+              "type"
+            ],
+            [
+              "AutomationAccount",
+              "creationTime",
+              "id",
+              "lastModifiedTime",
+              "location",
+              "name",
+              "tags",
+              "type"
+            ],
+            [
+              "GraphServicePrincipal",
+              "accountEnabled",
+              "alternativeNames",
+              "appId",
+              "displayName",
+              "id",
+              "replyUrls",
+              "servicePrincipalNames",
+              "servicePrincipalType"
+            ]
+          ]
+        },
+        {
+          "id": "a3b404ce-c0f6-4a3a-b813-a89c7da74ec4",
+          "title": "Key Vault Protection",
+          "query": "MATCH (k:KeyVault) \nRETURN\n  k.id AS id,\n  k.name AS name,\n  k.enableRbacAuthorization AS RbacEnabled,\n  k.enableSoftDelete AS SoftDeleteEnabled,\n  k.publicNetworkAccess AS publicNetworkAccess\n  \n\n",
+          "width": 23,
+          "height": 4,
+          "x": 0,
+          "y": 5,
+          "type": "table",
+          "selection": {},
+          "settings": {
+            "allowDownload": true,
+            "compact": true,
+            "fullscreenEnabled": true,
+            "refreshButtonEnabled": true
+          }
+        },
+        {
+          "id": "2e907abe-0c0a-41c9-8066-efa25a9296bf",
+          "title": "NSG Rules",
+          "query": "MATCH (nsg:NSG)-[:HAS_RULE]-(rule:NSGRule)\nWHERE rule.access = \"Allow\"\nWITH DISTINCT nsg, rule,\n     COLLECT(DISTINCT rule.sourceAddressPrefix) AS sourceAddressPrefix,\n     COLLECT(DISTINCT rule.sourcePortRange) AS sourcePorts,\n     COLLECT(DISTINCT rule.sourcePortRanges) AS sourcePortRanges,\n     COLLECT(DISTINCT rule.destinationAddressPrefix) as destinationAddressPrefix,\n     COLLECT(DISTINCT rule.destinationPortRange) AS destinationPorts,\n     COLLECT(DISTINCT rule.destinationPortRanges) AS destinationPortRanges\nRETURN nsg.id AS id,\n       nsg.name AS NsgName,\n       rule.name AS ruleName,\n       rule.access AS access,\n       rule.direction AS direction,\n       sourceAddressPrefix,\n       rule.sourceAddressPrefixes AS sourceAddressPrefixes,\n       sourcePorts,\n       sourcePortRanges,\n       destinationAddressPrefix,\n       rule.destinationAddressPrefixes AS destinationAddressPrefixes,\n       destinationPorts,\n       destinationPortRanges\n\n\n",
+          "width": 23,
+          "height": 6,
+          "x": 0,
+          "y": 9,
+          "type": "table",
+          "selection": {},
+          "settings": {}
         }
       ]
     }

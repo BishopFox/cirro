@@ -53,6 +53,7 @@ impl SqliteDb {
             "directoryRoles",
             "groups",
             "organization",
+            "policies",
             "roleAssignments",
             "servicePrincipals",
             "subscriptions",

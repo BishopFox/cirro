@@ -141,23 +141,31 @@ impl CirroIngestor {
                 imageVersion: row.properties.storageProfile.imageReference.exactVersion
             }
 
-            WITH obj, row WHERE row.properties.networkProfile.networkInterfaces IS NOT NULL
-                UNWIND row.properties.networkProfile.networkInterfaces AS nic
-                MERGE (n:ArmResource {id: nic.id})
-                MERGE (obj)-[:HAS_NIC]->(n)
+            WITH obj, row
+                CALL {
+                    WITH obj, row
+                    UNWIND coalesce(row.properties.networkProfile.networkInterfaces, []) AS nic
+                    MERGE (n:ArmResource {id: nic.id})
+                    MERGE (obj)-[:HAS_NIC]->(n)
+                    RETURN count(*) AS _
+                }
             
-            WITH obj, row WHERE row.resources IS NOT NULL
-                UNWIND row.resources AS resource
-                WITH obj, resource WHERE toLower(resource.type) = "microsoft.compute/virtualmachines/extensions"
-                    MERGE (e:VMExtension {id: resource.id})
-                    SET e += {
-                        id: resource.id,
-                        name: resource.name,
-                        type: resource.type,
-                        location: resource.location,
-                        provisioningState: resource.properties.provisioningState
-                    }
-                    MERGE (obj)-[:HAS_EXTENSION]->(e)
+            WITH obj, row
+                CALL {
+                    WITH obj, row
+                    UNWIND coalesce(row.resources, []) AS resource
+                    WITH obj, resource WHERE toLower(resource.type) = "microsoft.compute/virtualmachines/extensions"
+                        MERGE (e:VMExtension {id: resource.id})
+                        SET e += {
+                            id: resource.id,
+                            name: resource.name,
+                            type: resource.type,
+                            location: resource.location,
+                            provisioningState: resource.properties.provisioningState
+                        }
+                        MERGE (obj)-[:HAS_EXTENSION]->(e)
+                    RETURN count(*) AS _
+                }
         "#;
 
         self.process_specific_arm_resource(resource_type, node_insert_query, properties)

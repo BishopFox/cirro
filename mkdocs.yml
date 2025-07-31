@@ -67,6 +67,7 @@ nav:
         - analysis/graph-nodes/graph-device.md
         - analysis/graph-nodes/graph-role.md
         - analysis/graph-nodes/graph-org.md
+        - analysis/graph-nodes/graph-policy.md
         - analysis/graph-nodes/graph-administrative-unit.md
       - ARM Nodes:
         - analysis/arm-nodes.md

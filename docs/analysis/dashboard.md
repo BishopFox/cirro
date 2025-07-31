@@ -65,6 +65,23 @@ RETURN
 ORDER BY org.displayName, domain.isDefault DESC
 ```
 
+#### Organization Policy Analysis
+
+Analyzes organizational policies and security settings.
+
+```cypher
+MATCH (org:GraphOrg)-[:HAS_POLICY]->(policy:GraphPolicy)
+RETURN 
+  org.displayName AS OrganizationName,
+  policy.type AS PolicyType,
+  policy.allowUserConsentForRiskyApps AS AllowRiskyApps,
+  policy.blockMsolPowerShell AS BlockPowerShell,
+  policy.allowEmailVerifiedUsersToJoinOrganization AS AllowEmailVerifiedUsers,
+  policy.allowedToCreateApps AS UsersCanCreateApps,
+  policy.allowedToCreateSecurityGroups AS UsersCanCreateGroups
+ORDER BY org.displayName
+```
+
 ### Entra ID Admins
 
 This page focuses on identifying users with administrative privileges in Entra ID.

@@ -20,15 +20,19 @@ impl CirroIngestor {
                 vaultUri: row.properties.vaultUri
             }
 
-            WITH obj, row WHERE row.properties.accessPolicies IS NOT NULL
-                UNWIND row.properties.accessPolicies AS policy
-                MERGE (p:GraphObject {id: policy.objectId})
-                MERGE (p)-[r:HAS_POLICY]->(obj)
+            WITH obj, row
+                CALL {
+                    WITH obj, row
+                    UNWIND coalesce(row.properties.accessPolicies, []) AS policy
+                    MERGE (p:GraphObject {id: policy.objectId})
+                    MERGE (p)-[r:HAS_POLICY]->(obj)
 
-                SET r += {
-                    certificates: policy.permissions.certificates,
-                    keys: policy.permissions.keys,
-                    secrets: policy.permissions.secrets
+                    SET r += {
+                        certificates: policy.permissions.certificates,
+                        keys: policy.permissions.keys,
+                        secrets: policy.permissions.secrets
+                    }
+                    RETURN count(*) AS _
                 }
         "#;
 

@@ -131,14 +131,18 @@ impl CirroIngestor {
             SET obj:StorageAccount
             
             WITH obj, row
-                UNWIND row.keys AS key
-                MERGE (k:StorageAccountKey {name: key.keyName})
-                SET k += {
-                    value: key.value,
-                    permissions: key.permissions,
-                    creationTime: key.creationTime
+                CALL {
+                    WITH obj, row
+                    UNWIND coalesce(row.keys, []) AS key
+                    MERGE (k:StorageAccountKey {name: key.keyName})
+                    SET k += {
+                        value: key.value,
+                        permissions: key.permissions,
+                        creationTime: key.creationTime
+                    }
+                    MERGE (obj)-[:HAS_KEY]->(k)
+                    RETURN count(*) AS _
                 }
-                MERGE (obj)-[:HAS_KEY]->(k)
         "#;
 
         self.process_enrichment(module_name, node_insert_query, properties)

@@ -30,32 +30,40 @@ impl CirroIngestor {
                 vmUuid: row.properties.vmUuid
             }
 
-            WITH obj, row WHERE row.properties.networkProfile.networkInterfaces IS NOT NULL
-                UNWIND row.properties.networkProfile.networkInterfaces AS nic
-                WITH obj, row, nic WHERE nic.ipAddresses IS NOT NULL
-                    UNWIND nic.ipAddresses AS ipAddress
-                    MERGE (ip:HybridIPAddress {address: ipAddress.address})
-                    SET ip += {
-                        ipAddressVersion: ipAddress.ipAddressVersion,
-                        subnet: ipAddress.subnet.addressPrefix
-                    }
-                    MERGE (obj)-[:HAS_IP]->(ip)
+            WITH obj, row
+                CALL {
+                    WITH obj, row
+                    UNWIND coalesce(row.properties.networkProfile.networkInterfaces, []) AS nic
+                    WITH obj, row, nic
+                        UNWIND coalesce(nic.ipAddresses, []) AS ipAddress
+                        MERGE (ip:HybridIPAddress {address: ipAddress.address})
+                        SET ip += {
+                            ipAddressVersion: ipAddress.ipAddressVersion,
+                            subnet: ipAddress.subnet.addressPrefix
+                        }
+                        MERGE (obj)-[:HAS_IP]->(ip)
+                    RETURN count(*) AS _
+                }
             
-            WITH obj, row WHERE row.resources IS NOT NULL
-                UNWIND row.resources AS resource
-                WITH obj, resource WHERE toLower(resource.type) = "microsoft.hybridcompute/machines/extensions"
-                    MERGE (e:HybridExtension {id: resource.id})
-                    SET e += {
-                        name: resource.name,
-                        type: resource.type,
-                        location: resource.location,
-                        typeHandlerVersion: resource.properties.typeHandlerVersion,
-                        autoUpgradeMinorVersion: resource.properties.autoUpgradeMinorVersion,
-                        enableAutomaticUpgrade: resource.properties.enableAutomaticUpgrade,
-                        statusMessage: resource.properties.instanceView.status.message,
-                        provisioningState: resource.properties.provisioningState
-                    }
-                    MERGE (obj)-[:HAS_EXTENSION]->(e)
+            WITH obj, row
+                CALL {
+                    WITH obj, row
+                    UNWIND coalesce(row.resources, []) AS resource
+                    WITH obj, resource WHERE toLower(resource.type) = "microsoft.hybridcompute/machines/extensions"
+                        MERGE (e:HybridExtension {id: resource.id})
+                        SET e += {
+                            name: resource.name,
+                            type: resource.type,
+                            location: resource.location,
+                            typeHandlerVersion: resource.properties.typeHandlerVersion,
+                            autoUpgradeMinorVersion: resource.properties.autoUpgradeMinorVersion,
+                            enableAutomaticUpgrade: resource.properties.enableAutomaticUpgrade,
+                            statusMessage: resource.properties.instanceView.status.message,
+                            provisioningState: resource.properties.provisioningState
+                        }
+                        MERGE (obj)-[:HAS_EXTENSION]->(e)
+                    RETURN count(*) AS _
+                }
         "#;
 
         self.process_specific_arm_resource(resource_type, node_insert_query, properties)
