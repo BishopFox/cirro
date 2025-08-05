@@ -97,7 +97,19 @@ pub async fn enumerate_graph(collector: Arc<Collector>) -> Result<(), CirroError
         GraphObject::new(
             "applications",
             "$top=999",
-            Some(HashMap::from([("owners".into(), vec!["/id".into()])])),
+            Some(HashMap::from([
+                ("owners".into(), vec!["/id".into()]),
+                (
+                    "federatedIdentityCredentials".into(),
+                    vec![
+                        "/id".into(),
+                        "/name".into(),
+                        "/description".into(),
+                        "/issuer".into(),
+                        "/audiences".into(),
+                    ],
+                ),
+            ])),
         ),
         GraphObject::new(
             "servicePrincipals",
@@ -108,6 +120,16 @@ pub async fn enumerate_graph(collector: Arc<Collector>) -> Result<(), CirroError
                 (
                     "appRoleAssignedTo".into(),
                     vec!["/principalId".into(), "/appRoleId".into()],
+                ),
+                (
+                    "endpoints".into(),
+                    vec![
+                        "/id".into(),
+                        "/capability".into(),
+                        "/providerName".into(),
+                        "/providerResourceId".into(),
+                        "/uri".into(),
+                    ],
                 ),
             ])),
         ),

@@ -132,16 +132,17 @@ impl CirroIngestor {
     pub async fn process_graph_applications(&self) -> Result<(), CirroIngestError> {
         // JSON Pointer style properties for the object
         let properties = vec![
-            "/displayName",
-            "/id",
             "/appId",
+            "/appRoleAssignedTo",
+            "/appRoles",
+            "/displayName",
+            "/federatedIdentityCredentials",
+            "/id",
+            "/keyCredentials",
+            "/owners",
             "/passwordCredentials",
             "/publisherDomain",
             "/signInAudience",
-            "/keyCredentials",
-            "/owners",
-            "/appRoles",
-            "/appRoleAssignedTo",
         ];
 
         let node_insert_query = r#"
@@ -193,6 +194,24 @@ impl CirroIngestor {
                     UNWIND coalesce(row.owners, []) AS owner
                     MERGE (o:GraphObject {id: owner})
                     MERGE (o)-[:OWNS]->(obj)
+                    RETURN count(*) AS _
+                }
+            
+            // Federated credentials
+            WITH row, obj
+                CALL {
+                    WITH row, obj
+                    UNWIND coalesce(row.federatedIdentityCredentials, []) AS fidc
+                    MERGE (f:FederatedIdentityCredential {id: fidc.id})
+                    SET f += {
+                        audience: fidc.audience,
+                        description: fidc.description,
+                        issuer: fidc.issuer,
+                        name: fidc.name,
+                        subject: fidc.subject,
+                        type: fidc.type
+                    }
+                    MERGE (obj)-[:FEDERATED_CREDENTIAL]->(f)
                     RETURN count(*) AS _
                 }
 
@@ -531,6 +550,7 @@ impl CirroIngestor {
             "/appRoleAssignmentRequired",
             "/appRoles",
             "/displayName",
+            "/endpoints",
             "/id",
             "/keyCredentials",
             "/memberOf",
@@ -613,6 +633,21 @@ impl CirroIngestor {
                     MERGE (o)-[:OWNS]->(obj)
                     RETURN count(*) AS _
                 }
+            
+            WITH row, obj
+                CALL {
+                    WITH row, obj
+                    UNWIND coalesce(row.endpoints, []) AS endpoint
+                    MERGE (e:ServicePrincipalEndpoint {id: endpoint.id})
+                    SET e += {
+                        capability: endpoint.capability,
+                        providerName: endpoint.providerName,
+                        providerResourceId: endpoint.providerResourceId,
+                        uri: endpoint.uri
+                    }
+                MERGE (obj)-[:HAS_ENDPOINT]->(e)
+                RETURN count(*) AS _
+                }
 
             WITH row, obj
                 CALL {
@@ -648,7 +683,7 @@ impl CirroIngestor {
                 MERGE (k)-[:AUTHENTICATES]->(obj)
                 RETURN count(*) AS _
             }
-            RETURN count(obj) AS processedCount
+            RETURN count(obj) AS _
         "#;
 
         let app_role_post_query = r#"
