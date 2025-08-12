@@ -1,9 +1,9 @@
-use crate::errors::CirroIngestError;
+use crate::errors::CirroGraphError;
 use crate::ingest::ingestor::CirroIngestor;
 
 impl CirroIngestor {
     /// Process storage accounts
-    pub async fn process_storage_accounts(&self) -> Result<(), CirroIngestError> {
+    pub async fn process_storage_accounts(&self) -> Result<(), CirroGraphError> {
         let resource_type = "microsoft.storage/storageaccounts";
         let properties = vec!["/id", "/properties"];
 
@@ -36,7 +36,7 @@ impl CirroIngestor {
     }
 
     /// Process classic storage accounts
-    pub async fn process_classic_storage_accounts(&self) -> Result<(), CirroIngestError> {
+    pub async fn process_classic_storage_accounts(&self) -> Result<(), CirroGraphError> {
         let resource_type = "microsoft.classicstorage/storageaccounts";
         let properties = vec!["/id", "/properties"];
 

@@ -41,5 +41,5 @@ Enable detailed logging for troubleshooting:
 cirro collect azcli --debug
 
 # Ingestion with debug output
-cirro-ingest --file cirro_output.db --debug
+cirro-graph --file cirro_output.db --debug
 ```

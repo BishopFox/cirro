@@ -1,9 +1,9 @@
-use crate::errors::CirroIngestError;
+use crate::errors::CirroGraphError;
 use crate::ingest::ingestor::CirroIngestor;
 
 impl CirroIngestor {
     /// Process sql servers
-    pub async fn process_sql_servers(&self) -> Result<(), CirroIngestError> {
+    pub async fn process_sql_servers(&self) -> Result<(), CirroGraphError> {
         let resource_type = "microsoft.sql/servers";
         let properties = vec!["/id", "/properties"];
 
@@ -29,7 +29,7 @@ impl CirroIngestor {
     /// Process sql databases
     // TODO: The server this database belongs to should come from the id property, not managedBy.
     // https://github.com/memgraph/mage/issues/642
-    pub async fn process_sql_databases(&self) -> Result<(), CirroIngestError> {
+    pub async fn process_sql_databases(&self) -> Result<(), CirroGraphError> {
         let resource_type = "microsoft.sql/servers/databases";
         let properties = vec!["/id", "/properties", "/managedBy"];
 

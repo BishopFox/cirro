@@ -1,6 +1,6 @@
-# Cirro-Ingest CLI Reference
+# cirro-graph CLI Reference
 
-The `cirro-ingest` command-line tool is responsible for loading data collected by `cirro` into graph databases (Neo4j or Memgraph).
+The `cirro-graph` command-line tool is responsible for loading data collected by `cirro` into graph databases (Neo4j or Memgraph).
 
 !!! warning "Security Notice"
 
@@ -11,7 +11,7 @@ The `cirro-ingest` command-line tool is responsible for loading data collected b
 
 ## Synopsis
 
-The `cirro-ingest` tool performs the following operations:
+The `cirro-graph` tool performs the following operations:
 
 1. **Database Connection** - Establishes connection to the target graph database
 2. **Schema Setup** - Creates necessary constraints and indexes
@@ -21,7 +21,7 @@ The `cirro-ingest` tool performs the following operations:
 6. **Index Optimization** - Optimizes database performance
 
 ```bash
-cirro-ingest --file <DATABASE_FILE> [OPTIONS]
+cirro-graph --file <DATABASE_FILE> [OPTIONS]
 ```
 
 ## Required Arguments
@@ -31,7 +31,7 @@ cirro-ingest --file <DATABASE_FILE> [OPTIONS]
 Path to the Cirro results database file (SQLite) created by the `cirro` tool.
 
 ```bash
-cirro-ingest --file cirro_output.db
+cirro-graph --file cirro_output.db
 ```
 
 **Format:** SQLite database file path  
@@ -44,7 +44,7 @@ cirro-ingest --file cirro_output.db
 Specifies the target graph database type.
 
 ```bash
-cirro-ingest --file cirro_output.db --graph-type neo4j
+cirro-graph --file cirro_output.db --graph-type neo4j
 ```
 
 **Values:**
@@ -59,7 +59,7 @@ cirro-ingest --file cirro_output.db --graph-type neo4j
 Database server connection string with supported URI schemes.
 
 ```bash
-cirro-ingest --file cirro_output.db --server bolt://localhost:7687
+cirro-graph --file cirro_output.db --server bolt://localhost:7687
 ```
 
 **Supported Schemes:**
@@ -78,7 +78,7 @@ cirro-ingest --file cirro_output.db --server bolt://localhost:7687
 Database username for authentication.
 
 ```bash
-cirro-ingest --file cirro_output.db --user myuser
+cirro-graph --file cirro_output.db --user myuser
 ```
 
 **Default:** `neo4j`
@@ -88,7 +88,7 @@ cirro-ingest --file cirro_output.db --user myuser
 Database password for authentication.
 
 ```bash
-cirro-ingest --file cirro_output.db --password mypassword
+cirro-graph --file cirro_output.db --password mypassword
 ```
 
 **Default:** `password`
@@ -98,7 +98,7 @@ cirro-ingest --file cirro_output.db --password mypassword
 Database name to connect to (optional).
 
 ```bash
-cirro-ingest --file cirro_output.db --db-name mydatabase
+cirro-graph --file cirro_output.db --db-name mydatabase
 ```
 
 **Default Behavior:**
@@ -111,7 +111,7 @@ cirro-ingest --file cirro_output.db --db-name mydatabase
 Enable debug logging for troubleshooting.
 
 ```bash
-cirro-ingest --file cirro_output.db --debug
+cirro-graph --file cirro_output.db --debug
 ```
 
 **Default:** `false`
@@ -122,17 +122,17 @@ cirro-ingest --file cirro_output.db --debug
 
 ```bash
 # Basic ingestion to Neo4j with defaults
-cirro-ingest --file cirro_output.db
+cirro-graph --file cirro_output.db
 
 # Basic ingestion to Memgraph
-cirro-ingest --file cirro_output.db --graph-type memgraph
+cirro-graph --file cirro_output.db --graph-type memgraph
 ```
 
 ### Neo4j Examples
 
 ```bash
 # Neo4j with custom server
-cirro-ingest \
+cirro-graph \
   --file cirro_output.db \
   --graph-type neo4j \
   --server bolt://neo4j.example.com:7687 \
@@ -140,21 +140,21 @@ cirro-ingest \
   --password mypassword
 
 # Neo4j with TLS encryption
-cirro-ingest \
+cirro-graph \
   --file cirro_output.db \
   --server bolt+s://neo4j.example.com:7687 \
   --user neo4j \
   --password mypassword
 
 # Neo4j cluster with routing
-cirro-ingest \
+cirro-graph \
   --file cirro_output.db \
   --server neo4j://neo4j-cluster.example.com:7687 \
   --user neo4j \
   --password mypassword
 
 # Neo4j with custom database name
-cirro-ingest \
+cirro-graph \
   --file cirro_output.db \
   --db-name analytics \
   --user neo4j \
@@ -165,7 +165,7 @@ cirro-ingest \
 
 ```bash
 # Memgraph with default settings
-cirro-ingest \
+cirro-graph \
   --file cirro_output.db \
   --graph-type memgraph \
   --server bolt://localhost:7687 \
@@ -173,7 +173,7 @@ cirro-ingest \
   --password memgraph
 
 # Memgraph with custom server
-cirro-ingest \
+cirro-graph \
   --file cirro_output.db \
   --graph-type memgraph \
   --server bolt://memgraph.example.com:7687 \
@@ -181,7 +181,7 @@ cirro-ingest \
   --password secret
 
 # Memgraph with TLS
-cirro-ingest \
+cirro-graph \
   --file cirro_output.db \
   --graph-type memgraph \
   --server bolt+s://memgraph.example.com:7687 \
@@ -193,10 +193,10 @@ cirro-ingest \
 
 ```bash
 # Enable debug logging
-cirro-ingest --file cirro_output.db --debug
+cirro-graph --file cirro_output.db --debug
 
 # Full example with all options
-cirro-ingest \
+cirro-graph \
   --file /path/to/cirro_output.db \
   --graph-type neo4j \
   --server bolt+s://neo4j.example.com:7687 \
@@ -212,10 +212,10 @@ cirro-ingest \
 
 ```bash
 # Local Neo4j (default)
-cirro-ingest --file cirro_output.db
+cirro-graph --file cirro_output.db
 
 # Local Memgraph
-cirro-ingest \
+cirro-graph \
   --file cirro_output.db \
   --graph-type memgraph \
   --user memgraph \
@@ -226,14 +226,14 @@ cirro-ingest \
 
 ```bash
 # Neo4j in Docker
-cirro-ingest \
+cirro-graph \
   --file cirro_output.db \
   --server bolt://localhost:7687 \
   --user neo4j \
   --password password
 
 # Memgraph in Docker
-cirro-ingest \
+cirro-graph \
   --file cirro_output.db \
   --graph-type memgraph \
   --server bolt://localhost:7687 \
@@ -245,14 +245,14 @@ cirro-ingest \
 
 ```bash
 # Neo4j AuraDB (cloud)
-cirro-ingest \
+cirro-graph \
   --file cirro_output.db \
   --server neo4j+s://xxxxxxxx.databases.neo4j.io:7687 \
   --user neo4j \
   --password your-aura-password
 
 # Self-hosted with TLS
-cirro-ingest \
+cirro-graph \
   --file cirro_output.db \
   --server bolt+s://your-server.com:7687 \
   --user your-username \

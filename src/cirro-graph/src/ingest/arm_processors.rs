@@ -1,5 +1,5 @@
 use crate::ingest::ingestor::CirroIngestor;
-use crate::{errors::CirroIngestError, ingest::constants::GraphType};
+use crate::{errors::CirroGraphError, ingest::constants::GraphType};
 use log::{debug, error, info};
 use neo4rs::{BoltType, query};
 use serde_json::Value;
@@ -11,7 +11,7 @@ impl CirroIngestor {
         table_name: &str,
         node_insert_query: &str,
         properties: Vec<&str>,
-    ) -> Result<(), CirroIngestError> {
+    ) -> Result<(), CirroGraphError> {
         // Get the count of objects in the database
         let count = self
             .sql_conn
@@ -101,7 +101,7 @@ impl CirroIngestor {
                             BoltType::try_from(serde_json::to_value(&processed_values)?)?,
                         ))
                         .await
-                        .map_err(|e| CirroIngestError::DatabaseError(e.to_string()))?;
+                        .map_err(|e| CirroGraphError::DatabaseError(e.to_string()))?;
                 } else {
                     error!(
                         "No values to insert for {} at offset {}",
@@ -123,7 +123,7 @@ impl CirroIngestor {
         resource_type: &str,
         node_insert_query: &str,
         properties: Vec<&str>,
-    ) -> Result<(), CirroIngestError> {
+    ) -> Result<(), CirroGraphError> {
         // Get the count of objects in the database
         let count_query = format!(
             "SELECT COUNT(*) FROM resources WHERE lower(resource_type) = '{}'",
@@ -216,7 +216,7 @@ impl CirroIngestor {
                             BoltType::try_from(serde_json::to_value(&processed_values)?)?,
                         ))
                         .await
-                        .map_err(|e| CirroIngestError::DatabaseError(e.to_string()))?;
+                        .map_err(|e| CirroGraphError::DatabaseError(e.to_string()))?;
                 } else {
                     error!(
                         "No values to insert for {} at offset {}",
@@ -233,7 +233,7 @@ impl CirroIngestor {
     }
 
     // Process tenants
-    pub async fn process_tenants(&self) -> Result<(), CirroIngestError> {
+    pub async fn process_tenants(&self) -> Result<(), CirroGraphError> {
         let properties = vec![
             "/id",
             "/displayName",
@@ -270,7 +270,7 @@ impl CirroIngestor {
     }
 
     // Process subscriptions
-    pub async fn process_subscriptions(&self) -> Result<(), CirroIngestError> {
+    pub async fn process_subscriptions(&self) -> Result<(), CirroGraphError> {
         let properties = vec![
             "/id",
             "/displayName",
@@ -302,7 +302,7 @@ impl CirroIngestor {
     }
 
     // Process resource groups
-    pub async fn process_resource_groups(&self) -> Result<(), CirroIngestError> {
+    pub async fn process_resource_groups(&self) -> Result<(), CirroGraphError> {
         let properties = vec!["/id", "/name", "/location", "/type"];
 
         let node_insert_query = r#"
@@ -414,7 +414,7 @@ impl CirroIngestor {
                             BoltType::try_from(serde_json::to_value(&processed_values)?)?,
                         ))
                         .await
-                        .map_err(|e| CirroIngestError::DatabaseError(e.to_string()))?;
+                        .map_err(|e| CirroGraphError::DatabaseError(e.to_string()))?;
                 } else {
                     error!(
                         "No values to insert for resource groups at offset {}",
@@ -432,7 +432,7 @@ impl CirroIngestor {
     }
 
     // Process generic ARM resources
-    pub async fn process_generic_arm_resources(&self) -> Result<(), CirroIngestError> {
+    pub async fn process_generic_arm_resources(&self) -> Result<(), CirroGraphError> {
         let properties = vec![
             "/id",
             "/identity",
@@ -564,7 +564,7 @@ impl CirroIngestor {
                             BoltType::try_from(serde_json::to_value(&processed_values)?)?,
                         ))
                         .await
-                        .map_err(|e| CirroIngestError::DatabaseError(e.to_string()))?;
+                        .map_err(|e| CirroGraphError::DatabaseError(e.to_string()))?;
                 } else {
                     error!(
                         "No values to insert for resource groups at offset {}",
@@ -581,7 +581,7 @@ impl CirroIngestor {
         Ok(())
     }
     // Process Azure role assignments
-    pub async fn process_role_assignments(&self) -> Result<(), CirroIngestError> {
+    pub async fn process_role_assignments(&self) -> Result<(), CirroGraphError> {
         let properties = vec![
             "/id",
             "/description",
@@ -599,7 +599,7 @@ impl CirroIngestor {
                     MERGE (o:GraphObject {id: row.properties.principalId})
                     WITH o, row
                         MATCH (r:ArmResource {id: toLower(row.properties.scope)})
-                        CALL apoc.merge.relationship(o, row.roleName, {}, {}, r) YIELD rel
+                        CALL apoc.merge.relationship(o, replace(row.roleName, " ", ""), {}, {}, r) YIELD rel
                         SET rel += {
                             id : row.id,
                             description : row.description,
@@ -622,7 +622,7 @@ impl CirroIngestor {
                     UNWIND $batch AS row
                     MATCH (o:GraphObject {id: row.properties.principalId})
                     MATCH (r:ArmResource {id: toLower(row.properties.scope)})
-                    CALL merge.relationship(o, row.roleName, {}, {
+                    CALL merge.relationship(o, replace(row.roleName, " ", ""), {}, {
                         description : row.description,
                         roleName : row.roleName,
                         roleType : row.roleType,

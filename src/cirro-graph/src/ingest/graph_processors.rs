@@ -1,6 +1,6 @@
 use std::vec;
 
-use crate::errors::CirroIngestError;
+use crate::errors::CirroGraphError;
 use crate::ingest::ingestor::CirroIngestor;
 use log::{debug, error, info};
 use neo4rs::{BoltType, query};
@@ -15,7 +15,7 @@ impl CirroIngestor {
         node_insert_query: &str,
         properties: Vec<&str>,
         post_queries: Option<Vec<&str>>,
-    ) -> Result<(), CirroIngestError> {
+    ) -> Result<(), CirroGraphError> {
         // Get the count of objects in the database
         let count = self
             .sql_conn
@@ -98,7 +98,7 @@ impl CirroIngestor {
                             BoltType::try_from(serde_json::to_value(&processed_values)?)?,
                         ))
                         .await
-                        .map_err(|e| CirroIngestError::DatabaseError(e.to_string()))?;
+                        .map_err(|e| CirroGraphError::DatabaseError(e.to_string()))?;
 
                     // if post_queries is Some
                     match &post_queries {
@@ -107,7 +107,7 @@ impl CirroIngestor {
                             for post_query in queries {
                                 let _ =
                                     self.graph.run(query(post_query)).await.map_err(|e| {
-                                        CirroIngestError::DatabaseError(e.to_string())
+                                        CirroGraphError::DatabaseError(e.to_string())
                                     })?;
                             }
                         }
@@ -129,7 +129,7 @@ impl CirroIngestor {
     }
 
     /// Processes graph applications
-    pub async fn process_graph_applications(&self) -> Result<(), CirroIngestError> {
+    pub async fn process_graph_applications(&self) -> Result<(), CirroGraphError> {
         // JSON Pointer style properties for the object
         let properties = vec![
             "/appId",
@@ -281,7 +281,7 @@ impl CirroIngestor {
     }
 
     /// Processes administrative units
-    pub async fn process_graph_administrative_units(&self) -> Result<(), CirroIngestError> {
+    pub async fn process_graph_administrative_units(&self) -> Result<(), CirroGraphError> {
         // JSON Pointer style properties for the object
         let properties = vec![
             "/id",
@@ -348,7 +348,7 @@ impl CirroIngestor {
     }
 
     /// Processes graph devices
-    pub async fn process_graph_devices(&self) -> Result<(), CirroIngestError> {
+    pub async fn process_graph_devices(&self) -> Result<(), CirroGraphError> {
         // JSON Pointer style properties for the object
         let properties = vec![
             "/displayName",
@@ -430,7 +430,7 @@ impl CirroIngestor {
     }
 
     /// Processes graph groups
-    pub async fn process_graph_groups(&self) -> Result<(), CirroIngestError> {
+    pub async fn process_graph_groups(&self) -> Result<(), CirroGraphError> {
         // JSON Pointer style properties for the object
         let properties = vec![
             "/displayName",
@@ -502,7 +502,7 @@ impl CirroIngestor {
     }
 
     /// Processes graph roles
-    pub async fn process_graph_roles(&self) -> Result<(), CirroIngestError> {
+    pub async fn process_graph_roles(&self) -> Result<(), CirroGraphError> {
         let properties = vec![
             "/displayName",
             "/id",
@@ -540,7 +540,7 @@ impl CirroIngestor {
     }
 
     /// Processes graph service principals
-    pub async fn process_graph_service_principals(&self) -> Result<(), CirroIngestError> {
+    pub async fn process_graph_service_principals(&self) -> Result<(), CirroGraphError> {
         let properties = vec![
             "/accountEnabled",
             "/alternativeNames",
@@ -714,7 +714,7 @@ impl CirroIngestor {
     }
 
     /// Processes graph users
-    pub async fn process_graph_users(&self) -> Result<(), CirroIngestError> {
+    pub async fn process_graph_users(&self) -> Result<(), CirroGraphError> {
         let properties = vec![
             "/accountEnabled",
             "/city",
@@ -791,7 +791,7 @@ impl CirroIngestor {
     }
 
     /// Processes graph organizations
-    pub async fn process_graph_organizations(&self) -> Result<(), CirroIngestError> {
+    pub async fn process_graph_organizations(&self) -> Result<(), CirroGraphError> {
         let properties = vec![
             "/id",
             "/businessPhones",
@@ -843,7 +843,7 @@ impl CirroIngestor {
     }
 
     /// Process policies
-    pub async fn process_graph_policies(&self) -> Result<(), CirroIngestError> {
+    pub async fn process_graph_policies(&self) -> Result<(), CirroGraphError> {
         // For policies, we list all properties for all policy types
         // Not ideal, but the most straightforward approach given how we
         // need to handle different policy types and their specific properties.
@@ -1003,7 +1003,7 @@ impl CirroIngestor {
                             BoltType::try_from(serde_json::to_value(&processed_values)?)?,
                         ))
                         .await
-                        .map_err(|e| CirroIngestError::DatabaseError(e.to_string()))?;
+                        .map_err(|e| CirroGraphError::DatabaseError(e.to_string()))?;
                 } else {
                     error!("No values to insert for policies at offset {}", offset);
                 }

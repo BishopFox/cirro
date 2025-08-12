@@ -1,9 +1,9 @@
-use crate::errors::CirroIngestError;
+use crate::errors::CirroGraphError;
 use crate::ingest::ingestor::CirroIngestor;
 
 impl CirroIngestor {
     /// Process key vaults
-    pub async fn process_keyvaults(&self) -> Result<(), CirroIngestError> {
+    pub async fn process_keyvaults(&self) -> Result<(), CirroGraphError> {
         let resource_type = "microsoft.keyvault/vaults";
         let properties = vec!["/id", "/properties"];
 

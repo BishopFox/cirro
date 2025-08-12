@@ -1,4 +1,4 @@
-use crate::errors::CirroIngestError;
+use crate::errors::CirroGraphError;
 use crate::ingest::ingestor::CirroIngestor;
 use log::{debug, error, info};
 use neo4rs::{BoltType, query};
@@ -11,7 +11,7 @@ impl CirroIngestor {
         module_name: &str,
         node_insert_query: &str,
         properties: Vec<&str>,
-    ) -> Result<(), CirroIngestError> {
+    ) -> Result<(), CirroGraphError> {
         // Get the count of objects in the database
         let count_query = format!(
             "SELECT COUNT(*) FROM enrichments WHERE module  = '{}'",
@@ -104,7 +104,7 @@ impl CirroIngestor {
                             BoltType::try_from(serde_json::to_value(&processed_values)?)?,
                         ))
                         .await
-                        .map_err(|e| CirroIngestError::DatabaseError(e.to_string()))?;
+                        .map_err(|e| CirroGraphError::DatabaseError(e.to_string()))?;
                 } else {
                     error!(
                         "No values to insert for {} at offset {}",
@@ -121,7 +121,7 @@ impl CirroIngestor {
     }
 
     /// Process storage account keys enrichment
-    pub async fn process_enrich_storage_keys(&self) -> Result<(), CirroIngestError> {
+    pub async fn process_enrich_storage_keys(&self) -> Result<(), CirroGraphError> {
         let module_name = "storage_account_keys";
         let properties = vec!["/keys"];
 

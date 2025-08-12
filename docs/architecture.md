@@ -6,7 +6,7 @@ graph TB
     A -->|Queries| C[Microsoft Graph APIs]
     B -->|Stores Results| D[SQLite Database]
     C -->|Stores Results| D[SQLite Database]
-    D -->  H[Cirro-Ingest]
+    D -->  H[cirro-graph]
 
     H -->|Ingests Into| E[Neo4j]
     H -->|Ingests Into| F[Memgraph]
@@ -20,7 +20,7 @@ graph TB
 Cirro uses a two-stage architecture:
 
 1. **Data Collection (`cirro`)**: Gathers data from Azure and stores it in a local SQLite database
-2. **Data Ingestion (`cirro-ingest`)**: Loads the collected data into your chosen graph database
+2. **Data Ingestion (`cirro-graph`)**: Loads the collected data into your chosen graph database
 
 ## Components
 
@@ -34,9 +34,9 @@ The main `cirro` tool is responsible for:
 - Storing collected data in a local SQLite database
 - Supporting multiple Azure cloud environments
 
-### Cirro-Ingest
+### cirro-graph
 
-The `cirro-ingest` tool handles:
+The `cirro-graph` tool handles:
 
 - Reading data from the SQLite database
 - Transforming data for graph database compatibility

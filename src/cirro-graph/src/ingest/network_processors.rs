@@ -1,9 +1,9 @@
-use crate::errors::CirroIngestError;
+use crate::errors::CirroGraphError;
 use crate::ingest::ingestor::CirroIngestor;
 
 impl CirroIngestor {
     /// Process dns zones
-    pub async fn process_dns_zones(&self) -> Result<(), CirroIngestError> {
+    pub async fn process_dns_zones(&self) -> Result<(), CirroGraphError> {
         let resource_type = "microsoft.network/dnszones";
         let properties = vec!["/id", "/properties"];
 
@@ -24,7 +24,7 @@ impl CirroIngestor {
     }
 
     /// Process public IP addresses
-    pub async fn process_public_ip_addresses(&self) -> Result<(), CirroIngestError> {
+    pub async fn process_public_ip_addresses(&self) -> Result<(), CirroGraphError> {
         let resource_type = "microsoft.network/publicipaddresses";
         let properties = vec!["/id", "/properties"];
 
@@ -46,7 +46,7 @@ impl CirroIngestor {
     }
 
     /// Process network interfaces
-    pub async fn process_network_interfaces(&self) -> Result<(), CirroIngestError> {
+    pub async fn process_network_interfaces(&self) -> Result<(), CirroGraphError> {
         let resource_type = "microsoft.network/networkinterfaces";
         let properties = vec!["/id", "/properties"];
 
@@ -102,7 +102,7 @@ impl CirroIngestor {
     }
 
     /// Process network security groups
-    pub async fn process_network_security_groups(&self) -> Result<(), CirroIngestError> {
+    pub async fn process_network_security_groups(&self) -> Result<(), CirroGraphError> {
         let resource_type = "microsoft.network/networksecuritygroups";
         let properties = vec!["/id", "/properties"];
 
@@ -170,7 +170,7 @@ impl CirroIngestor {
     }
 
     /// Process virtual networks
-    pub async fn process_virtual_networks(&self) -> Result<(), CirroIngestError> {
+    pub async fn process_virtual_networks(&self) -> Result<(), CirroGraphError> {
         let resource_type = "microsoft.network/virtualnetworks";
         let properties = vec!["/id", "/properties"];
 

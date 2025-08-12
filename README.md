@@ -19,7 +19,7 @@ You can check out the [Documentation](https://crispy-adventure-qre5p1k.pages.git
 Cirro consists of two main components:
 
 - **`cirro`**: The primary data collection tool that gathers information from Azure and Microsoft Graph APIs
-- **`cirro-ingest`**: The ingestion tool that loads collected data into graph databases (Neo4j or Memgraph)
+- **`cirro-graph`**: The ingestion tool that loads collected data into graph databases (Neo4j or Memgraph)
 
 ## Installation
 
@@ -79,18 +79,18 @@ cirro collect access-token --token <ACCESS_TOKEN>
 
 ### 2. Data Ingestion
 
-Both Neo4j and Memgraph are supported as graph database backends. Set up your preferred database before ingesting data. There are two docker-compose files in the [tools](/tools/) directory to assist with containerized databases. `cirro-ingest` defaults to Neo4j configurations but you might consider using Memgraph for faster ingestion and performance.
+Both Neo4j and Memgraph are supported as graph database backends. Set up your preferred database before ingesting data. There are two docker-compose files in the [tools](/tools/) directory to assist with containerized databases. `cirro-graph` defaults to Neo4j configurations but you might consider using Memgraph for faster ingestion and performance.
 
 After collecting data, ingest it into your graph database:
 
 #### Neo4j
 ```bash
-cirro-ingest --file cirro_output.db
+cirro-graph --file cirro_output.db
 ```
 
 #### Memgraph
 ```bash
-cirro-ingest --file cirro_output.db \
+cirro-graph --file cirro_output.db \
   --graph-type memgraph \
   --user cirro \
   --password cirro
@@ -157,7 +157,7 @@ Enable debug logging for detailed information:
 
 ```bash
 cirro collect azcli --debug
-cirro-ingest --file cirro_output.db --debug
+cirro-graph --file cirro_output.db --debug
 ```
 
 ---

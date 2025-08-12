@@ -1,9 +1,9 @@
-use crate::errors::CirroIngestError;
+use crate::errors::CirroGraphError;
 use crate::ingest::ingestor::CirroIngestor;
 
 impl CirroIngestor {
     /// Process container registries
-    pub async fn process_container_registries(&self) -> Result<(), CirroIngestError> {
+    pub async fn process_container_registries(&self) -> Result<(), CirroGraphError> {
         let resource_type = "microsoft.containerregistry/registries";
         let properties = vec!["/id", "/sku", "/systemData", "/properties"];
 

@@ -1,9 +1,9 @@
-use crate::errors::CirroIngestError;
+use crate::errors::CirroGraphError;
 use crate::ingest::ingestor::CirroIngestor;
 
 impl CirroIngestor {
     /// Process automation accounts
-    pub async fn process_automation_accounts(&self) -> Result<(), CirroIngestError> {
+    pub async fn process_automation_accounts(&self) -> Result<(), CirroGraphError> {
         let resource_type = "microsoft.automation/automationaccounts";
         let properties = vec!["/id", "/properties"];
 

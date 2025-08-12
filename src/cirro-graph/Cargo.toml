@@ -1,7 +1,7 @@
 [package]
 description = "Ingestion tool for cirro"
 edition = "2024"
-name = "cirro-ingest"
+name = "cirro-graph"
 repository = "https://github.com/bishopfox/cirro"
 version = "0.2.0"
 

@@ -1,9 +1,9 @@
-use crate::errors::CirroIngestError;
+use crate::errors::CirroGraphError;
 use crate::ingest::ingestor::CirroIngestor;
 
 impl CirroIngestor {
     /// Process cognitive services accounts
-    pub async fn process_cognitive_services_account(&self) -> Result<(), CirroIngestError> {
+    pub async fn process_cognitive_services_account(&self) -> Result<(), CirroGraphError> {
         let resource_type = "microsoft.cognitiveservices/accounts";
         let properties = vec!["/id", "/properties"];
 

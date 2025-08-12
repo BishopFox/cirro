@@ -1,9 +1,9 @@
-use crate::errors::CirroIngestError;
+use crate::errors::CirroGraphError;
 use crate::ingest::ingestor::CirroIngestor;
 
 impl CirroIngestor {
     /// Process user assigned identities
-    pub async fn process_user_assigned_identities(&self) -> Result<(), CirroIngestError> {
+    pub async fn process_user_assigned_identities(&self) -> Result<(), CirroGraphError> {
         let resource_type = "microsoft.managedidentity/userassignedidentities";
         let properties = vec!["/id", "/properties"];
 

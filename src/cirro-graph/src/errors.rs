@@ -2,7 +2,7 @@ use thiserror::Error;
 
 /// Custom error type for Graph API related errors
 #[derive(Error, Debug)]
-pub enum CirroIngestError {
+pub enum CirroGraphError {
     #[error("Invalid configuration: {0}")]
     InvalidConfig(String),
 
@@ -16,7 +16,7 @@ pub enum CirroIngestError {
     LogSetupError(#[from] fern::InitError),
 
     #[error("Multiple errors: {0:?}")]
-    MultipleErrors(Vec<CirroIngestError>),
+    MultipleErrors(Vec<CirroGraphError>),
 
     #[error("Unknown error: {0}")]
     Unknown(String),
@@ -35,4 +35,7 @@ pub enum CirroIngestError {
 
     #[error("Invalid data: {0}")]
     InvalidData(String),
+
+    #[error("IO error: {0}")]
+    IoError(#[from] std::io::Error),
 }

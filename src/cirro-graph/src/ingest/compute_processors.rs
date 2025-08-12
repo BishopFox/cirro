@@ -1,9 +1,9 @@
-use crate::errors::CirroIngestError;
+use crate::errors::CirroGraphError;
 use crate::ingest::ingestor::CirroIngestor;
 
 impl CirroIngestor {
     /// Process availability sets
-    pub async fn process_availability_sets(&self) -> Result<(), CirroIngestError> {
+    pub async fn process_availability_sets(&self) -> Result<(), CirroGraphError> {
         let resource_type = "microsoft.compute/availabilitysets";
         let properties = vec!["/id", "/sku", "/properties"];
 
@@ -26,7 +26,7 @@ impl CirroIngestor {
     }
 
     /// Process disks
-    pub async fn process_disks(&self) -> Result<(), CirroIngestError> {
+    pub async fn process_disks(&self) -> Result<(), CirroGraphError> {
         let resource_type = "microsoft.compute/disks";
         let properties = vec!["/id", "/managedBy", "/properties"];
 
@@ -54,7 +54,7 @@ impl CirroIngestor {
     }
 
     /// Process restore point collections
-    pub async fn process_restore_point_collections(&self) -> Result<(), CirroIngestError> {
+    pub async fn process_restore_point_collections(&self) -> Result<(), CirroGraphError> {
         let resource_type = "microsoft.compute/restorepointcollections";
         let properties = vec!["/id", "/properties"];
 
@@ -64,7 +64,7 @@ impl CirroIngestor {
             SET obj:RestorePointCollection
 
             MERGE (vm:ArmResource {id: row.properties.source.id})
-            MERGE (h)-[:HAS_RESTOREPOINT]->(obj)
+            MERGE (vm)-[:HAS_RESTOREPOINT]->(obj)
         "#;
 
         self.process_specific_arm_resource(resource_type, node_insert_query, properties)
@@ -73,7 +73,7 @@ impl CirroIngestor {
     }
 
     /// Process snapshots
-    pub async fn process_snapshots(&self) -> Result<(), CirroIngestError> {
+    pub async fn process_snapshots(&self) -> Result<(), CirroGraphError> {
         let resource_type = "microsoft.compute/snapshots";
         let properties = vec!["/id", "/properties"];
 
@@ -103,7 +103,7 @@ impl CirroIngestor {
     }
 
     /// Process SSH public keys
-    pub async fn process_ssh_public_keys(&self) -> Result<(), CirroIngestError> {
+    pub async fn process_ssh_public_keys(&self) -> Result<(), CirroGraphError> {
         let resource_type = "microsoft.compute/sshpublickeys";
         let properties = vec!["/id", "/properties"];
 
@@ -122,7 +122,7 @@ impl CirroIngestor {
     }
 
     /// Process virtual machines
-    pub async fn process_virtual_machines(&self) -> Result<(), CirroIngestError> {
+    pub async fn process_virtual_machines(&self) -> Result<(), CirroGraphError> {
         let resource_type = "microsoft.compute/virtualmachines";
         let properties = vec!["/id", "/resources", "/properties"];
 

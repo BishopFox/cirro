@@ -1,9 +1,9 @@
-use crate::errors::CirroIngestError;
+use crate::errors::CirroGraphError;
 use crate::ingest::ingestor::CirroIngestor;
 
 impl CirroIngestor {
     /// Process communication services
-    pub async fn process_communication_services(&self) -> Result<(), CirroIngestError> {
+    pub async fn process_communication_services(&self) -> Result<(), CirroGraphError> {
         let resource_type = "microsoft.communication/communicationservices";
         let properties = vec!["/id", "/properties"];
 

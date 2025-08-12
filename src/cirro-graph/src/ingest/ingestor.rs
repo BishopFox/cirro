@@ -1,4 +1,4 @@
-use crate::errors::CirroIngestError;
+use crate::errors::CirroGraphError;
 use crate::ingest::constants::*;
 
 use log::{debug, info};
@@ -55,7 +55,7 @@ impl CirroIngestor {
             .password(password.clone())
             .db(db_name.clone())
             .build()
-            .map_err(|e| CirroIngestError::DatabaseError(e.to_string()))
+            .map_err(|e| CirroGraphError::DatabaseError(e.to_string()))
             .unwrap();
 
         info!(
@@ -64,7 +64,7 @@ impl CirroIngestor {
         );
         let graph = Graph::connect(config)
             .await
-            .map_err(|e| CirroIngestError::DatabaseError(e.to_string()))
+            .map_err(|e| CirroGraphError::DatabaseError(e.to_string()))
             .unwrap();
 
         // Test connection to the database
@@ -75,7 +75,7 @@ impl CirroIngestor {
         info!("Successfully connected to the database");
 
         let sql_conn = Connection::open(file.clone())
-            .map_err(|e| CirroIngestError::DatabaseError(e.to_string()))
+            .map_err(|e| CirroGraphError::DatabaseError(e.to_string()))
             .ok();
 
         let ingestor = CirroIngestor {
@@ -93,7 +93,7 @@ impl CirroIngestor {
     }
 
     /// Runs the ingestor
-    pub async fn run(&mut self) -> Result<(), CirroIngestError> {
+    pub async fn run(&mut self) -> Result<(), CirroGraphError> {
         // Create constraints and indexes for each node type
         for node_type in NodeType::iter() {
             let constraint_query = self
@@ -107,7 +107,7 @@ impl CirroIngestor {
                 .run(query(&constraint_query))
                 .await
                 .map_err(|e| {
-                    CirroIngestError::DatabaseError(format!(
+                    CirroGraphError::DatabaseError(format!(
                         "Failed to create constraint for {}: {}",
                         node_type, e
                     ))
@@ -121,7 +121,7 @@ impl CirroIngestor {
 
                 debug!("Executing query: {}", index_query);
                 let _ = self.graph.run(query(&index_query)).await.map_err(|e| {
-                    CirroIngestError::DatabaseError(format!(
+                    CirroGraphError::DatabaseError(format!(
                         "Failed to create index for {}: {}",
                         node_type, e
                     ))
@@ -139,7 +139,7 @@ impl CirroIngestor {
                 .run(query("STORAGE MODE IN_MEMORY_ANALYTICAL;"))
                 .await
                 .map_err(|e| {
-                    CirroIngestError::DatabaseError(format!(
+                    CirroGraphError::DatabaseError(format!(
                         "Failed to set storage mode for Memgraph: {}",
                         e
                     ))
@@ -159,7 +159,7 @@ impl CirroIngestor {
         Ok(())
     }
 
-    async fn process_file(&mut self) -> Result<(), CirroIngestError> {
+    async fn process_file(&mut self) -> Result<(), CirroGraphError> {
         info!(
             "Starting Cirro ingest on file: {:?}",
             self.file.as_path().file_name().unwrap()
@@ -167,7 +167,7 @@ impl CirroIngestor {
 
         // Define type that matches the actual function signature. Thanks Copilot cause this is harder than Python.
         #[rustfmt::skip]
-        type ProcessorFn = for<'a> fn(&'a CirroIngestor,) -> Pin<Box<dyn Future<Output = Result<(), CirroIngestError>> + 'a>,>;
+        type ProcessorFn = for<'a> fn(&'a CirroIngestor,) -> Pin<Box<dyn Future<Output = Result<(), CirroGraphError>> + 'a>,>;
 
         let processors: Vec<ProcessorFn> = vec![
             |ingestor| Box::pin(CirroIngestor::process_graph_users(ingestor)),
@@ -218,7 +218,7 @@ impl CirroIngestor {
             debug!("Running processor: {:?}", processor);
             let result = processor(self).await;
             if let Err(e) = result {
-                return Err(CirroIngestError::ProcessingError(format!(
+                return Err(CirroGraphError::ProcessingError(format!(
                     "Failed to process file with error: {}",
                     e
                 )));
@@ -230,7 +230,7 @@ impl CirroIngestor {
         Ok(())
     }
 
-    async fn post_process(&mut self) -> Result<(), CirroIngestError> {
+    async fn post_process(&mut self) -> Result<(), CirroGraphError> {
         debug!("Running post-processing merge query");
 
         match self.graph_type {
@@ -251,7 +251,7 @@ impl CirroIngestor {
                     ))
                     .await
                     .map_err(|e| {
-                        CirroIngestError::DatabaseError(format!(
+                        CirroGraphError::DatabaseError(format!(
                             "Failed to run post-processing merge query: {}",
                             e
                         ))
@@ -270,7 +270,7 @@ impl CirroIngestor {
                     ))
                     .await
                     .map_err(|e| {
-                        CirroIngestError::DatabaseError(format!(
+                        CirroGraphError::DatabaseError(format!(
                             "Failed to run post-processing merge relationships query: {}",
                             e
                         ))
@@ -291,7 +291,7 @@ impl CirroIngestor {
                     ))
                     .await
                     .map_err(|e| {
-                        CirroIngestError::DatabaseError(format!(
+                        CirroGraphError::DatabaseError(format!(
                             "Failed to assert lowercase IDs: {}",
                             e
                         ))
@@ -308,7 +308,7 @@ impl CirroIngestor {
                     ))
                     .await
                     .map_err(|e| {
-                        CirroIngestError::DatabaseError(format!(
+                        CirroGraphError::DatabaseError(format!(
                             "Failed to run post-processing merge query: {}",
                             e
                         ))
@@ -333,7 +333,7 @@ impl CirroIngestor {
                     ))
                     .await
                     .map_err(|e| {
-                        CirroIngestError::DatabaseError(format!(
+                        CirroGraphError::DatabaseError(format!(
                             "Failed to run post-processing merge relationships query: {}",
                             e
                         ))

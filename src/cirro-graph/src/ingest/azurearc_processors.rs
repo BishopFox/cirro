@@ -1,9 +1,9 @@
-use crate::errors::CirroIngestError;
+use crate::errors::CirroGraphError;
 use crate::ingest::ingestor::CirroIngestor;
 
 impl CirroIngestor {
     /// Process azure arc sql servers
-    pub async fn process_azurearc_sql_servers(&self) -> Result<(), CirroIngestError> {
+    pub async fn process_azurearc_sql_servers(&self) -> Result<(), CirroGraphError> {
         let resource_type = "microsoft.azurearcdata/sqlserverinstances";
         let properties = vec!["/id", "/properties"];
 
@@ -39,7 +39,7 @@ impl CirroIngestor {
     // Process azure arc sql server db
     // Disabled for now
     // https://github.com/memgraph/mage/issues/642
-    // pub async fn process_azurearc_sql_database(&self) -> Result<(), CirroIngestError> {
+    // pub async fn process_azurearc_sql_database(&self) -> Result<(), CirroGraphError> {
     //     let resource_type = "microsoft.azurearcdata/sqlserverinstances/databases";
     //     let properties = vec!["/id", "/properties"];
 
