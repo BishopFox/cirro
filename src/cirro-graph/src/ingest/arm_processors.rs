@@ -232,6 +232,66 @@ impl CirroIngestor {
         Ok(())
     }
 
+    // Process management group entities
+    pub async fn process_mg_entities(&self) -> Result<(), CirroGraphError> {
+        let properties = vec!["/id", "/properties", "/type"];
+
+        let node_insert_query = r#"
+            UNWIND $batch AS row
+
+            WITH row
+            CALL {
+                WITH row
+                WITH row
+                WHERE toLower(row.type) = 'microsoft.management/managementgroups'
+                MERGE (obj:ManagementGroup {id: row.id})
+                SET obj.displayName = row.properties.displayName
+
+                // If parent is null -> Tenant
+                WITH row, obj
+                CALL {
+                    WITH row, obj
+                    WITH row, obj
+                    WHERE row.properties.parent.id IS NULL
+
+                    // Merge the tenant into existing tenant objects but avoid GraphOrg
+                    MERGE (t:Tenant {id: "/tenants/" + row.properties.tenantId})
+                    MERGE (t)-[:HAS_ENTITY]->(obj)
+                    RETURN count(*) AS _
+                }
+
+                // If parent not null -> parent group
+                WITH row, obj
+                CALL {
+                    WITH row, obj
+                    WITH row, obj
+                    WHERE row.properties.parent.id IS NOT NULL
+                    MERGE (p:ManagementGroup {id: row.properties.parent.id})
+                    MERGE (p)-[:HAS_ENTITY]->(obj)
+                    RETURN count(*) AS _
+                }
+                RETURN count(*) AS _
+            }
+
+            WITH row
+            CALL {
+                WITH row
+                WITH row
+                WHERE toLower(row.type) = '/subscriptions'
+                MERGE (s:Subscription {id: row.id})
+                MERGE (mg:ManagementGroup {id: row.properties.parent.id})
+                MERGE (mg)-[:HAS_SUBSCRIPTION]->(s)
+                RETURN count(*) AS _
+            }
+            RETURN count(*) AS _
+        "#;
+
+        self.process_arm_resource("managementGroupEntities", node_insert_query, properties)
+            .await?;
+
+        Ok(())
+    }
+
     // Process tenants
     pub async fn process_tenants(&self) -> Result<(), CirroGraphError> {
         let properties = vec![
@@ -277,7 +337,6 @@ impl CirroIngestor {
             "/authorizationSource",
             "/state",
             "/subscriptionId",
-            "/tenantId",
         ];
 
         let node_insert_query = r#"
@@ -291,8 +350,6 @@ impl CirroIngestor {
                 subscriptionId : row.subscriptionId,
                 tenantId : row.tenantId
             }
-            MERGE (t:Tenant {tenantId: row.tenantId})
-            MERGE (t)-[:CONTAINS]->(s)
         "#;
 
         self.process_arm_resource("subscriptions", node_insert_query, properties)
@@ -438,6 +495,7 @@ impl CirroIngestor {
             "/identity",
             "/kind",
             "/location",
+            "/managedBy",
             "/name",
             "/type",
             "/tags",
@@ -457,15 +515,46 @@ impl CirroIngestor {
             MERGE (rg:ArmResource {id: row.resourcegroup_id})
                 SET rg:ResourceGroup
                 MERGE (rg)-[:HAS_RESOURCE]->(obj)
+
+
             WITH obj, row
-                WHERE row.identity IS NOT NULL AND toLower(row.identity.type) = 'systemassigned'
+            CALL {
+                WITH obj, row
+                WITH obj, row WHERE row.managedBy IS NOT NULL 
+                MERGE (h:ArmResource {id: row.managedBy})
+                MERGE (h)-[:MANAGES]->(obj)
+            }
+
+            WITH obj, row
+            CALL {
+                WITH obj, row
+                WITH obj, row WHERE row.identity IS NOT NULL AND toLower(row.identity.type) = 'systemassigned'
                     MERGE (i:GraphObject {id: row.identity.principalId})
                     MERGE (obj)-[:HAS_IDENTITY]->(i)
+            }
+
             WITH obj, row
-                WHERE row.identity IS NOT NULL AND toLower(row.identity.type) = 'userassigned'
+            CALL {
+                WITH obj, row
+                WITH obj, row WHERE row.identity IS NOT NULL AND toLower(row.identity.type) = 'userassigned'
                     MERGE (i:GraphObject {id: row.identity.principalId})
                     MERGE (obj)-[:HAS_IDENTITY]->(i)
-      
+            }
+
+            WITH obj, row
+            CALL {
+                WITH obj, row
+                UNWIND coalesce(row.properties.privateEndpointConnections, []) AS conn
+                MERGE (p:PrivateEndpointConnection {id: conn.id})
+                SET p += {
+                    name: conn.name,
+                    type: conn.type,
+                    groupIds: conn.properties.groupIds
+                }
+                MERGE (obj)-[:HAS_PRIVATE_ENDPOINT]->(r:ArmResource {id: conn.properties.privateEndpoint.id})
+                RETURN count(*) AS _
+            }
+            RETURN count(*) AS _
         "#;
 
         // Get the count of objects in the database
@@ -580,6 +669,7 @@ impl CirroIngestor {
 
         Ok(())
     }
+
     // Process Azure role assignments
     pub async fn process_role_assignments(&self) -> Result<(), CirroGraphError> {
         let properties = vec![

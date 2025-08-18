@@ -36,7 +36,9 @@ impl CirroIngestor {
                 idleTimeoutInMinutes: row.properties.idleTimeoutInMinutes,
                 ipAddress: row.properties.ipAddress,
                 publicIPAddressVersion: row.properties.publicIPAddressVersion,
-                publicIPAllocationMethod: row.properties.publicIPAllocationMethod
+                publicIPAllocationMethod: row.properties.publicIPAllocationMethod,
+                domainNameLabel: row.properties.dnsSettings.domainNameLabel,
+                fqdn: row.properties.dnsSettings.fqdn
             }
         "#;
 
@@ -61,6 +63,16 @@ impl CirroIngestor {
                 dnsServers: row.properties.dnsSettings.dnsServers
             }
 
+            WITH obj, row WHERE row.properties.virtualMachine.id IS NOT NULL
+                MERGE (vm:ArmResource {id: row.properties.virtualMachine.id})
+                SET vm:VirtualMachine
+                MERGE (vm)-[:HAS_NIC]->(obj) 
+
+            WITH obj, row WHERE row.properties.networkSecurityGroup IS NOT NULL
+                MERGE (nsg:ArmResource {id: row.properties.networkSecurityGroup.id})
+                SET nsg:NSG
+                MERGE (obj)-[:HAS_NSG]->(nsg)
+
             WITH obj, row
                 CALL {
                     WITH obj, row
@@ -84,16 +96,7 @@ impl CirroIngestor {
                         MERGE (ipconnode)-[:HAS_IP]->(pubip)
                     RETURN count(*) AS _
                 }
-
-            WITH obj, row WHERE row.properties.virtualMachine.id IS NOT NULL
-                MERGE (vm:ArmResource {id: row.properties.virtualMachine.id})
-                SET vm:VirtualMachine
-                MERGE (vm)-[:HAS_NIC]->(obj) 
-            
-            WITH obj, row WHERE row.properties.networkSecurityGroup IS NOT NULL
-                MERGE (nsg:ArmResource {id: row.properties.networkSecurityGroup.id})
-                SET nsg:NSG
-                MERGE (obj)-[:HAS_NSG]->(nsg)
+            RETURN count(*) AS _
         "#;
 
         self.process_specific_arm_resource(resource_type, node_insert_query, properties)
@@ -162,6 +165,7 @@ impl CirroIngestor {
                     MERGE (obj)-[:HAS_RULE]->(r)
                     RETURN count(*) AS _
                 }
+            RETURN count(*) AS _
         "#;
 
         self.process_specific_arm_resource(resource_type, node_insert_query, properties)
@@ -190,13 +194,229 @@ impl CirroIngestor {
                     SET s += {
                         name: subnet.name,
                         type: subnet.type,
-                        addressPrefix: subnet.properties.addressPrefix,
+                        addressPrefixes: subnet.properties.addressPrefixes,
                         privateEndpointNetworkPolicies: subnet.properties.privateEndpointNetworkPolicies,
                         privateLinkServiceNetworkPolicies: subnet.properties.privateLinkServiceNetworkPolicies
                     }
                     MERGE (obj)-[:HAS_SUBNET]->(s)
+
+                    WITH obj, row, s, subnet WHERE subnet.properties.routeTable.id IS NOT NULL
+                    MERGE (r:RouteTable {id: subnet.properties.routeTable.id})
+                    MERGE (s)-[:HAS_ROUTE_TABLE]->(r)
                     RETURN count(*) AS _
                 }
+            
+            WITH obj, row
+                CALL {
+                    WITH obj, row
+                    UNWIND coalesce(row.properties.virtualNetworkPeerings, []) AS peer
+                    MERGE (p:NetworkPeering {id: peer.id})
+                    SET p += {
+                        name: peer.name,
+                        type: peer.type,
+                        allowForwardedTraffic: peer.properties.allowForwardedTraffic,
+                        allowGatewayTransit: peer.properties.allowGatewayTransit,
+                        allowVirtualNetworkAccess: peer.properties.allowVirtualNetworkAccess,
+                        doNotVerifyRemoteGateway: peer.properties.doNotVerifyRemoteGateway,
+                        peerCompleteVnets: peer.properties.peerCompleteVnets,
+                        peeringState: peer.properties.peeringState,
+                        peeringSyncLevel: peer.properties.peeringSyncLevel,
+                        remoteAddressPrefixes: peer.properties.remoteAddressSpace.addressPrefixes,
+                        useRemoteGateways: peer.properties.useRemoteGateways
+                    }
+                    MERGE (obj)-[:HAS_PEERING]->(p)
+
+                    WITH obj, row, peer, p
+                    CALL {
+                        WITH obj, row, peer, p
+                        UNWIND coalesce(peer.properties.remoteGateways, []) AS gateway
+                        MERGE (g:NetworkGateway {id: gateway.id})
+                        MERGE (p)-[:HAS_GATEWAY]->(g)
+
+                        MERGE (v:VirtualNetwork {id: peer.properties.remoteVirtualNetwork.id})
+                        MERGE (p)-[:PEER_TO]->(v)
+                        RETURN count(*) AS _
+                    }
+                    RETURN count(*) AS _
+                }
+            RETURN count(*) AS _
+        "#;
+
+        self.process_specific_arm_resource(resource_type, node_insert_query, properties)
+            .await?;
+        Ok(())
+    }
+
+    /// Process route tables
+    pub async fn process_route_tables(&self) -> Result<(), CirroGraphError> {
+        let resource_type = "microsoft.network/routetables";
+        let properties = vec!["/id", "/properties"];
+
+        let node_insert_query = r#"
+            UNWIND $batch AS row
+            MERGE (obj:ArmResource {id: row.id})
+            SET obj:RouteTable
+            SET obj += {
+                disableBgpRoutePropagation: row.properties.disableBgpRoutePropagation
+            }
+
+            WITH obj, row
+                CALL {
+                    WITH obj, row
+                    UNWIND coalesce(row.properties.routes, []) AS route
+                    MERGE (r:NetworkRoute {id: route.id})
+                    SET r += {
+                        name: route.name,
+                        type: route.type,
+                        addressPrefix: route.properties.addressPrefix,
+                        nextHopType: route.properties.nextHopType,
+                        nextHopIpAddress: route.properties.nextHopIpAddress,
+                        hasBgpOverride: route.properties.hasBgpOverride
+                    }
+                    MERGE (obj)-[:HAS_ROUTE]->(r)
+                    RETURN count(*) AS _
+                }
+
+            WITH obj, row
+                CALL {
+                    WITH obj, row
+                    UNWIND coalesce(row.properties.subnets, []) AS subnet
+                    MERGE (s:Subnet {id: subnet.id})
+                    MERGE (s)-[:HAS_ROUTE_TABLE]->(obj)
+                    RETURN count(*) AS _
+                }
+            RETURN count(*) AS _
+        "#;
+
+        self.process_specific_arm_resource(resource_type, node_insert_query, properties)
+            .await?;
+        Ok(())
+    }
+
+    /// Process bastion hosts
+    pub async fn process_bastion_hosts(&self) -> Result<(), CirroGraphError> {
+        let resource_type = "microsoft.network/bastionhosts";
+        let properties = vec!["/id", "/properties"];
+
+        let node_insert_query = r#"
+            UNWIND $batch AS row
+            MERGE (obj:ArmResource {id: row.id})
+            SET obj:BastionHost
+            SET obj += {
+                disableCopyPaste: row.properties.disableCopyPaste,
+                dnsName: row.properties.dnsName,
+                enableIpConnect: row.properties.enableIpConnect,
+                enableKerberos: row.properties.enableKerberos,
+                enablePrivateOnlyBastion: row.properties.enablePrivateOnlyBastion,
+                enableSessionRecording: row.properties.enableSessionRecording,
+                enableShareableLink: row.properties.enableShareableLink,
+                enableTunneling: row.properties.enableTunneling,
+                scaleUnits: row.properties.scaleUnits
+            }
+
+            WITH obj, row
+            CALL {
+                WITH obj, row
+                UNWIND coalesce(row.properties.ipConfigurations, []) AS ipconfig
+                MERGE (b:BastionIPConfig {id: ipconfig.id})
+                SET b += {
+                    privateIPAllocationMethod: ipconfig.properties.privateIPAllocationMethod
+                }
+                MERGE (obj)-[:HAS_CONFIG]->(b)
+
+                MERGE (b)-[:HAS_IP]->(:PublicIPAddress {id: ipconfig.properties.publicIPAddress.id})
+                MERGE (sub:Subnet {id: ipconfig.properties.subnet.id})-[:CONTAINS]->(b)
+
+                RETURN count(*) AS _
+            }
+            RETURN count(*) AS _
+        "#;
+
+        self.process_specific_arm_resource(resource_type, node_insert_query, properties)
+            .await?;
+        Ok(())
+    }
+
+    /// Process private endpoints
+    pub async fn process_private_endpoints(&self) -> Result<(), CirroGraphError> {
+        let resource_type = "microsoft.network/privateendpoints";
+        let properties = vec!["/id", "/properties"];
+
+        let node_insert_query = r#"
+            UNWIND $batch AS row
+            MERGE (obj:ArmResource {id: row.id})
+            SET obj:PrivateEndpoint
+            SET obj += {
+                customNetworkInterfaceName: row.properties.customNetworkInterfaceName,
+                ipVersionType: row.properties.ipVersionType
+            }
+
+            WITH obj, row
+            CALL {
+                WITH obj, row
+                UNWIND coalesce(row.properties.customDnsConfigs, []) AS config
+                MERGE (d:CustomDnsConfig {fqdn: config.fqdn})
+                SET d += {
+                    ipAddresses: config.properties.ipAddresses
+                }
+                MERGE (obj)-[:HAS_DNS_CONFIG]->(d)
+                RETURN count(*) AS _
+            }
+
+            WITH obj, row
+            CALL {
+                WITH obj, row
+                UNWIND coalesce(row.properties.networkInterfaces, []) AS interface
+                MERGE (n:NetworkInterface {id: interface.id})
+                RETURN count(*) AS _
+            }
+
+            WITH obj, row
+            CALL {
+                WITH obj, row 
+                WITH obj, row WHERE row.properties.subnet.id IS NOT NULL
+                MERGE (s:Subnet {id: row.properties.subnet.id})
+                MERGE (s)-[:CONTAINS]->(obj)
+                RETURN count(*) AS _
+            }
+
+            WITH obj, row
+            CALL {
+                WITH obj, row
+                UNWIND coalesce(row.properties.privateLinkServiceConnections, []) AS conn
+                MERGE (p:PrivateLinkServiceConnection {id: conn.id})
+                SET p += {
+                    name: conn.name,
+                    type: conn.type,
+                    groupIds: conn.properties.groupIds
+                }
+                MERGE (r:ArmResource {id: conn.properties.privateLinkServiceId})-[:HAS_PRIVATE_ENDPOINT]->(obj)
+                RETURN count(*) AS _
+            }
+            RETURN count(*) AS _
+        "#;
+
+        self.process_specific_arm_resource(resource_type, node_insert_query, properties)
+            .await?;
+        Ok(())
+    }
+
+    /// Process private dns zones
+    pub async fn process_private_dns_zones(&self) -> Result<(), CirroGraphError> {
+        let resource_type = "microsoft.network/privateDnsZones";
+        let properties = vec!["/id", "/properties"];
+
+        let node_insert_query = r#"
+            UNWIND $batch AS row
+            MERGE (obj:ArmResource {id: row.id})
+            SET obj:PrivateDnsZone
+
+            SET obj += {
+                internalId: row.properties.internalId,
+                numberOfRecordSets: row.properties.numberOfRecordSets,
+                numberOfVirtualNetworkLinks: row.properties.numberOfVirtualNetworkLinks,
+                numberOfVirtualNetworkLinksWithRegistration: row.properties.numberOfVirtualNetworkLinksWithRegistration
+            }
         "#;
 
         self.process_specific_arm_resource(resource_type, node_insert_query, properties)

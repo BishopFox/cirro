@@ -137,12 +137,14 @@ impl CirroIngestor {
             "/appRoles",
             "/displayName",
             "/federatedIdentityCredentials",
+            "/identifierUris",
             "/id",
             "/keyCredentials",
             "/owners",
-            "/passwordCredentials",
             "/publisherDomain",
+            "/passwordCredentials",
             "/signInAudience",
+            "/web",
         ];
 
         let node_insert_query = r#"
@@ -154,7 +156,9 @@ impl CirroIngestor {
                     displayName: row.displayName,
                     appId: row.appId,
                     publisherDomain: row.publisherDomain,
-                    signInAudience: row.signInAudience
+                    signInAudience: row.signInAudience,
+                    identifierUris: row.identifierUris,
+                    redirectUris: row.web.redirectUris
                 }
 
             // App Roles
@@ -251,6 +255,8 @@ impl CirroIngestor {
                     MERGE (k)-[:AUTHENTICATES]->(obj)
                     RETURN count(*) AS _
                 }
+
+            RETURN count(*) AS _
             "#;
 
         let app_role_post_query = r#"
@@ -338,6 +344,7 @@ impl CirroIngestor {
                             SET r.roleName = role.displayName
                     RETURN count(*) AS _
                 }
+            RETURN count(*) AS _
         "#;
 
         // Process the graph objects
@@ -420,7 +427,7 @@ impl CirroIngestor {
                     MERGE (o)-[:REGISTERED_OWNER]->(obj)
                     RETURN count(*) AS _
                 }
-
+            RETURN count(*) AS _
         "#;
 
         // Process the graph objects
@@ -492,6 +499,7 @@ impl CirroIngestor {
                     MERGE (m)-[:MEMBER_OF]->(obj)
                     RETURN count(*) AS _
                 }
+            RETURN count(*) AS _
         "#;
 
         // Process the graph objects
@@ -530,6 +538,7 @@ impl CirroIngestor {
                     MERGE (m)-[:HAS_ROLE]->(obj)
                     RETURN count(*) AS _
                 }
+            RETURN count(*) AS _
         "#;
 
         // Process the graph objects
@@ -782,7 +791,7 @@ impl CirroIngestor {
                     MERGE (obj)-[:MEMBER_OF]->(g)
                     RETURN count(*) AS _
                 }
-
+            RETURN count(*) AS _
         "#;
         self.process_graph_objects("users", node_insert_query, properties, None)
             .await?;
@@ -834,7 +843,7 @@ impl CirroIngestor {
                     MERGE (obj)-[:VERIFIED_DOMAIN]->(d)
                     RETURN count(*) AS _
                 }
-
+            RETURN count(*) AS _
         "#;
         self.process_graph_objects("organization", node_insert_query, properties, None)
             .await?;

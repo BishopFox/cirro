@@ -64,6 +64,7 @@ impl CirroIngestor {
                         MERGE (obj)-[:HAS_EXTENSION]->(e)
                     RETURN count(*) AS _
                 }
+            RETURN count(*) AS _
         "#;
 
         self.process_specific_arm_resource(resource_type, node_insert_query, properties)

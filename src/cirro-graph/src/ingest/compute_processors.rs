@@ -14,10 +14,6 @@ impl CirroIngestor {
             SET obj += {
                 sku: row.sku.name,
             }
-
-            WITH obj, row WHERE row.managedBy IS NOT NULL
-                MERGE (h:ArmResource {id: row.managedBy})
-                MERGE (h)-[:MANAGES]->(obj)
         "#;
 
         self.process_specific_arm_resource(resource_type, node_insert_query, properties)
@@ -28,24 +24,21 @@ impl CirroIngestor {
     /// Process disks
     pub async fn process_disks(&self) -> Result<(), CirroGraphError> {
         let resource_type = "microsoft.compute/disks";
-        let properties = vec!["/id", "/managedBy", "/properties"];
+        let properties = vec!["/id", "/properties"];
 
         let node_insert_query = r#"
             UNWIND $batch AS row
             MERGE (obj:ArmResource {id: row.id})
             SET obj:Disk
             SET obj += {
-                managedBy: row.managedBy,
                 diskSizeGB: row.properties.diskSizeGB,
                 diskState: row.properties.diskState,
                 osType: row.properties.osType,
                 networkAccessPolicy: row.properties.networkAccessPolicy,
-                publicNetworkAccess: row.properties.publicNetworkAccess
+                publicNetworkAccess: row.properties.publicNetworkAccess,
+                timeCreated: row.properties.timeCreated,
+                uniqueId: row.properties.uniqueId
             }
-
-            WITH obj, row WHERE row.managedBy IS NOT NULL
-                MERGE (h:ArmResource {id: row.managedBy})
-                MERGE (h)-[:HAS_DISK]->(obj)
         "#;
 
         self.process_specific_arm_resource(resource_type, node_insert_query, properties)
@@ -166,6 +159,133 @@ impl CirroIngestor {
                         MERGE (obj)-[:HAS_EXTENSION]->(e)
                     RETURN count(*) AS _
                 }
+            RETURN count(*) AS _
+        "#;
+
+        self.process_specific_arm_resource(resource_type, node_insert_query, properties)
+            .await?;
+        Ok(())
+    }
+
+    /// Process virtual machine extensions
+    pub async fn process_virtual_machine_extensions(&self) -> Result<(), CirroGraphError> {
+        let resource_type = "microsoft.compute/virtualmachines/extensions";
+        let properties = vec!["/id", "/properties"];
+
+        // VMExtensions aren't a primary resource type so remove resource group relationship
+        let node_insert_query = r#"
+            UNWIND $batch AS row
+            MERGE (obj:VMExtension {id: row.id})
+
+            SET obj += {
+                autoUpgradeMinorVersion: row.properties.autoUpgradeMinorVersion,
+                provisioningState: row.properties.provisioningState,
+                publisher: row.properties.publisher,
+                triggerForceUpgrade: row.properties.triggerForceUpgrade,
+                type: row.properties.type,
+                vmType: row.properties.settings.vmType,
+                objectStr: row.properties.settings.objectStr
+            }
+        "#;
+
+        self.process_specific_arm_resource(resource_type, node_insert_query, properties)
+            .await?;
+        Ok(())
+    }
+
+    /// Process virtual machine applications
+    pub async fn process_vm_applications(&self) -> Result<(), CirroGraphError> {
+        let resource_type = "microsoft.compute/virtualmachines/vmapplications";
+        let properties = vec!["/id", "/properties"];
+
+        let node_insert_query = r#"
+            UNWIND $batch AS row
+            MERGE (obj:ArmResource {id: row.id})
+            SET obj:VMApplication
+            SET obj += {
+                enableAutomaticUpgrade: row.properties.enableAutomaticUpgrade,
+                manuallyManaged: row.properties.manuallyManaged,
+                treatFailureAsDeploymentFailure: row.properties.treatFailureAsDeploymentFailure
+            }
+            MERGE (o:GalleryAppVersion {id: row.properties.packageReferenceId})
+            MERGE (obj)-[:REFERENCES_PACKAGE]->(o)
+
+            WITH obj, row, split(toLower(obj.id), '/vmapplications/')[0] AS vmId
+                MERGE (vm:VirtualMachine {id: vmId})
+                MERGE (vm)-[:HAS_VMAPP]->(obj)
+        "#;
+
+        self.process_specific_arm_resource(resource_type, node_insert_query, properties)
+            .await?;
+        Ok(())
+    }
+
+    /// Process galleries
+    pub async fn process_galleries(&self) -> Result<(), CirroGraphError> {
+        let resource_type = "microsoft.compute/galleries";
+        let properties = vec!["/id", "/properties"];
+
+        let node_insert_query = r#"
+            UNWIND $batch AS row
+            MERGE (obj:ArmResource {id: row.id})
+            SET obj:Gallery
+            SET obj += {
+                uniqueName: row.properties.identifier.uniqueName
+            }
+        "#;
+
+        self.process_specific_arm_resource(resource_type, node_insert_query, properties)
+            .await?;
+        Ok(())
+    }
+
+    /// Process gallery applications
+    pub async fn process_gallery_applications(&self) -> Result<(), CirroGraphError> {
+        let resource_type = "microsoft.compute/galleries/applications";
+        let properties = vec!["/id", "/properties"];
+
+        let node_insert_query = r#"
+            UNWIND $batch AS row
+            MERGE (obj:ArmResource {id: row.id})
+            SET obj:GalleryApp
+            SET obj += {
+                supportedOSType: row.properties.supportedOSType
+            }
+
+            WITH obj, row
+            WITH obj, row, split(row.id, '/applications/')[0] AS galleryId
+            MERGE (g:Gallery {id: galleryId})
+            MERGE (g)-[:HAS_APPLICATION]->(obj)
+        "#;
+
+        self.process_specific_arm_resource(resource_type, node_insert_query, properties)
+            .await?;
+        Ok(())
+    }
+
+    /// Process gallery application versions
+    pub async fn process_gallery_application_versions(&self) -> Result<(), CirroGraphError> {
+        let resource_type = "microsoft.compute/galleries/applications/versions";
+        let properties = vec!["/id", "/properties"];
+
+        let node_insert_query = r#"
+            UNWIND $batch AS row
+            MERGE (obj:ArmResource {id: row.id})
+            SET obj:GalleryAppVersion
+            SET obj += {
+                excludeFromLatest: row.properties.publishingProfile.excludeFromLatest,
+                installAction: row.properties.publishingProfile.manageActions.install,
+                removeAction: row.properties.publishingProfile.manageActions.remove,
+                publishedDate: row.properties.publishingProfile.publishedDate,
+                packageFileName: row.properties.publishingProfile.settings.packageFileName,
+                scriptBehaviorAfterReboot: row.properties.publishingProfile.settings.scriptBehaviorAfterReboot,
+                source: row.properties.publishingProfile.settings.source.mediaLink
+            }
+
+            WITH obj, row
+            WITH obj, row, split(row.id, '/versions/')[0] AS galleryAppId
+            MERGE (g:GalleryApp {id: galleryAppId})
+            MERGE (g)-[:HAS_VERSION]->(obj)
         "#;
 
         self.process_specific_arm_resource(resource_type, node_insert_query, properties)

@@ -331,6 +331,55 @@ async fn enumerate_role_assignments(
     return roles;
 }
 
+/// Enumerates management group entities
+async fn enumerate_management_groups(
+    collector: Arc<Collector>,
+) -> Result<Vec<Map<String, Value>>, CirroError> {
+    let mut resources: Vec<Map<String, Value>> = Vec::new();
+
+    let mut next_url =
+        "providers/Microsoft.Management/getEntities?api-version=2021-04-01&$top=999".to_string();
+    loop {
+        let response =
+            paged_arm_request(&collector, &next_url, reqwest::Method::POST, None).await?;
+
+        if response.get("error").is_some() {
+            return Err(CirroError::HttpError(
+                "Error response from ARM API".to_string(),
+            ));
+        }
+
+        if let Some(value) = response.get("value") {
+            // Sometimes the value is an array, sometimes it's a single object
+            if let Some(obj) = value.as_object() {
+                resources.push(obj.clone());
+            } else if let Some(arr) = value.as_array() {
+                for item in arr {
+                    if let Some(obj) = item.as_object() {
+                        resources.push(obj.clone());
+                    }
+                }
+            }
+        } else if let Some(obj) = response.as_object() {
+            // Also handle the case where the response is a single object
+            resources.push(obj.clone());
+        } else {
+            return Err(CirroError::HttpError(format!(
+                "Unexpected response format from ARM API: {}",
+                next_url
+            )));
+        }
+
+        // Check for next link
+        if let Some(next_link) = response.get("@odata.nextLink").and_then(|v| v.as_str()) {
+            next_url = next_link.to_string();
+        } else {
+            break; // No more pages to fetch
+        }
+    }
+    Ok(resources.into())
+}
+
 /// Enumerates a subscription
 async fn enumerate_subscription(
     collector: Arc<Collector>,
@@ -679,6 +728,7 @@ async fn enumerate_resourcegroup(
 
     Ok(())
 }
+
 pub async fn enumerate_arm(collector: Arc<Collector>) -> Result<(), CirroError> {
     info!("Starting ARM enumeration");
 
@@ -706,6 +756,37 @@ pub async fn enumerate_arm(collector: Arc<Collector>) -> Result<(), CirroError> 
         async move {
             let _ = collector_clone
                 .write_value_to_db("tenants".into(), tenant_id.to_lowercase(), tenant_data)
+                .await;
+        }
+        .await;
+    }
+
+    // Management groups
+    // If unable to get management groups, return an empty vector
+    let mg_entities = enumerate_management_groups(collector.clone())
+        .await
+        .unwrap_or_else(|e| {
+            warn!("Failed to enumerate management groups: {}", e);
+            Vec::new()
+        });
+    info!("Found {} management group entities", mg_entities.len());
+    debug!("Management Groups entities: {:?}", mg_entities);
+
+    // Write the management groups entities to the database
+    for entity in &mg_entities {
+        let entity_id = entity.get("id").and_then(Value::as_str).ok_or_else(|| {
+            CirroError::ArmApiError("Management group ID not found in object".to_string())
+        })?;
+        let entity_data = serde_json::to_value(entity.clone())
+            .map_err(|e| CirroError::SerializationError(e.to_string()))?;
+        let collector_clone = collector.clone();
+        async move {
+            let _ = collector_clone
+                .write_value_to_db(
+                    "managementGroupEntities".into(),
+                    entity_id.to_lowercase(),
+                    entity_data,
+                )
                 .await;
         }
         .await;

@@ -44,7 +44,7 @@ cirro collect client-secret \
 
 ## Ingest into Graph Database
 
-Both Neo4j and Memgraph are supported as graph database backends. Set up your preferred database before ingesting data. There are two docker-compose files in the [tools](/tools/) directory to assist with containerized databases. `cirro-graph` defaults to Neo4j configurations but you might consider using Memgraph for faster ingestion and performance.
+Both Neo4j and Memgraph are supported as graph database backends. Set up your preferred database before ingesting data. There are two docker-compose files in the [tools](https://github.com/bishopfox/cirro/tools) directory to assist with containerized databases. `cirro-graph` defaults to Neo4j configurations but you might consider using Memgraph for faster ingestion and performance.
 
 ```bash
 # For Neo4j

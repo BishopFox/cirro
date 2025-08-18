@@ -36,29 +36,29 @@ impl CirroIngestor {
         Ok(())
     }
 
-    // Process azure arc sql server db
-    // Disabled for now
-    // https://github.com/memgraph/mage/issues/642
-    // pub async fn process_azurearc_sql_database(&self) -> Result<(), CirroGraphError> {
-    //     let resource_type = "microsoft.azurearcdata/sqlserverinstances/databases";
-    //     let properties = vec!["/id", "/properties"];
+    pub async fn process_azurearc_sql_database(&self) -> Result<(), CirroGraphError> {
+        let resource_type = "microsoft.azurearcdata/sqlserverinstances/databases";
+        let properties = vec!["/id", "/properties"];
 
-    //     let node_insert_query = r#"
-    //     UNWIND $batch AS row
-    //     MERGE (obj:ArmResource {id: row.id})
-    //     SET obj:AzureArcSqlDB
-    //     SET obj += {
-    //         dataFileSizeMB: row.properties.dataFileSizeMB
-    //         databaseCreationDate: row.properties.databaseCreationDate
-    //         lastDatabaseUploadTime: row.properties.lastDatabaseUploadTime
-    //         state: row.properties.state
+        let node_insert_query = r#"
+            UNWIND $batch AS row
+            MERGE (obj:ArmResource {id: row.id})
+            SET obj:ArcSqlDB
+            SET obj += {
+                dataFileSizeMB: row.properties.dataFileSizeMB,
+                databaseCreationDate: row.properties.databaseCreationDate,
+                lastDatabaseUploadTime: row.properties.lastDatabaseUploadTime,
+                isReadOnly: row.properties.isReadOnly,
+                state: row.properties.state
+            }
 
-    //     WITH obj, row, split(row.id, '/')[7] AS instance_id
-    //         WITH obj, row, text.join(instance_id,
+            WITH obj, row, split(toLower(obj.id), '/databases/')[0] AS serverId
+                MERGE (s:ArcSqlServer {id: serverId})
+                MERGE (s)-[:HAS_DB]->(obj)
+        "#;
 
-    //     }
-    //     "#;
-
-    //     Ok(())
-    // }
+        self.process_specific_arm_resource(resource_type, node_insert_query, properties)
+            .await?;
+        Ok(())
+    }
 }

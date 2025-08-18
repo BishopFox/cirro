@@ -26,12 +26,41 @@ impl CirroIngestor {
         Ok(())
     }
 
+    /// Process sql virtual machines
+    pub async fn process_sql_virtual_machines(&self) -> Result<(), CirroGraphError> {
+        let resource_type = "microsoft.sqlvirtualmachine/sqlvirtualmachines";
+        let properties = vec!["/id", "/properties"];
+
+        let node_insert_query = r#"
+            UNWIND $batch AS row
+            MERGE (obj:ArmResource {id: row.id})
+            SET obj:SqlVirtualMachine
+            SET obj += {
+                additionalVmPatch: row.properties.additionalVmPatch,
+                enableAutomaticUpgrade: row.properties.enableAutomaticUpgrade,
+                leastPrivilegeMode: row.properties.leastPrivilegeMode,
+                osType: row.properties.osType,
+                sqlImageOffer: row.properties.sqlImageOffer,
+                sqlImageSku: row.properties.sqlImageSku,
+                sqlServerLicenseType: row.properties.sqlServerLicenseType,
+                sqlManagement: row.properties.sqlManagement
+            }
+
+            MERGE (vm:VirtualMachine {id: row.properties.virtualMachineResourceId})
+            MERGE (vm)-[:HAS_SQL_VM]->(obj)
+        "#;
+
+        self.process_specific_arm_resource(resource_type, node_insert_query, properties)
+            .await?;
+        Ok(())
+    }
+
     /// Process sql databases
-    // TODO: The server this database belongs to should come from the id property, not managedBy.
+    // TODO: The server this database belongs to should come from the id property.
     // https://github.com/memgraph/mage/issues/642
     pub async fn process_sql_databases(&self) -> Result<(), CirroGraphError> {
         let resource_type = "microsoft.sql/servers/databases";
-        let properties = vec!["/id", "/properties", "/managedBy"];
+        let properties = vec!["/id", "/properties"];
 
         let node_insert_query = r#"
             UNWIND $batch AS row
@@ -46,9 +75,10 @@ impl CirroIngestor {
                 maxSizeBytes: row.properties.maxSizeBytes,
                 status: row.properties.status
             }
-            WITH obj, row WHERE row.managedBy IS NOT NULL
-            MERGE (s:ArmResource {id: toLower(row.managedBy)})
-            MERGE (s)-[:HAS_DB]->(obj)
+
+            WITH obj, row, split(toLower(obj.id), '/databases/')[0] AS serverId
+                MERGE (s:SqlServer {id: serverId})
+                MERGE (s)-[:HAS_DB]->(obj)
         "#;
 
         self.process_specific_arm_resource(resource_type, node_insert_query, properties)

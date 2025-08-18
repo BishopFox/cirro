@@ -15,8 +15,3 @@ Represents Azure virtual machines.
 - `os` - Operating system type
 - `image` - VM image offer
 - `imageVersion` - VM image version
-
-**Relationships:**
-- `HAS_NIC` → NetworkInterface
-- `HAS_EXTENSION` → VMExtension
-- `HAS_DISK` ← Disk (via managedBy)
