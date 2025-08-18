@@ -523,6 +523,7 @@ impl CirroIngestor {
                 WITH obj, row WHERE row.managedBy IS NOT NULL 
                 MERGE (h:ArmResource {id: row.managedBy})
                 MERGE (h)-[:MANAGES]->(obj)
+                RETURN count(*) AS _
             }
 
             WITH obj, row
@@ -531,14 +532,18 @@ impl CirroIngestor {
                 WITH obj, row WHERE row.identity IS NOT NULL AND toLower(row.identity.type) = 'systemassigned'
                     MERGE (i:GraphObject {id: row.identity.principalId})
                     MERGE (obj)-[:HAS_IDENTITY]->(i)
+                RETURN count(*) AS _
             }
 
             WITH obj, row
             CALL {
                 WITH obj, row
                 WITH obj, row WHERE row.identity IS NOT NULL AND toLower(row.identity.type) = 'userassigned'
-                    MERGE (i:GraphObject {id: row.identity.principalId})
+                    UNWIND keys(row.identity.userAssignedIdentities) AS subKey
+                    WITH subKey, row.identity.userAssignedIdentities[subKey] AS ident
+                    MERGE (i:GraphObject {id: ident.principalId})
                     MERGE (obj)-[:HAS_IDENTITY]->(i)
+                RETURN count(*) AS _
             }
 
             WITH obj, row
