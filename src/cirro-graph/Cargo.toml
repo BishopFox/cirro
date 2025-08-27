@@ -3,7 +3,7 @@ description = "Ingestion tool for cirro"
 edition = "2024"
 name = "cirro-graph"
 repository = "https://github.com/bishopfox/cirro"
-version = "0.3.1"
+version = "0.3.2"
 
 [dependencies]
 clap = { version = "4.5.41", features = ["cargo", "derive"] }
