@@ -12,7 +12,7 @@ impl CirroIngestor {
             MERGE (obj:ArmResource {id: row.id})
             SET obj:AvailabilitySet
             SET obj += {
-                sku: row.sku.name,
+                sku: row.sku.name
             }
         "#;
 

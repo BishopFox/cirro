@@ -16,7 +16,7 @@ impl CirroIngestor {
                 tenantId: row.properties.tenantId
             }
             MERGE (o:GraphObject {appId: row.properties.clientId})
-            MERGE (obj)-[:HAS_IDENTITY]->(o)
+            MERGE (obj)-[:REPRESENTED_BY]->(o)
         "#;
 
         self.process_specific_arm_resource(resource_type, node_insert_query, properties)

@@ -540,9 +540,12 @@ impl CirroIngestor {
                 WITH obj, row
                 WITH obj, row WHERE row.identity IS NOT NULL AND toLower(row.identity.type) = 'userassigned'
                     UNWIND keys(row.identity.userAssignedIdentities) AS subKey
-                    WITH subKey, row.identity.userAssignedIdentities[subKey] AS ident
-                    MERGE (i:GraphObject {id: ident.principalId})
-                    MERGE (obj)-[:HAS_IDENTITY]->(i)
+                    WITH obj, subKey, row.identity.userAssignedIdentities[subKey] AS ident
+                        MERGE (i:UserAssignedIdentity {id: subKey})
+                        MERGE (obj)-[:HAS_IDENTITY]->(i)
+
+                        MERGE (o:GraphObject {appId: ident.clientId})
+                        MERGE (i)-[:REPRESENTED_BY]->(o)
                 RETURN count(*) AS _
             }
 
