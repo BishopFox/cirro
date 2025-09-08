@@ -4,7 +4,7 @@ description = "A CLI tool for graphing Azure and Entra ID data"
 edition = "2024"
 name = "cirro"
 repository = "https://github.com/bishopfox/cirro"
-version = "0.3.2"
+version = "0.3.3"
 
 [dependencies]
 async-trait = "0.1.78"
