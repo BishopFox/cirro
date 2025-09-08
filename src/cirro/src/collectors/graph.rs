@@ -8,6 +8,7 @@ use once_cell::sync::Lazy;
 use reqwest::{Client, StatusCode};
 use serde_json::Value;
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Instant;
 use std::{collections::HashMap, vec};
 
@@ -24,6 +25,9 @@ static HTTP_CLIENT: Lazy<Client> = Lazy::new(|| {
 // Global static cache for the token
 static TOKEN_CACHE: Lazy<tokio::sync::Mutex<Option<crate::credentials::common::Token>>> =
     Lazy::new(|| tokio::sync::Mutex::new(None));
+
+// Add this static variable near the top with your other statics
+static RATE_LIMIT_LOGGED: AtomicBool = AtomicBool::new(false);
 
 /// Represents a Graph object with its resource type, query parameters, and optional expand properties
 #[derive(Clone)]
@@ -553,35 +557,87 @@ pub async fn paged_graph_request(
         }
     };
 
-    // Make the request using the global client
-    let response = HTTP_CLIENT
-        .get(&graph_url)
-        .bearer_auth(&*token_str)
-        .timeout(std::time::Duration::from_secs(30))
-        .send()
-        .await
-        .map_err(|e| {
-            if e.is_timeout() {
-                CirroError::IoError(std::io::Error::new(
-                    std::io::ErrorKind::TimedOut,
-                    format!("Request timed out: {}", e),
-                ))
-            } else {
-                CirroError::RequestError(e)
+    let mut retries = 0;
+    let max_retries = 5;
+
+    let response = loop {
+        // Make the request using the global client
+        let result = HTTP_CLIENT
+            .get(&graph_url)
+            .bearer_auth(&*token_str)
+            .timeout(std::time::Duration::from_secs(30))
+            .send()
+            .await;
+
+        let response = match result {
+            Ok(resp) => resp,
+            Err(e) => {
+                if e.is_timeout() {
+                    // Handle timeout with retry logic
+                    // Sometimes there will be an IO timeout around the throttling limits so need to retry in a little bit
+                    // Guidance says 10 seconds, so we'll go with 12 seconds to be safe
+                    if retries >= max_retries {
+                        return Err(CirroError::IoError(std::io::Error::new(
+                            std::io::ErrorKind::TimedOut,
+                            format!("Request timed out after {} retries: {}", max_retries, e),
+                        )));
+                    }
+
+                    debug!(
+                        "Request timeout for {}, retrying after 15 seconds (attempt {})",
+                        graph_url,
+                        retries + 1
+                    );
+                    tokio::time::sleep(std::time::Duration::from_secs(15)).await;
+
+                    retries += 1;
+                    continue; // Retry the request after waiting
+                } else {
+                    return Err(CirroError::RequestError(e));
+                }
             }
-        })?;
+        };
 
-    let status = response.status();
+        let status = response.status();
 
-    // Check for non-200 status codes early to avoid parsing JSON for error responses
-    if status != StatusCode::OK {
-        let error_text = response.text().await?;
-        return Err(CirroError::HttpError(format!(
-            "HTTP {} - {}",
-            status.as_u16(),
-            error_text
-        )));
-    }
+        // Check for rate limiting first
+        if status.is_success() {
+            break response;
+        } else if status == StatusCode::TOO_MANY_REQUESTS {
+            // Handle rate limiting by checking for Too Many Requests status
+            if retries >= max_retries {
+                return Err(CirroError::HttpError(
+                    "Too many requests, exceeded max retries".to_string(),
+                ));
+            }
+
+            // Only log the first time any task hits the rate limit
+            if !RATE_LIMIT_LOGGED.swap(true, Ordering::Relaxed) {
+                info!("Graph API rate limit hit, all tasks will back off for 25 seconds");
+
+                // The task that logs the message also starts a timer to reset the flag
+                // Should be slightly longer than the backoff and other tasks will not log
+                tokio::spawn(async {
+                    tokio::time::sleep(std::time::Duration::from_secs(30)).await;
+                    RATE_LIMIT_LOGGED.store(false, Ordering::Relaxed);
+                });
+            }
+
+            // Determined from documented throttling guidance
+            // https://learn.microsoft.com/en-us/graph/throttling-limits#identity-and-access-service-limits
+            tokio::time::sleep(std::time::Duration::from_secs(25)).await;
+
+            retries += 1;
+            continue; // Retry the request after waiting
+        } else {
+            let error_text = response.text().await?;
+            return Err(CirroError::HttpError(format!(
+                "HTTP {} - {}",
+                status.as_u16(),
+                error_text
+            )));
+        }
+    };
 
     // Parse the response data
     let response_data: Value = response.json::<Value>().await?;

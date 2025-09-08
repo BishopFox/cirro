@@ -544,6 +544,7 @@ impl CirroIngestor {
                         MERGE (i:UserAssignedIdentity {id: subKey})
                         MERGE (obj)-[:HAS_IDENTITY]->(i)
 
+                        WITH obj, i, ident WHERE ident.clientId IS NOT NULL
                         MERGE (o:GraphObject {appId: ident.clientId})
                         MERGE (i)-[:REPRESENTED_BY]->(o)
                 RETURN count(*) AS _

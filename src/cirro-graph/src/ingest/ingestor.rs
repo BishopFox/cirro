@@ -341,7 +341,7 @@ impl CirroIngestor {
                     .graph
                     .run(query(
                         r#"MATCH (a)-[r]->(b)
-                        WHERE id(a) <> id(b)  // ❗ skip self-loops
+                        WHERE id(a) <> id(b)  // skip self-loops
                         WITH a, b, type(r) AS rel_type, collect(r) AS rels
                         WHERE size(rels) > 1
                         CALL {

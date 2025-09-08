@@ -324,8 +324,11 @@ impl CirroIngestor {
                 }
                 MERGE (obj)-[:HAS_CONFIG]->(b)
 
-                MERGE (b)-[:HAS_IP]->(:PublicIPAddress {id: ipconfig.properties.publicIPAddress.id})
-                MERGE (sub:Subnet {id: ipconfig.properties.subnet.id})-[:CONTAINS]->(b)
+                MERGE (i:PublicIPAddress {id: ipconfig.properties.publicIPAddress.id})
+                MERGE (b)-[:HAS_IP]->(i)
+                
+                MERGE (sub:Subnet {id: ipconfig.properties.subnet.id})
+                MERGE (sub)-[:CONTAINS]->(b)
 
                 RETURN count(*) AS _
             }
@@ -390,7 +393,8 @@ impl CirroIngestor {
                     type: conn.type,
                     groupIds: conn.properties.groupIds
                 }
-                MERGE (r:ArmResource {id: conn.properties.privateLinkServiceId})-[:HAS_PRIVATE_ENDPOINT]->(obj)
+                MERGE (r:ArmResource {id: conn.properties.privateLinkServiceId})
+                MERGE (r)-[:HAS_PRIVATE_ENDPOINT]->(obj)
                 RETURN count(*) AS _
             }
             RETURN count(*) AS _

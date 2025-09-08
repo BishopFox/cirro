@@ -175,14 +175,8 @@ pub async fn paged_arm_request(
 
         let status = response.status();
 
-        // Check for non-200 status codes early to avoid parsing JSON for error responses
-        if !status.is_success() {
-            let error_text = response.text().await?;
-            return Err(CirroError::HttpError(format!(
-                "HTTP {} - {}",
-                status.as_u16(),
-                error_text
-            )));
+        if status.is_success() {
+            break response;
         } else if status == StatusCode::TOO_MANY_REQUESTS {
             // Handle rate limiting by checking for Too Many Requests status
             if retries >= max_retries {
@@ -203,8 +197,6 @@ pub async fn paged_arm_request(
 
             retries += 1;
             continue; // Retry the request after waiting
-        } else if status.is_success() {
-            break response;
         } else {
             let error_text = response.text().await?;
             return Err(CirroError::HttpError(format!(
