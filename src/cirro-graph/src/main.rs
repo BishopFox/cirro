@@ -1,5 +1,5 @@
+pub mod dns;
 pub mod errors;
-pub mod export;
 pub mod ingest;
 pub mod logger;
 pub mod styles;
@@ -65,19 +65,11 @@ enum Commands {
         #[arg(long, action = clap::ArgAction::SetTrue)]
         debug: bool,
     },
-    /// Export data from the database
-    Export {
-        /// Export type
-        #[arg(short, long, value_name = "EXPORT_TYPE")]
-        export_type: export::exporter::ExportType,
-
-        /// Output file
-        #[arg(short, long, value_name = "FILE", value_hint = clap::ValueHint::FilePath)]
+    /// Perform checks related to DNS resolution and configuration
+    Dns {
+        /// Output results in markdown format
+        #[arg(short, long, value_name = "FILE", default_value = "cirro_dns_output.md", value_hint = clap::ValueHint::FilePath)]
         output_file: PathBuf,
-
-        /// Database type
-        #[arg(short, long, value_name = "GRAPH_TYPE", default_value = "neo4j")]
-        graph_type: ingest::constants::GraphType,
 
         /// Database server. Possible schemes: bolt, bolt+s, bolt+ssc, neo4j, neo4j+s, neo4j+ssc
         #[arg(
@@ -98,7 +90,7 @@ enum Commands {
 
         /// Database name. Defaults to "neo4j" or "memgraph" depending on the graph type.
         #[arg(short, long, value_name = "NAME")]
-        db_name: Option<String>,
+        db_name: String,
 
         /// Enable debug logging
         #[arg(long, action = clap::ArgAction::SetTrue)]
@@ -157,10 +149,8 @@ _|"""""|_|"""""|_|"""""|_|"""""|_|"""""|
                 return Err(e);
             }
         }
-        Commands::Export {
-            export_type,
+        Commands::Dns {
             output_file,
-            graph_type,
             server,
             user,
             password,
@@ -171,17 +161,10 @@ _|"""""|_|"""""|_|"""""|_|"""""|_|"""""|
                 return Err(CirroGraphError::LogSetupError(e));
             }
 
-            let mut exporter = export::exporter::CirroExporter::new(
-                export_type,
-                output_file,
-                graph_type,
-                server,
-                user,
-                password,
-                db_name,
-            )
-            .await;
-            if let Err(e) = exporter.run().await {
+            let mut checker =
+                dns::DnsChecker::new(output_file, server, user, password, db_name).await;
+
+            if let Err(e) = checker.run().await {
                 return Err(e);
             }
         }

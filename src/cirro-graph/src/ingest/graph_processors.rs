@@ -141,9 +141,11 @@ impl CirroIngestor {
             "/id",
             "/keyCredentials",
             "/owners",
+            "/publicClient",
             "/publisherDomain",
             "/passwordCredentials",
             "/signInAudience",
+            "/spa",
             "/web",
         ];
 
@@ -158,7 +160,10 @@ impl CirroIngestor {
                     publisherDomain: row.publisherDomain,
                     signInAudience: row.signInAudience,
                     identifierUris: row.identifierUris,
-                    redirectUris: row.web.redirectUris
+                    redirectUris: row.web.redirectUris + row.spa.redirectUris + row.publicClient.redirectUris,
+                    publicClientRedirectUris: row.publicClient.redirectUris,
+                    spaRedirectUris: row.spa.redirectUris,
+                    webRedirectUris: row.web.redirectUris
                 }
 
             // App Roles
@@ -562,6 +567,8 @@ impl CirroIngestor {
             "/endpoints",
             "/id",
             "/keyCredentials",
+            "/loginUrl",
+            "/logoutUrl",
             "/memberOf",
             "/owners",
             "/passwordCredentials",
@@ -583,6 +590,8 @@ impl CirroIngestor {
                 appOwnerOrganizationId: row.appOwnerOrganizationId,
                 publisherName: row.publisherName,
                 servicePrincipalType: row.servicePrincipalType,
+                loginUrl: row.loginUrl,
+                logoutUrl: row.logoutUrl,
                 replyUrls: row.replyUrls,
                 servicePrincipalNames: row.servicePrincipalNames
             }

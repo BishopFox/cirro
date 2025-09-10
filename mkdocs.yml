@@ -57,6 +57,8 @@ nav:
       - Quick Start: usage/quick-start.md
       - Cirro: usage/cirro.md
       - cirro-graph: usage/cirro-graph.md
+  - Analysis:
+      - Overview: analysis/cirro-graph-analysis.md
   - Nodes and Edges:
       - Graph Nodes: 
         - analysis/graph-nodes.md
