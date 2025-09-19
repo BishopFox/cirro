@@ -19,6 +19,7 @@ log.workspace = true
 lru = "0.16.0"
 neo4rs = { version = "0.8.0", features = ["json"] }
 psl = "2"
+regex = "*"
 rusqlite.workspace = true
 serde.workspace = true
 serde_json.workspace = true

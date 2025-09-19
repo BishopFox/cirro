@@ -1,4 +1,5 @@
 pub mod dns;
+pub mod enrich;
 pub mod errors;
 pub mod ingest;
 pub mod logger;
@@ -7,8 +8,12 @@ pub mod styles;
 use crate::errors::CirroGraphError;
 use crate::logger::setup_logger;
 
-use clap::{ColorChoice, Parser, Subcommand, crate_authors, crate_description, crate_version};
+use clap::{
+    Args, ColorChoice, Parser, Subcommand, builder::ArgPredicate, crate_authors, crate_description,
+    crate_version,
+};
 use colored::Colorize;
+use serde::Serialize;
 use std::path::PathBuf;
 use tokio;
 
@@ -65,11 +70,11 @@ enum Commands {
         #[arg(long, action = clap::ArgAction::SetTrue)]
         debug: bool,
     },
-    /// Perform checks related to DNS resolution and configuration
+    /// Perform checks related to DNS resolution
     Dns {
-        /// Output results in markdown format
-        #[arg(short, long, value_name = "FILE", default_value = "cirro_dns_output.md", value_hint = clap::ValueHint::FilePath)]
-        output_file: PathBuf,
+        /// Output directory
+        #[arg(short, long, default_value = ".", value_name = "OUTPUT_DIR", value_hint = clap::ValueHint::DirPath)]
+        output_dir: PathBuf,
 
         /// Database server. Possible schemes: bolt, bolt+s, bolt+ssc, neo4j, neo4j+s, neo4j+ssc
         #[arg(
@@ -96,6 +101,63 @@ enum Commands {
         #[arg(long, action = clap::ArgAction::SetTrue)]
         debug: bool,
     },
+
+    /// Export an enrichment config file based on provided flags
+    Enrich {
+        /// Output JSON file
+        #[arg(short, long, default_value = "enrich_config.json", value_name = "FILE", value_hint = clap::ValueHint::FilePath)]
+        output_file: PathBuf,
+
+        /// Database server. Possible schemes: bolt, bolt+s, bolt+ssc, neo4j, neo4j+s, neo4j+ssc
+        #[arg(
+            short,
+            long,
+            value_name = "SERVER",
+            default_value = "bolt://localhost:7687"
+        )]
+        server: String,
+
+        /// Database user
+        #[arg(short, long, value_name = "USER", default_value = "neo4j")]
+        user: String,
+
+        /// Database password
+        #[arg(short, long, value_name = "PASSWORD", default_value = "password")]
+        password: String,
+
+        /// Database name. Defaults to "neo4j" or "memgraph" depending on the graph type.
+        #[arg(short, long, value_name = "NAME")]
+        db_name: String,
+
+        /// Enable debug logging
+        #[arg(long, action = clap::ArgAction::SetTrue)]
+        debug: bool,
+
+        /// Object ID to analyze for permissions
+        #[arg(short, long, value_name = "ID")]
+        id: uuid::Uuid,
+
+        /// Relationship depth for permission queries (default: 10)
+        #[arg(long, value_name = "DEPTH", default_value = "10")]
+        relation_depth: isize,
+
+        #[clap(flatten)]
+        flags: EnrichFlags,
+    },
+}
+
+#[derive(Args, Debug, Serialize)]
+#[group(required = true, multiple = true)]
+pub struct EnrichFlags {
+    /// Perform all checks
+    #[arg(long, action = clap::ArgAction::SetTrue)]
+    all: bool,
+
+    /// Check for storage account keys
+    #[arg(long, action = clap::ArgAction::SetTrue, default_value_ifs([
+            ("all", ArgPredicate::Equals("true".into()), "true"),
+        ]))]
+    storage_keys: bool,
 }
 
 #[tokio::main]
@@ -150,7 +212,7 @@ _|"""""|_|"""""|_|"""""|_|"""""|_|"""""|
             }
         }
         Commands::Dns {
-            output_file,
+            output_dir,
             server,
             user,
             password,
@@ -162,9 +224,39 @@ _|"""""|_|"""""|_|"""""|_|"""""|_|"""""|
             }
 
             let mut checker =
-                dns::DnsChecker::new(output_file, server, user, password, db_name).await;
+                dns::DnsChecker::new(output_dir, server, user, password, db_name).await;
 
             if let Err(e) = checker.run().await {
+                return Err(e);
+            }
+        }
+        Commands::Enrich {
+            output_file,
+            server,
+            user,
+            password,
+            db_name,
+            debug,
+            id,
+            relation_depth,
+            flags,
+        } => {
+            if let Err(e) = setup_logger(debug) {
+                return Err(CirroGraphError::LogSetupError(e));
+            }
+
+            let enricher = enrich::EnrichConfigurator::new(
+                output_file,
+                server,
+                user,
+                password,
+                db_name,
+                relation_depth,
+                flags,
+            )
+            .await?;
+
+            if let Err(e) = enricher.make_config(id).await {
                 return Err(e);
             }
         }

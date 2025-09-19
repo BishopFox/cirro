@@ -1,6 +1,7 @@
+use crate::collectors::enrich::EnrichConfig;
 use crate::db::DBWriteMessage;
 use crate::errors::CirroError;
-use crate::{AzureCloud, EnrichmentFlags, EnumerationMode};
+use crate::{AzureCloud, EnumerationMode};
 use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::sync::mpsc;
@@ -13,6 +14,7 @@ pub struct CollectorContext<C> {
     pub msgraph_credential: C,
     pub arm_credential: C,
     pub vault_credential: C,
+    pub storage_credential: C,
     pub output_path: PathBuf,
     pub tenant_id: Option<String>,
     pub subscription_id: Option<String>,
@@ -20,8 +22,7 @@ pub struct CollectorContext<C> {
     pub client_secret: Option<String>,
     pub client_cert_path: Option<PathBuf>,
     pub db_writer: Option<Arc<mpsc::UnboundedSender<DBWriteMessage>>>,
-    pub enrich_mode: bool,
-    pub enrich_flags: Option<EnrichmentFlags>,
+    pub enrich_config: Option<EnrichConfig>,
 }
 
 impl<C> CollectorContext<C> {
@@ -95,10 +96,11 @@ impl<C> CollectorContext<C> {
 
 #[derive(Debug, Clone, Copy)]
 pub struct CloudEndpoints {
+    pub token_endpoint: &'static str,
     pub msgraph_url: &'static str,
     pub arm_url: &'static str,
     pub vault_url: &'static str,
-    pub token_endpoint: &'static str,
+    pub storage_url: &'static str,
 }
 
 impl CloudEndpoints {
@@ -106,28 +108,32 @@ impl CloudEndpoints {
     pub fn new(cloud: AzureCloud) -> Self {
         match cloud {
             AzureCloud::Public => CloudEndpoints {
+                token_endpoint: "https://login.microsoftonline.com",
                 msgraph_url: "https://graph.microsoft.com",
                 arm_url: "https://management.azure.com",
                 vault_url: "https://vault.azure.net",
-                token_endpoint: "https://login.microsoftonline.com",
+                storage_url: "https://storage.azure.com",
             },
             AzureCloud::China => CloudEndpoints {
+                token_endpoint: "https://login.chinacloudapi.cn",
                 msgraph_url: "https://microsoftgraph.chinacloudapi.cn",
                 arm_url: "https://management.chinacloudapi.cn",
                 vault_url: "https://vault.azure.cn",
-                token_endpoint: "https://login.chinacloudapi.cn",
+                storage_url: "https://storage.azure.cn",
             },
             AzureCloud::Germany => CloudEndpoints {
+                token_endpoint: "https://login.microsoftazure.de",
                 msgraph_url: "https://microsoftgraph.microsoft.de",
                 arm_url: "https://management.microsoftazure.de",
                 vault_url: "https://vault.microsoftazure.de",
-                token_endpoint: "https://login.microsoftazure.de",
+                storage_url: "https://storage.microsoftazure.de",
             },
             AzureCloud::USGov => CloudEndpoints {
+                token_endpoint: "https://login.microsoftonline.us",
                 msgraph_url: "https://graph.microsoft.us",
                 arm_url: "https://management.usgovcloudapi.net",
                 vault_url: "https://vault.azure.us",
-                token_endpoint: "https://login.microsoftonline.us",
+                storage_url: "https://storage.azure.us",
             },
         }
     }

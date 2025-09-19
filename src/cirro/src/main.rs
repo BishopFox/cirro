@@ -57,11 +57,12 @@ enum Commands {
     },
     /// Enrich data in the database
     Enrich {
+        /// Enrichment configuration file path
+        #[arg(short, long, value_name = "FILE", value_hint = clap::ValueHint::FilePath)]
+        config: PathBuf,
+
         #[command(subcommand)]
         auth_mode: AuthenticationMode,
-
-        #[clap(flatten)]
-        flags: EnrichmentFlags,
     },
 }
 
@@ -177,20 +178,6 @@ enum AuthenticationMode {
     },
 }
 
-#[derive(Debug, Clone, Args)]
-pub struct EnrichmentFlags {
-    /// Gather storage account keys
-    #[arg(long, action = clap::ArgAction::SetTrue)]
-    storage_keys: bool,
-    // /// Gather storage account containers and blobs with authentication
-    // #[arg(long, action = clap::ArgAction::SetTrue)]
-    // storage_blobs: bool,
-
-    // /// Gather storage account containers and blobs without authentication
-    // #[arg(long, action = clap::ArgAction::SetTrue)]
-    // storage_blobs_anon: bool,
-}
-
 #[tokio::main]
 async fn main() -> Result<(), CirroError> {
     let cli = Cli::parse();
@@ -217,7 +204,6 @@ _|"""""|_|"""""|_|"""""|_|"""""|_|"""""|
                     token,
                     common.cloud,
                     common.output_path,
-                    false,
                     None,
                 )
                 .await
@@ -241,7 +227,6 @@ _|"""""|_|"""""|_|"""""|_|"""""|_|"""""|
                     common.mode,
                     common.cloud,
                     common.output_path,
-                    false,
                     None,
                 )
                 .await
@@ -266,7 +251,6 @@ _|"""""|_|"""""|_|"""""|_|"""""|_|"""""|
                     common.mode,
                     common.cloud,
                     common.output_path,
-                    false,
                     None,
                 )
                 .await
@@ -291,7 +275,6 @@ _|"""""|_|"""""|_|"""""|_|"""""|_|"""""|
                     common.mode,
                     common.cloud,
                     common.output_path,
-                    false,
                     None,
                 )
                 .await
@@ -305,7 +288,7 @@ _|"""""|_|"""""|_|"""""|_|"""""|_|"""""|
                 ));
             }
         },
-        Some(Commands::Enrich { auth_mode, flags }) => match auth_mode {
+        Some(Commands::Enrich { auth_mode, config }) => match auth_mode {
             AuthenticationMode::AccessToken { token, common } => {
                 // Get verbose flag from CLI
                 if let Err(e) = setup_logger(common.debug) {
@@ -315,8 +298,7 @@ _|"""""|_|"""""|_|"""""|_|"""""|_|"""""|
                     token,
                     common.cloud,
                     common.output_path,
-                    true,
-                    Some(flags),
+                    Some(config),
                 )
                 .await
                 {
@@ -339,8 +321,7 @@ _|"""""|_|"""""|_|"""""|_|"""""|_|"""""|
                     common.mode,
                     common.cloud,
                     common.output_path,
-                    true,
-                    Some(flags),
+                    Some(config),
                 )
                 .await
                 {
@@ -364,8 +345,7 @@ _|"""""|_|"""""|_|"""""|_|"""""|_|"""""|
                     common.mode,
                     common.cloud,
                     common.output_path,
-                    true,
-                    Some(flags),
+                    Some(config),
                 )
                 .await
                 {
@@ -389,8 +369,7 @@ _|"""""|_|"""""|_|"""""|_|"""""|_|"""""|
                     common.mode,
                     common.cloud,
                     common.output_path,
-                    true,
-                    Some(flags),
+                    Some(config),
                 )
                 .await
                 {

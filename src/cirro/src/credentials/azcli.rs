@@ -70,7 +70,7 @@ impl AuthCredential for AzureCliCredential {
         new_token
             .set_expires_on_from_token()
             .map_err(|e| AuthError::ParseError(format!("Failed to set expires_on: {}", e)))?;
-        debug!("New token fetched successfully for client secret credential");
+        debug!("New token fetched successfully for Azure CLI credential");
         let mut write_guard = self.token.write().await;
         *write_guard = new_token.clone();
 

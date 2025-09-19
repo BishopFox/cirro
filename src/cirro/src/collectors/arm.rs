@@ -80,8 +80,13 @@ async fn query_resources(
         }
 
         // Check for next link
-        if let Some(next_link) = response.get("@odata.nextLink").and_then(|v| v.as_str()) {
+        if let Some(next_link) = response
+            .get("@odata.nextLink")
+            .or_else(|| response.get("nextLink"))
+            .and_then(|v| v.as_str())
+        {
             next_url = next_link.to_string();
+            info!("Fetching next page: {}", next_url);
         } else {
             break; // No more pages to fetch
         }
@@ -363,7 +368,11 @@ async fn enumerate_management_groups(
         }
 
         // Check for next link
-        if let Some(next_link) = response.get("@odata.nextLink").and_then(|v| v.as_str()) {
+        if let Some(next_link) = response
+            .get("@odata.nextLink")
+            .or_else(|| response.get("nextLink"))
+            .and_then(|v| v.as_str())
+        {
             next_url = next_link.to_string();
         } else {
             break; // No more pages to fetch

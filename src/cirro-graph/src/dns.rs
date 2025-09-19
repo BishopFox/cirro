@@ -70,7 +70,7 @@ pub struct ReplyUrlState {
 }
 
 pub struct DnsChecker {
-    output_file: PathBuf,
+    output_dir: PathBuf,
     server: String,
     user: String,
     db_name: String,
@@ -84,7 +84,7 @@ pub struct DnsChecker {
 impl std::fmt::Debug for DnsChecker {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("DnsChecker")
-            .field("output_file", &self.output_file)
+            .field("output_dir", &self.output_dir)
             .field("server", &self.server)
             .field("user", &self.user)
             .field("db_name", &self.db_name)
@@ -96,13 +96,13 @@ impl std::fmt::Debug for DnsChecker {
 
 impl DnsChecker {
     pub async fn new(
-        output_file: PathBuf,
+        output_dir: PathBuf,
         server: String,
         user: String,
         password: String,
         db_name: String,
     ) -> Self {
-        let config = ConfigBuilder::default()
+        let neo4j_config = ConfigBuilder::default()
             .uri(&server)
             .user(&user)
             .password(&password)
@@ -112,7 +112,7 @@ impl DnsChecker {
             .unwrap();
 
         info!("Connecting to database at {} with user {}", server, user);
-        let graph = Graph::connect(config)
+        let graph = Graph::connect(neo4j_config)
             .await
             .map_err(|e| CirroGraphError::DatabaseError(e.to_string()))
             .unwrap();
@@ -124,7 +124,7 @@ impl DnsChecker {
         assert_eq!(1, value);
         info!("Successfully connected to the database");
 
-        let config = CheckConfig::default()
+        let check_config = CheckConfig::default()
             .with_concurrency(50) // Max 50 concurrent checks
             .with_timeout(Duration::from_secs(10)) // 10 second timeout
             .with_whois_fallback(false) // Enable WHOIS fallback
@@ -132,12 +132,12 @@ impl DnsChecker {
             .with_detailed_info(false); // Extract full domain info
 
         return DnsChecker {
-            output_file,
+            output_dir,
             server,
             user,
             db_name,
             graph,
-            whois_client: DomainChecker::with_config(config),
+            whois_client: DomainChecker::with_config(check_config),
             nxdomain_cache: Mutex::new(LruCache::new(NonZeroUsize::new(4096).unwrap())),
             availability_cache: Mutex::new(LruCache::new(NonZeroUsize::new(4096).unwrap())),
         };
@@ -150,7 +150,7 @@ impl DnsChecker {
         filename: &str,
     ) -> Result<(), CirroGraphError> {
         let csv_path = self
-            .output_file
+            .output_dir
             .parent()
             .unwrap_or(&PathBuf::from("."))
             .join(filename);
@@ -320,19 +320,6 @@ impl DnsChecker {
         }
 
         Ok(result)
-    }
-
-    /// Gets cache statistics for debugging
-    pub fn get_cache_stats(&self) -> (usize, usize, usize, usize) {
-        let nxdomain_cache = self.nxdomain_cache.lock().unwrap();
-        let availability_cache = self.availability_cache.lock().unwrap();
-
-        (
-            nxdomain_cache.len(),
-            nxdomain_cache.cap().get(),
-            availability_cache.len(),
-            availability_cache.cap().get(),
-        )
     }
 
     /// Checks VerifiedDomains for missing or invalid DNS records
