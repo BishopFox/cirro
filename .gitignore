@@ -50,3 +50,5 @@ rust-project.json
 *.bin
 neo4j/
 site/
+*.csv
+enrich_config.json

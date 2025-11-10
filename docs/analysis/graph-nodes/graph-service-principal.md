@@ -13,5 +13,7 @@ Represents Azure AD service principals collected from Microsoft Graph.
 - `appOwnerOrganizationId` - Owner organization ID
 - `publisherName` - Publisher name
 - `servicePrincipalType` - Type of service principal
+- `loginUrl` - Login URL for the service principal
+- `logoutUrl` - Logout URL for the service principal
 - `replyUrls` - Array of reply URLs
 - `servicePrincipalNames` - Array of service principal names

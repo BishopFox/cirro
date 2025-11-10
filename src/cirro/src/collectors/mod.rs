@@ -1,4 +1,4 @@
 pub mod arm;
 pub mod common;
-pub mod enrichments;
+pub mod enrich;
 pub mod graph;

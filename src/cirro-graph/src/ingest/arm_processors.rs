@@ -529,7 +529,7 @@ impl CirroIngestor {
             WITH obj, row
             CALL {
                 WITH obj, row
-                WITH obj, row WHERE row.identity IS NOT NULL AND toLower(row.identity.type) = 'systemassigned'
+                WITH obj, row WHERE row.identity IS NOT NULL AND toLower(row.identity.type) = 'systemassigned' AND row.identity.principalId IS NOT NULL
                     MERGE (i:GraphObject {id: row.identity.principalId})
                     MERGE (obj)-[:HAS_IDENTITY]->(i)
                 RETURN count(*) AS _
@@ -696,8 +696,8 @@ impl CirroIngestor {
                 r#"
                     UNWIND $batch AS row
                     MERGE (o:GraphObject {id: row.properties.principalId})
-                    WITH o, row
-                        MATCH (r:ArmResource {id: toLower(row.properties.scope)})
+                    MERGE (r:ArmResource {id: toLower(row.properties.scope)})
+                    WITH o, r, row
                         CALL apoc.merge.relationship(o, replace(row.roleName, " ", ""), {}, {}, r) YIELD rel
                         SET rel += {
                             id : row.id,
@@ -707,7 +707,8 @@ impl CirroIngestor {
                             actions : row.permissions[0].actions,
                             notActions : row.permissions[0].notActions,
                             dataActions : row.permissions[0].dataActions,
-                            notDataActions : row.permissions[0].notDataActions
+                            notDataActions : row.permissions[0].notDataActions,
+                            scope : row.properties.scope
                         }
                 "#
             }
@@ -719,25 +720,28 @@ impl CirroIngestor {
             GraphType::Memgraph => {
                 r#"
                     UNWIND $batch AS row
-                    MATCH (o:GraphObject {id: row.properties.principalId})
-                    MATCH (r:ArmResource {id: toLower(row.properties.scope)})
-                    CALL merge.relationship(o, replace(row.roleName, " ", ""), {}, {
-                        description : row.description,
-                        roleName : row.roleName,
-                        roleType : row.roleType,
-                        actions : row.permissions[0].actions,
-                        notActions : row.permissions[0].notActions,
-                        dataActions : row.permissions[0].dataActions,
-                        notDataActions : row.permissions[0].notDataActions
-                    }, r, {
-                        description : row.description,
-                        roleName : row.roleName,
-                        roleType : row.roleType,
-                        actions : row.permissions[0].actions,
-                        notActions : row.permissions[0].notActions,
-                        dataActions : row.permissions[0].dataActions,
-                        notDataActions : row.permissions[0].notDataActions
-                    }) YIELD rel
+                    MERGE (o:GraphObject {id: row.properties.principalId})
+                    MERGE (r:ArmResource {id: toLower(row.properties.scope)})
+                    WITH o, r, row
+                        CALL merge.relationship(o, replace(row.roleName, " ", ""), {}, {
+                            description : row.description,
+                            roleName : row.roleName,
+                            roleType : row.roleType,
+                            actions : row.permissions[0].actions,
+                            notActions : row.permissions[0].notActions,
+                            dataActions : row.permissions[0].dataActions,
+                            notDataActions : row.permissions[0].notDataActions,
+                            scope : row.properties.scope
+                        }, r, {
+                            description : row.description,
+                            roleName : row.roleName,
+                            roleType : row.roleType,
+                            actions : row.permissions[0].actions,
+                            notActions : row.permissions[0].notActions,
+                            dataActions : row.permissions[0].dataActions,
+                            notDataActions : row.permissions[0].notDataActions,
+                            scope : row.properties.scope
+                        }) YIELD rel
                 "#
             }
         };

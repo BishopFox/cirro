@@ -38,4 +38,13 @@ pub enum CirroGraphError {
 
     #[error("IO error: {0}")]
     IoError(#[from] std::io::Error),
+
+    #[error("DNS resolver error: {0}")]
+    DnsResolverError(String),
+
+    #[error("Domain check error: {0}")]
+    DomainCheckError(String),
+
+    #[error("WHOIS error: {0}")]
+    WhoisError(String),
 }

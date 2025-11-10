@@ -1,5 +1,5 @@
-use crate::EnrichmentFlags;
 use crate::collectors::arm;
+use crate::collectors::enrich;
 use crate::collectors::graph;
 use crate::context::CloudEndpoints;
 use crate::context::CollectorContext;
@@ -131,6 +131,57 @@ async fn run_collector(mut collector: Collector) -> Result<(), CirroError> {
 
 /// Runs the enrichment functions
 async fn run_enrichment(mut collector: Collector) -> Result<(), CirroError> {
+    info!("Verifying enrich config and token OID");
+
+    let enrich_config = collector
+        .enrich_config
+        .as_ref()
+        .ok_or_else(|| CirroError::Unknown("Enrich config could not be referenced".into()))?;
+
+    if enrich_config.need_graph_token {
+        // Ensure that the token has the correct oid before proceeding
+        let token = collector.msgraph_credential.get_token().await?;
+        let claims = token.get_claims().map_err(|e| {
+            CirroError::AuthError(AuthError::ParseError(format!(
+                "Failed to parse token claims: {}",
+                e
+            )))
+        })?;
+
+        if claims.oid.as_deref().unwrap_or_default() != enrich_config.id {
+            return Err(CirroError::AuthError(AuthError::Unknown(
+                format!(
+                    "Token OID for Graph ({}) does not match EnrichConfig ID ({})",
+                    claims.oid.as_deref().unwrap_or_default(),
+                    enrich_config.id
+                )
+                .into(),
+            )));
+        }
+    }
+
+    if enrich_config.need_arm_token {
+        // Ensure that the token has the correct oid before proceeding
+        let token = collector.arm_credential.get_token().await?;
+        let claims = token.get_claims().map_err(|e| {
+            CirroError::AuthError(AuthError::ParseError(format!(
+                "Failed to parse token claims: {}",
+                e
+            )))
+        })?;
+
+        if claims.oid.as_deref().unwrap_or_default() != enrich_config.id {
+            return Err(CirroError::AuthError(AuthError::Unknown(
+                format!(
+                    "Token OID for ARM ({}) does not match EnrichConfig ID ({})",
+                    claims.oid.as_deref().unwrap_or_default(),
+                    enrich_config.id
+                )
+                .into(),
+            )));
+        }
+    }
+
     info!("Using cloud: {:?}", collector.cloud);
     info!(
         "Using output: {:?}",
@@ -150,14 +201,9 @@ async fn run_enrichment(mut collector: Collector) -> Result<(), CirroError> {
     });
 
     // Run the enrichment functions
-    // Check each flag in enrich_flags and print if true
-    // If a function fails, continue to the next one
-    let sqlite_conn = SqliteDb::new(output_path).get_connection().await?;
-    let enrich_flags = collector.enrich_flags.as_ref().unwrap();
-    if enrich_flags.storage_keys {
-        if let Err(e) = collector.enrich_storage_account_keys(sqlite_conn).await {
-            error!("Error enriching storage blobs: {}", e);
-        }
+    if let Err(e) = collector.launch_enrichments().await {
+        error!("Error during enrichment: {}", e);
+        return Err(e);
     }
 
     // Wait for the DB writer to finish
@@ -177,9 +223,15 @@ pub async fn collect_with_access_token(
     token: String,
     cloud: AzureCloud,
     output_path: PathBuf,
-    enrich_mode: bool,
-    enrich_flags: Option<EnrichmentFlags>,
+    enrich_config: Option<PathBuf>,
 ) -> Result<(), CirroError> {
+    // If enrich_config is provided, create the EnrichConfig
+    let enrich_config = if let Some(ref path) = enrich_config {
+        Some(enrich::EnrichConfig::from_file(path.clone())?)
+    } else {
+        None
+    };
+
     // We don't really need to create all of these credentials for Access Token mode,
     // but we do it to keep the interface consistent with other authentication modes.
     // We can probably optimize this later.
@@ -191,6 +243,9 @@ pub async fn collect_with_access_token(
             token: tokio::sync::RwLock::new(crate::credentials::common::Token::default()),
         });
     let vault_credential = Box::new(crate::credentials::access_token::AccessTokenCredential {
+        token: tokio::sync::RwLock::new(crate::credentials::common::Token::default()),
+    });
+    let storage_credential = Box::new(crate::credentials::access_token::AccessTokenCredential {
         token: tokio::sync::RwLock::new(crate::credentials::common::Token::default()),
     });
 
@@ -239,13 +294,6 @@ pub async fn collect_with_access_token(
         }
     }
 
-    // Enrich mode is only supported in Arm mode
-    if enrich_mode && mode != EnumerationMode::Arm {
-        return Err(CirroError::AuthError(AuthError::Unknown(
-            "Enrichment mode is only supported in Arm mode".into(),
-        )));
-    }
-
     info!("Starting with Access Token credentials");
 
     // Initialize the collector context with Access Token credentials
@@ -257,6 +305,7 @@ pub async fn collect_with_access_token(
             msgraph_credential: msgraph_credential as Box<dyn AuthCredential + Send + Sync>,
             arm_credential: arm_credential as Box<dyn AuthCredential + Send + Sync>,
             vault_credential: vault_credential as Box<dyn AuthCredential + Send + Sync>,
+            storage_credential: storage_credential as Box<dyn AuthCredential + Send + Sync>,
             output_path,
             tenant_id: None,
             subscription_id: None,
@@ -264,13 +313,12 @@ pub async fn collect_with_access_token(
             client_secret: None,
             client_cert_path: None,
             db_writer: None,
-            enrich_mode,
-            enrich_flags,
+            enrich_config,
         },
     };
 
     // Run the collector
-    if collector.enrich_mode {
+    if collector.enrich_config.is_some() {
         if let Err(e) = run_enrichment(collector).await {
             error!("Error enriching data: {}", e);
             return Err(e);
@@ -292,10 +340,16 @@ pub async fn collect_with_azure_cli(
     mode: EnumerationMode,
     cloud: AzureCloud,
     output_path: PathBuf,
-    enrich_mode: bool,
-    enrich_flags: Option<EnrichmentFlags>,
+    enrich_config: Option<PathBuf>,
 ) -> Result<(), CirroError> {
     info!("Starting with Azure CLI credentials");
+
+    // If enrich_config is provided, create the EnrichConfig
+    let enrich_config = if let Some(ref path) = enrich_config {
+        Some(enrich::EnrichConfig::from_file(path.clone())?)
+    } else {
+        None
+    };
 
     let cloud_endpoints = CloudEndpoints::new(cloud);
 
@@ -315,6 +369,11 @@ pub async fn collect_with_azure_cli(
         resource: &cloud_endpoints.vault_url,
         token: tokio::sync::RwLock::new(crate::credentials::common::Token::default()),
     });
+    let storage_credential = Box::new(AzureCliCredential {
+        tenant_id: tenant_id.clone(),
+        resource: &cloud_endpoints.storage_url,
+        token: tokio::sync::RwLock::new(crate::credentials::common::Token::default()),
+    });
 
     // Initialize the collector context with Azure CLI credentials
     let collector = Collector {
@@ -325,6 +384,7 @@ pub async fn collect_with_azure_cli(
             msgraph_credential: msgraph_credential as Box<dyn AuthCredential + Send + Sync>,
             arm_credential: arm_credential as Box<dyn AuthCredential + Send + Sync>,
             vault_credential: vault_credential as Box<dyn AuthCredential + Send + Sync>,
+            storage_credential: storage_credential as Box<dyn AuthCredential + Send + Sync>,
             output_path: output_path,
             tenant_id: tenant_id.clone(),
             subscription_id,
@@ -332,13 +392,12 @@ pub async fn collect_with_azure_cli(
             client_secret: None,
             client_cert_path: None,
             db_writer: None,
-            enrich_mode,
-            enrich_flags,
+            enrich_config,
         },
     };
 
     // Run the collector
-    if collector.enrich_mode {
+    if collector.enrich_config.is_some() {
         if let Err(e) = run_enrichment(collector).await {
             error!("Error enriching data: {}", e);
             return Err(e);
@@ -361,10 +420,16 @@ pub async fn collect_with_client_secret(
     mode: EnumerationMode,
     cloud: AzureCloud,
     output_path: PathBuf,
-    enrich_mode: bool,
-    enrich_flags: Option<EnrichmentFlags>,
+    enrich_config: Option<PathBuf>,
 ) -> Result<(), CirroError> {
     info!("Starting with Client Secret credentials");
+
+    // If enrich_config is provided, create the EnrichConfig
+    let enrich_config = if let Some(ref path) = enrich_config {
+        Some(enrich::EnrichConfig::from_file(path.clone())?)
+    } else {
+        None
+    };
 
     let cloud_endpoints = CloudEndpoints::new(cloud);
 
@@ -393,6 +458,14 @@ pub async fn collect_with_client_secret(
         resource: cloud_endpoints.vault_url,
         token: tokio::sync::RwLock::new(crate::credentials::common::Token::default()),
     });
+    let storage_credential = Box::new(crate::credentials::clientsecret::ClientSecretCredential {
+        token_endpoint: &cloud_endpoints.token_endpoint,
+        client_id: client_id.clone(),
+        client_secret: client_secret.clone(),
+        tenant_id: tenant_id.clone(),
+        resource: cloud_endpoints.storage_url,
+        token: tokio::sync::RwLock::new(crate::credentials::common::Token::default()),
+    });
 
     // Initialize the collector context with Client Secret credentials
     let collector = Collector {
@@ -403,6 +476,7 @@ pub async fn collect_with_client_secret(
             msgraph_credential: msgraph_credential as Box<dyn AuthCredential + Send + Sync>,
             arm_credential: arm_credential as Box<dyn AuthCredential + Send + Sync>,
             vault_credential: vault_credential as Box<dyn AuthCredential + Send + Sync>,
+            storage_credential: storage_credential as Box<dyn AuthCredential + Send + Sync>,
             output_path,
             tenant_id: Some(tenant_id.clone()),
             subscription_id: None,
@@ -410,13 +484,12 @@ pub async fn collect_with_client_secret(
             client_secret: None,
             client_cert_path: None,
             db_writer: None,
-            enrich_mode,
-            enrich_flags,
+            enrich_config,
         },
     };
 
     // Run the collector
-    if collector.enrich_mode {
+    if collector.enrich_config.is_some() {
         if let Err(e) = run_enrichment(collector).await {
             error!("Error enriching data: {}", e);
             return Err(e);
@@ -438,10 +511,16 @@ pub async fn collect_with_client_cert(
     mode: EnumerationMode,
     cloud: AzureCloud,
     output_path: PathBuf,
-    enrich_mode: bool,
-    enrich_flags: Option<EnrichmentFlags>,
+    enrich_config: Option<PathBuf>,
 ) -> Result<(), CirroError> {
     info!("Starting with Client Certificate credentials");
+
+    // If enrich_config is provided, create the EnrichConfig
+    let enrich_config = if let Some(ref path) = enrich_config {
+        Some(enrich::EnrichConfig::from_file(path.clone())?)
+    } else {
+        None
+    };
 
     let cloud_endpoints = CloudEndpoints::new(cloud);
 
@@ -476,6 +555,16 @@ pub async fn collect_with_client_cert(
             token: tokio::sync::RwLock::new(crate::credentials::common::Token::default()),
         },
     );
+    let storage_credential = Box::new(
+        crate::credentials::clientcert::ClientCertificateCredential {
+            token_endpoint: &cloud_endpoints.token_endpoint,
+            client_id: client_id.clone(),
+            certificate_path: client_certificate.clone(),
+            tenant_id: tenant_id.clone(),
+            resource: cloud_endpoints.storage_url,
+            token: tokio::sync::RwLock::new(crate::credentials::common::Token::default()),
+        },
+    );
 
     // Initialize the collector context with Client Certificate credentials
     let collector = Collector {
@@ -486,6 +575,7 @@ pub async fn collect_with_client_cert(
             msgraph_credential: msgraph_credential as Box<dyn AuthCredential + Send + Sync>,
             arm_credential: arm_credential as Box<dyn AuthCredential + Send + Sync>,
             vault_credential: vault_credential as Box<dyn AuthCredential + Send + Sync>,
+            storage_credential: storage_credential as Box<dyn AuthCredential + Send + Sync>,
             output_path,
             tenant_id: Some(tenant_id.clone()),
             subscription_id: None,
@@ -493,12 +583,11 @@ pub async fn collect_with_client_cert(
             client_secret: None,
             client_cert_path: Some(client_certificate),
             db_writer: None,
-            enrich_mode,
-            enrich_flags: enrich_flags,
+            enrich_config,
         },
     };
     // Run the collector
-    if collector.enrich_mode {
+    if collector.enrich_config.is_some() {
         if let Err(e) = run_enrichment(collector).await {
             error!("Error enriching data: {}", e);
             return Err(e);
