@@ -529,7 +529,7 @@ impl CirroIngestor {
             WITH obj, row
             CALL {
                 WITH obj, row
-                WITH obj, row WHERE row.identity IS NOT NULL AND toLower(row.identity.type) = 'systemassigned'
+                WITH obj, row WHERE row.identity IS NOT NULL AND toLower(row.identity.type) = 'systemassigned' AND row.identity.principalId IS NOT NULL
                     MERGE (i:GraphObject {id: row.identity.principalId})
                     MERGE (obj)-[:HAS_IDENTITY]->(i)
                 RETURN count(*) AS _
