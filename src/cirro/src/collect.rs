@@ -275,13 +275,16 @@ pub async fn collect_with_access_token(
     info!("Using token with audience: {}", audience);
     match audience.as_str() {
         // Audience can sometimes be the App ID URI or the resource URL
-        _ if audience == cloud_endpoints.arm_url
-            || audience == "00000002-0000-0000-c000-000000000000" =>
+        // Audience might have a trailing slash or not, so we handle both cases
+        _ if audience.trim_end_matches("/") == cloud_endpoints.arm_url.trim_end_matches('/')
+            || audience == "00000002-0000-0000-c000-000000000000"
+            || audience.trim_end_matches("/") == "https://management.core.windows.net" =>
         {
             mode = EnumerationMode::Arm;
             arm_credential = credential;
         }
-        _ if audience == cloud_endpoints.msgraph_url
+        _ if audience.trim_end_matches("/")
+            == cloud_endpoints.msgraph_url.trim_end_matches('/')
             || audience == "00000003-0000-0000-c000-000000000000" =>
         {
             mode = EnumerationMode::Graph;

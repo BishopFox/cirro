@@ -414,7 +414,8 @@ async fn enumerate_subscription(
             "No role assignments found for subscription {}",
             subscription_id
         );
-        return Ok(());
+        // We might not have permissions to view role assignments, so continue
+        // return Ok(());
     }
     info!(
         "Found {} role assignments for subscription {} ({})",
