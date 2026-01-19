@@ -6,6 +6,7 @@ Represents Azure AD applications collected from Microsoft Graph.
 
 **Properties:**
 
+- `id` - Application object ID (primary key)
 - `displayName` - Application's display name
 - `appId` - Application ID (client ID)
 - `publisherDomain` - Publisher domain
@@ -15,3 +16,38 @@ Represents Azure AD applications collected from Microsoft Graph.
 - `publicClientRedirectUris` - Array of public client redirect URIs
 - `spaRedirectUris` - Array of single-page application redirect URIs
 - `webRedirectUris` - Array of web application redirect URIs
+
+## Relationships
+
+### Incoming
+
+- **GraphObject** → `OWNS` → **GraphApplication** - Owners of the application
+- **GraphObject** → `APPROLE` → **GraphApplication** - Objects with app role assignments
+- **ClientSecret** → `AUTHENTICATES` → **GraphApplication** - Client secrets for authentication
+- **Certificate** → `AUTHENTICATES` → **GraphApplication** - Certificates for authentication
+
+### Outgoing
+
+- **GraphApplication** → `HAS_APPROLE` → **GraphAppRole** - App roles defined by the application
+- **GraphApplication** → `FEDERATED_CREDENTIAL` → **FederatedIdentityCredential** - Federated identity credentials
+
+## Examples
+
+```cypher
+// Find all multi-tenant applications
+MATCH (app:GraphApplication)
+WHERE app.signInAudience = "AzureADMultipleOrgs"
+RETURN app.displayName, app.appId, app.publisherDomain
+```
+
+```cypher
+// Find applications and their owners
+MATCH (owner:GraphObject)-[:OWNS]->(app:GraphApplication)
+RETURN app.displayName, collect(owner.displayName) AS owners
+```
+
+```cypher
+// Find applications with federated credentials
+MATCH (app:GraphApplication)-[:FEDERATED_CREDENTIAL]->(cred:FederatedIdentityCredential)
+RETURN app.displayName, cred.issuer, cred.subject
+```

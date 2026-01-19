@@ -1,0 +1,16 @@
+name: "Communication Services"
+label: "{{ LABELS.CommunicationServices }}"
+table_name: "resources"
+resource_type: "microsoft.communication/communicationservices"
+properties:
+  - "/id"
+  - "/properties"
+cypher: |
+    UNWIND $batch AS row
+    MERGE (obj:{{ LABELS.ArmResource }} {id: row.id})
+    SET obj:{{ LABELS.CommunicationServices }}
+    SET obj += {
+        dataLocation: row.properties.dataLocation,
+        hostName: row.properties.hostName,
+        immutableResourceId: row.properties.immutableResourceId
+    }

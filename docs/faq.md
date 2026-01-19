@@ -2,11 +2,11 @@
 
 ## What is Cirro?
 
-Cirro is a comprehensive security research tool designed for penetration testers and security researchers to map and analyze Azure cloud environments. It provides a complete view of your target environment's attack surface by collecting data from both Azure Resource Manager (ARM) APIs and Microsoft Graph APIs.
+Cirro is a comprehensive security research tool designed for penetration testers and security researchers to map and analyze cloud environments. While currently focused on Azure, Cirro is architected to support multiple cloud platforms in the future. It provides a complete view of your target environment's attack surface by collecting data from platform-specific APIs (currently Azure Resource Manager and Microsoft Graph APIs).
 
 ## What permissions does Cirro need?
 
-For comprehensive data collection, Cirro requires:
+For comprehensive Azure data collection, Cirro requires:
 
 **Azure Resource Manager (ARM)**:
 
@@ -28,18 +28,16 @@ For comprehensive data collection, Cirro requires:
 
 Since Cirro loads data into standard graph databases, you can use any compatible visualization tool:
 
-**For Neo4j**:
 - Neo4j Browser (built-in)
 - Neo4j Bloom
-- NeoDash (included configuration)
-
-**For Memgraph**:
-- Memgraph Lab
-- NeoDash
+- CirroDash (included configuration)
 
 ## How is Cirro different from AzureHound?
 
 While both tools help with Azure security assessment, they take fundamentally different approaches:
+
+!!! note "Platform Support"
+    This comparison focuses on Azure capabilities since both tools currently target Azure environments. Cirro is designed to extend to other cloud platforms in the future.
 
 ### Collection Scope: Management Plane vs Data Plane
 

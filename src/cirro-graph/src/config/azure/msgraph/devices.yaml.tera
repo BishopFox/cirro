@@ -1,0 +1,72 @@
+name: "Graph Devices"
+label: "{{ LABELS.GraphDevice }}"
+table_name: "devices"
+properties:
+  - "/displayName"
+  - "/id"
+  - "/accountEnabled"
+  - "/deviceId"
+  - "/isCompliant"
+  - "/isManaged"
+  - "/manufacturer"
+  - "/memberOf"
+  - "/model"
+  - "/onPremisesLastSyncDateTime"
+  - "/onPremisesSyncEnabled"
+  - "/operatingSystem"
+  - "/operatingSystemVersion"
+  - "/profileType"
+  - "/trustType"
+  - "/registeredUsers"
+  - "/registeredOwners"
+cypher: |
+  UNWIND $batch as row
+  WITH row
+      MERGE (obj:{{ LABELS.GraphObject }} {id: row.id})
+      SET obj:{{ LABELS.GraphDevice }}
+      SET obj += {
+          displayName: row.displayName,
+          accountEnabled: row.accountEnabled,
+          deviceId: row.deviceId,
+          isCompliant: row.isCompliant,
+          isManaged: row.isManaged,
+          manufacturer: row.manufacturer,
+          model: row.model,
+          onPremisesLastSyncDateTime: row.onPremisesLastSyncDateTime,
+          onPremisesSyncEnabled: row.onPremisesSyncEnabled,
+          operatingSystem: row.operatingSystem,
+          operatingSystemVersion: row.operatingSystemVersion,
+          profileType: row.profileType,
+          trustType: row.trustType
+      }
+
+  // Unwind memberOf
+  WITH row, obj
+      CALL {
+          WITH row, obj
+          UNWIND coalesce(row.memberOf, []) AS memberOf
+          MERGE (m:{{ LABELS.GraphObject }} {id: memberOf})
+          MERGE (obj)-[:{{ REL.MEMBER_OF }}]->(m)
+          RETURN count(*) AS _
+      }
+
+  // Unwind registered users
+  WITH row, obj
+      CALL {
+          WITH row, obj
+          UNWIND coalesce(row.registeredUsers, []) AS registeredUser
+          MERGE (u:{{ LABELS.GraphObject }} {id: registeredUser})
+          MERGE (u)-[:{{ REL.REGISTERED_USER }}]->(obj)
+          RETURN count(*) AS _
+      }
+
+  // Unwind registered owners
+  WITH row, obj
+      CALL {
+          WITH row, obj
+          UNWIND coalesce(row.registeredOwners, []) AS registeredOwner
+          MERGE (o:{{ LABELS.GraphObject }} {id: registeredOwner})
+          MERGE (o)-[:{{ REL.REGISTERED_OWNER }}]->(obj)
+          RETURN count(*) AS _
+      }
+  RETURN count(*) AS _

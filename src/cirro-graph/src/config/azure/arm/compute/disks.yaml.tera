@@ -1,0 +1,20 @@
+name: "Disks"
+label: "{{ LABELS.Disk }}"
+table_name: "resources"
+resource_type: "microsoft.compute/disks"
+properties:
+  - "/id"
+  - "/properties"
+cypher: |
+    UNWIND $batch AS row
+    MERGE (obj:{{ LABELS.ArmResource }} {id: row.id})
+    SET obj:{{ LABELS.Disk }}
+    SET obj += {
+        diskSizeGB: row.properties.diskSizeGB,
+        diskState: row.properties.diskState,
+        osType: row.properties.osType,
+        networkAccessPolicy: row.properties.networkAccessPolicy,
+        publicNetworkAccess: row.properties.publicNetworkAccess,
+        timeCreated: row.properties.timeCreated,
+        uniqueId: row.properties.uniqueId
+    }

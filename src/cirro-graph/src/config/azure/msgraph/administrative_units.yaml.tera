@@ -1,0 +1,53 @@
+name: "Administrative Units"
+label: "{{ LABELS.GraphAdministrativeUnit }}"
+table_name: "administrativeUnits"
+properties:
+  - "/id"
+  - "/description"
+  - "/displayName"
+  - "/isMemberManagementRestricted"
+  - "/members"
+  - "/membershipRule"
+  - "/membershipRuleProcessingState"
+  - "/membershipType"
+  - "/scopedRoleMembers"
+  - "/visibility"
+cypher: |
+  UNWIND $batch as row
+  WITH row
+      MERGE (obj:{{ LABELS.GraphObject }} {id: row.id})
+      SET obj:{{ LABELS.GraphAdministrativeUnit }}
+      SET obj += {
+          description: row.description,
+          displayName: row.displayName,
+          isMemberManagementRestricted: row.isMemberManagementRestricted,
+          membershipRule: row.membershipRule,
+          membershipRuleProcessingState: row.membershipRuleProcessingState,
+          membershipType: row.membershipType,
+          visibility: row.visibility
+      }
+
+  // Unwind members
+  WITH row, obj
+      CALL {
+          WITH row, obj
+          UNWIND coalesce(row.members, []) AS member
+          MERGE (m:{{ LABELS.GraphObject }} {id: member})
+          MERGE (m)-[:{{ REL.MEMBER_OF }}]->(obj)
+          RETURN count(*) AS _
+      }
+
+  // Unwind scoped role members
+  WITH row, obj
+      CALL {
+          WITH row, obj
+          UNWIND coalesce(row.scopedRoleMembers, []) AS scopedRole
+          MERGE (sr:{{ LABELS.GraphObject }} {id: scopedRole.roleMemberInfo.id})
+          MERGE (role:{{ LABELS.GraphObject }} {id: scopedRole.roleId})
+          MERGE (sr)-[:{{ REL.HAS_ROLE }}]->(role)
+          WITH sr, role, obj, scopedRole
+          MERGE (sr)-[r:{{ REL.HAS_ROLE }}]->(obj)
+          SET r.scope = "administrative-unit"
+          RETURN count(*) AS _
+      }
+  RETURN count(*) AS _

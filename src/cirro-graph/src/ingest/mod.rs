@@ -1,22 +1,8 @@
-pub mod constants;
 pub mod ingestor;
 
-pub mod arm_processors;
-pub mod automation_processors;
-pub mod azurearc_processors;
-pub mod cognitiveservices_processors;
-pub mod communication_processors;
-pub mod compute_processors;
-pub mod container_processors;
-pub mod datafactory_processors;
-pub mod enrichment_processors;
-pub mod eventgrid_processors;
-pub mod graph_processors;
-pub mod hybridcompute_processors;
-pub mod identity_processors;
-pub mod keyvault_processors;
-pub mod network_processors;
-pub mod recoveryservices_processors;
-pub mod sql_processors;
-pub mod storage_processors;
-pub mod web_processors;
+pub mod azure;
+
+const CREATE_CONSTRAINT_QUERY: &str =
+    "CREATE CONSTRAINT IF NOT EXISTS FOR (n:{}) REQUIRE n.id IS UNIQUE ";
+
+const CREATE_INDEX_QUERY: &str = "CREATE TEXT INDEX {}_id IF NOT EXISTS FOR (n:{}) ON (n.id)";

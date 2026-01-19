@@ -21,15 +21,10 @@ uuid = { version = "1.17.0", features = ["v4"] }
 
 [profile.dev]
 debug = "line-tables-only"
-
-[profile.dev.package."*"]
-debug = false
-
-[profile.debugging]
-debug = true
-inherits = "dev"
+opt-level = 0
 
 [profile.release]
+codegen-units = 1
 lto = "thin"
 opt-level = "s"
 panic = 'abort'
@@ -37,12 +32,5 @@ strip = true
 
 # The profile that 'dist' will build with
 [profile.dist]
-codegen-units = 1
-debug = false
-incremental = false
 inherits = "release"
-lto = "fat"
-opt-level = 3
-overflow-checks = false
-panic = "abort"
-strip = true
+lto = "thin"

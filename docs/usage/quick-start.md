@@ -2,14 +2,13 @@
 
 !!! tip "Prerequisites"
 
-    - Valid Azure credentials
-    - Running Neo4j or Memgraph instance
-    - Appropriate permissions for target Azure environment
+    - Valid cloud platform credentials (currently Azure)
+    - Running Neo4j instance
+    - Appropriate permissions for target cloud environment
 
 !!! warning
 
     - Neo4j requires [APOC plugin](https://neo4j.com/docs/apoc/current/)
-    - Memgraph requires [MAGE plugin](https://memgraph.com/docs/advanced-algorithms/install-mage)
   
 ## Install Cirro
 
@@ -29,7 +28,7 @@
 
     Download pre-built binaries from the [releases page](https://github.com/bishopfox/cirro/releases).
 
-## Collect Data
+## Collect Data (Azure)
 
 ```bash
 # Using Azure CLI authentication
@@ -44,14 +43,11 @@ cirro collect client-secret \
 
 ## Ingest into Graph Database
 
-Both Neo4j and Memgraph are supported as graph database backends. Set up your preferred database before ingesting data. There are two docker-compose files in the [tools](https://github.com/bishopfox/cirro/tools) directory to assist with containerized databases. `cirro-graph` defaults to Neo4j configurations but you might consider using Memgraph for faster ingestion and performance.
+Neo4j is supported as the graph database backend. Set up your database before ingesting cloud data. There is a docker-compose file in the [tools](https://github.com/bishopfox/cirro/tools) directory to assist with containerized database setup.
 
 ```bash
 # For Neo4j
 docker-compose up
-
-# For Memgraph
-docker-compose -f docker-compose.mg.yml up
 ```
 
 ```bash
@@ -60,12 +56,6 @@ cirro-graph --file cirro_output.db \
   --graph-type neo4j \
   --user neo4j \
   --password password
-
-# For Memgraph  
-cirro-graph --file cirro_output.db \
-  --graph-type memgraph \
-  --user cirro \
-  --password cirro
 ```
 
 ## Next Steps

@@ -1,14 +1,14 @@
 # Cirro Graph Analysis
 
-This document provides an overview of the analysis capabilities built into Cirro Graph for identifying security risks and misconfigurations in Azure environments. You can explore the help for these features by running `cirro-graph -h`.
+This document provides an overview of the analysis capabilities built into Cirro Graph for identifying security risks and misconfigurations in cloud environments. Currently focused on Azure environments, with the ability to expand to other platforms in the future. You can explore the help for these features by running `cirro-graph -h`.
 
 ## DNS Security Analysis
 
-The DNS security analysis module performs comprehensive checks on domain configurations within Azure AD and application registrations to identify potential security vulnerabilities related to domain ownership and DNS misconfigurations.
+The DNS security analysis module performs comprehensive checks on domain configurations within cloud identity providers (currently Azure AD) and application registrations to identify potential security vulnerabilities related to domain ownership and DNS misconfigurations.
 
 ### Purpose
 
-The DNS analysis functionality helps security teams identify potential domain takeover risks and misconfigured domain settings that could be exploited by attackers. It focuses on domains referenced in Azure AD configurations that may be vulnerable due to:
+The DNS analysis functionality helps security teams identify potential domain takeover risks and misconfigured domain settings that could be exploited by attackers. It focuses on domains referenced in cloud platform configurations (currently Azure AD) that may be vulnerable due to:
 
 - Expired or unregistered domains
 - Domains that resolve to non-existent DNS records (NXDOMAIN)

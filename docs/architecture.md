@@ -9,7 +9,7 @@ graph TB
     D -->  H[cirro-graph]
 
     H -->|Ingests Into| E[Neo4j]
-    H -->|Ingests Into| F[Memgraph]
+
     
 
     E <--> G[Visualization Tools]
@@ -40,7 +40,7 @@ The `cirro-graph` tool handles:
 
 - Reading data from the SQLite database
 - Transforming data for graph database compatibility
-- Loading data into Neo4j or Memgraph
+- Loading data into Neo4j
 - Creating appropriate indexes and constraints
 - Maintaining data relationships and properties
 

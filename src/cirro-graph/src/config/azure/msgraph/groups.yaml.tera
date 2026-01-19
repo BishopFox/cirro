@@ -1,0 +1,77 @@
+name: "Graph Groups"
+label: "{{ LABELS.GraphGroup }}"
+table_name: "groups"
+properties:
+  - "/displayName"
+  - "/id"
+  - "/groupTypes"
+  - "/owners"
+  - "/members"
+  - "/memberOf"
+  - "/membershipRule"
+  - "/membershipRuleProcessingState"
+  - "/mailNickname"
+  - "/onPremisesDomainName"
+  - "/onPremisesLastSyncDateTime"
+  - "/onPremisesNetBiosName"
+  - "/onPremisesSamAccountName"
+  - "/onPremisesSecurityIdentifier"
+  - "/onPremisesSyncEnabled"
+  - "/organizationId"
+  - "/securityEnabled"
+  - "/visibility"
+  - "/writebackConfiguration"
+cypher: |
+  UNWIND $batch as row
+  WITH row
+      MERGE (obj:{{ LABELS.GraphObject }} {id: row.id})
+      SET obj:{{ LABELS.GraphGroup }}
+      SET obj += {
+          displayName: row.displayName,
+          groupTypes: row.groupTypes,
+          membershipRule: row.membershipRule,
+          membershipRuleProcessingState: row.membershipRuleProcessingState,
+          mailNickname: row.mailNickname,
+          onPremisesDomainName: row.onPremisesDomainName,
+          onPremisesLastSyncDateTime: row.onPremisesLastSyncDateTime,
+          onPremisesNetBiosName: row.onPremisesNetBiosName,
+          onPremisesSamAccountName: row.onPremisesSamAccountName,
+          onPremisesSecurityIdentifier: row.onPremisesSecurityIdentifier,
+          onPremisesSyncEnabled: row.onPremisesSyncEnabled,
+          organizationId: row.organizationId,
+          securityEnabled: row.securityEnabled,
+          visibility: row.visibility,
+          writebackConfigurationEnabled: row.writebackConfiguration.isEnabled,
+          writebackConfigurationGroupType: row.writebackConfiguration.onPremisesGroupType
+      }
+
+  // Unwind memberOf
+  WITH row, obj
+      CALL {
+          WITH row, obj
+          UNWIND coalesce(row.memberOf, []) AS memberOf
+          MERGE (m:{{ LABELS.GraphObject }} {id: memberOf})
+          MERGE (obj)-[:{{ REL.MEMBER_OF }}]->(m)
+          RETURN count(*) AS _
+      }
+
+  // Unwind owners
+  WITH row, obj
+      CALL {
+          WITH row, obj
+          UNWIND coalesce(row.owners, []) AS owner
+          MERGE (o:{{ LABELS.GraphObject }} {id: owner})
+          MERGE (o)-[:{{ REL.OWNS }}]->(obj)
+          RETURN count(*) AS _
+      }
+  
+  // Unwind members
+  WITH row, obj
+      CALL {
+          WITH row, obj
+          UNWIND coalesce(row.members, []) AS member
+          MERGE (m:{{ LABELS.GraphObject }} {id: member})
+          MERGE (m)-[:{{ REL.MEMBER_OF }}]->(obj)
+          RETURN count(*) AS _
+      }
+  RETURN count(*) AS _

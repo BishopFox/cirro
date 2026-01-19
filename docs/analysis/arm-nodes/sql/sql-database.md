@@ -15,5 +15,24 @@ Represents Azure SQL databases.
 - `maxSizeBytes` - Maximum size in bytes
 - `status` - Database status
 
-**Relationships:**
-- `HAS_DB` ← SqlServer
+## Relationships
+
+### Incoming
+
+- **SqlServer** → `HAS_DB` → **SqlDatabase** - Parent SQL server
+
+## Examples
+
+```cypher
+// Find databases by service tier
+MATCH (db:SqlDatabase)
+WHERE db.currentServiceObjectiveName = "S0"
+RETURN db.name, db.maxSizeBytes, db.status
+```
+
+```cypher
+// Find databases with encryption enabled
+MATCH (db:SqlDatabase)
+WHERE db.isInfraEncryptionEnabled = true
+RETURN db.name, db.collation, db.creationDate
+```

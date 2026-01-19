@@ -1,0 +1,20 @@
+name: "Subscriptions"
+label: "{{ LABELS.Subscription }}"
+table_name: "subscriptions"
+properties:
+  - "/id"
+  - "/displayName"
+  - "/authorizationSource"
+  - "/state"
+  - "/subscriptionId"
+cypher: |
+    UNWIND $batch AS row
+    MERGE (s:{{ LABELS.ArmResource }} {id: row.id})
+    SET s:{{ LABELS.Subscription }}
+    SET s += {
+        displayName : row.displayName,
+        authorizationSource : row.authorizationSource,
+        state : row.state,
+        subscriptionId : row.subscriptionId,
+        tenantId : row.tenantId
+    }

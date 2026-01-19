@@ -1,0 +1,30 @@
+name: "Directory Roles"
+label: "{{ LABELS.GraphRole }}"
+table_name: "directoryRoles"
+properties:
+  - "/displayName"
+  - "/id"
+  - "/description"
+  - "/roleTemplateId"
+  - "/members"
+cypher: |
+  UNWIND $batch as row
+  WITH row
+      MERGE (obj:{{ LABELS.GraphObject }} {id: row.id})
+      SET obj:{{ LABELS.GraphRole }}
+      SET obj += {
+          displayName: row.displayName,
+          description: row.description,
+          roleTemplateId: row.roleTemplateId
+      }
+
+  // Unwind members
+  WITH row, obj
+      CALL {
+          WITH row, obj
+          UNWIND coalesce(row.members, []) AS member
+          MERGE (m:{{ LABELS.GraphObject }} {id: member})
+          MERGE (m)-[:{{ REL.HAS_ROLE }}]->(obj)
+          RETURN count(*) AS _
+      }
+  RETURN count(*) AS _

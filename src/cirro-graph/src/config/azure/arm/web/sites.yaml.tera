@@ -1,0 +1,34 @@
+name: "Sites"
+label: "{{ LABELS.WebSite }}"
+table_name: "resources"
+resource_type: "microsoft.web/sites"
+properties:
+  - "/id"
+  - "/properties"
+cypher: |
+  UNWIND $batch AS row  
+  MERGE (obj:{{ LABELS.ArmResource }} {id: row.id})
+  SET obj:{{ LABELS.WebSite }}
+  SET obj += {
+      adminEnabled: row.properties.adminEnabled,
+      clientCertEnabled: row.properties.clientCertEnabled,
+      clientCertMode: row.properties.clientCertMode,
+      defaultHostName: row.properties.defaultHostName,
+      enabled: row.properties.enabled,
+      enabledHostNames: row.properties.enabledHostNames,
+      ftpUsername: row.properties.ftpUsername,
+      ftpsHostName: row.properties.ftpsHostName,
+      httpsOnly: row.properties.httpsOnly,
+      inFlightFeatures: row.properties.inFlightFeatures,
+      inboundIpAddress: row.properties.inboundIpAddress,
+      inboundIpv6Address: row.properties.inboundIpv6Address,
+      ipMode: row.properties.ipMode,
+      keyVaultReferenceIdentity: row.properties.keyVaultReferenceIdentity,
+      kind: row.properties.kind,
+      lastModifiedTimeUtc: row.properties.lastModifiedTimeUtc,
+      publicNetworkAccess: row.properties.publicNetworkAccess,
+      linuxFxVersion: row.properties.siteConfig.linuxFxVersion
+  }
+
+  MERGE (sf:{{ LABELS.ServerFarm }} {id: row.properties.serverFarmId})
+  MERGE (sf)-[:HOSTS_SITE]->(obj)

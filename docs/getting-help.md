@@ -16,9 +16,9 @@ If you can't find a solution in the documentation:
 
 **Authentication Problems**
 
-- Verify your Azure credentials are valid
+- Verify your cloud platform credentials are valid (currently Azure)
 - Check that your account has appropriate permissions
-- Ensure you're targeting the correct Azure cloud environment
+- Ensure you're targeting the correct cloud environment
 
 **Database Connection Issues**
 

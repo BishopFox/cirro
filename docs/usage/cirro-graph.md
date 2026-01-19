@@ -1,6 +1,6 @@
 # cirro-graph CLI Reference
 
-The `cirro-graph` command-line tool is responsible for loading data collected by `cirro` into graph databases (Neo4j or Memgraph).
+The `cirro-graph` command-line tool is responsible for loading data collected by `cirro` from various cloud platforms into Neo4j graph database. Currently supports data collected from Azure environments.
 
 !!! warning "Security Notice"
 
@@ -15,7 +15,7 @@ The `cirro-graph` tool performs the following operations:
 
 1. **Database Connection** - Establishes connection to the target graph database
 2. **Schema Setup** - Creates necessary constraints and indexes
-3. **Data Transformation** - Converts SQLite data to graph format
+3. **Data Transformation** - Converts SQLite platform data to graph format
 4. **Node Creation** - Creates nodes for all collected entities
 5. **Relationship Creation** - Establishes relationships between entities
 6. **Index Optimization** - Optimizes database performance
@@ -28,7 +28,7 @@ cirro-graph --file <DATABASE_FILE> [OPTIONS]
 
 `--file` / `-f`
 
-Path to the Cirro results database file (SQLite) created by the `cirro` tool.
+Path to the Cirro results database file (SQLite) created by the `cirro` tool containing cloud platform data.
 
 ```bash
 cirro-graph --file cirro_output.db
@@ -50,7 +50,6 @@ cirro-graph --file cirro_output.db --graph-type neo4j
 **Values:**
 
 - `neo4j` (default) - Neo4j graph database
-- `memgraph` - Memgraph graph database
 
 **Default:** `neo4j`
 
@@ -104,7 +103,6 @@ cirro-graph --file cirro_output.db --db-name mydatabase
 **Default Behavior:**
 
 - For Neo4j: defaults to `neo4j`
-- For Memgraph: defaults to `memgraph`
 
 `--debug`
 
@@ -123,9 +121,6 @@ cirro-graph --file cirro_output.db --debug
 ```bash
 # Basic ingestion to Neo4j with defaults
 cirro-graph --file cirro_output.db
-
-# Basic ingestion to Memgraph
-cirro-graph --file cirro_output.db --graph-type memgraph
 ```
 
 ### Neo4j Examples
@@ -161,33 +156,7 @@ cirro-graph \
   --password mypassword
 ```
 
-### Memgraph Examples
 
-```bash
-# Memgraph with default settings
-cirro-graph \
-  --file cirro_output.db \
-  --graph-type memgraph \
-  --server bolt://localhost:7687 \
-  --user memgraph \
-  --password memgraph
-
-# Memgraph with custom server
-cirro-graph \
-  --file cirro_output.db \
-  --graph-type memgraph \
-  --server bolt://memgraph.example.com:7687 \
-  --user admin \
-  --password secret
-
-# Memgraph with TLS
-cirro-graph \
-  --file cirro_output.db \
-  --graph-type memgraph \
-  --server bolt+s://memgraph.example.com:7687 \
-  --user admin \
-  --password secret
-```
 
 ### Debug and Troubleshooting
 
@@ -213,13 +182,6 @@ cirro-graph \
 ```bash
 # Local Neo4j (default)
 cirro-graph --file cirro_output.db
-
-# Local Memgraph
-cirro-graph \
-  --file cirro_output.db \
-  --graph-type memgraph \
-  --user memgraph \
-  --password memgraph
 ```
 
 ### Docker Containers
@@ -231,14 +193,6 @@ cirro-graph \
   --server bolt://localhost:7687 \
   --user neo4j \
   --password password
-
-# Memgraph in Docker
-cirro-graph \
-  --file cirro_output.db \
-  --graph-type memgraph \
-  --server bolt://localhost:7687 \
-  --user memgraph \
-  --password memgraph
 ```
 
 ### Cloud Instances

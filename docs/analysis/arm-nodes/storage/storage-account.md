@@ -22,3 +22,19 @@ Represents Azure storage accounts.
 - `minimumTlsVersion` - Minimum TLS version
 - `networkAclBypass` - Network ACL bypass setting
 - `networkAclDefaultAction` - Network ACL default action
+
+## Examples
+
+```cypher
+// Find storage accounts with public blob access allowed
+MATCH (sa:StorageAccount)
+WHERE sa.allowBlobPublicAccess = true
+RETURN sa.name, sa.publicNetworkAccess, sa.accessTier
+```
+
+```cypher
+// Find storage accounts by access tier
+MATCH (sa:StorageAccount)
+WHERE sa.accessTier = "Hot"
+RETURN sa.name, sa.primaryLocation, sa.minimumTlsVersion
+```

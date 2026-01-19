@@ -2,14 +2,16 @@
 
 ## Overview
 
-[Cirro](https://github.com/bishopfox/cirro) is a comprehensive security research tool that helps penetration testers and security researchers map and analyze Azure cloud environments. By collecting data from both Azure Resource Manager (ARM) APIs and Microsoft Graph APIs, Cirro provides a complete picture of your target environment's attack surface.
+[Cirro](https://github.com/bishopfox/cirro) is a comprehensive security research tool designed to help penetration testers and security researchers map and analyze cloud environments across multiple platforms. While currently focused on Azure cloud environments, Cirro is architected for extensibility to support additional cloud platforms in the future.
+
+For Azure environments, Cirro collects data from both Azure Resource Manager (ARM) APIs and Microsoft Graph APIs, providing a complete picture of your target environment's attack surface.
 
 <div class="grid" markdown>
 
 <div class="card" markdown>
 **:material-rocket-launch: [Quick Start](usage/quick-start.md)**
 
-Get up and running with Cirro in minutes. Install, collect, and analyze your first Azure environment.
+Get up and running with Cirro in minutes. Install, collect, and analyze your first cloud environment (currently Azure).
 </div>
 
 </div>
@@ -18,13 +20,13 @@ Get up and running with Cirro in minutes. Install, collect, and analyze your fir
 
 !!! warning "Security Notice"
 
-    Cirro is designed for authorized security testing and research. Ensure you have proper permissions before running against any Azure environment. 
+    Cirro is designed for authorized security testing and research. Ensure you have proper permissions before running against any cloud environment. 
 
 ## Key Features
 
 === "Data Collection"
 
-    **Comprehensive Coverage**
+    **Comprehensive Coverage (Azure)**
     
     - :material-microsoft-azure: **Azure Resources**: VMs, storage accounts, Key Vaults, and more
     - :material-account-group: **Identity Data**: Users, groups, applications, service principals
@@ -32,7 +34,7 @@ Get up and running with Cirro in minutes. Install, collect, and analyze your fir
 
 === "Authentication"
 
-    **Flexible Authentication**
+    **Flexible Authentication (Azure)**
     
     - :material-console: **Azure CLI**: Use existing CLI authentication
     - :material-key-variant: **Access Tokens**: Direct token authentication
@@ -44,7 +46,7 @@ Get up and running with Cirro in minutes. Install, collect, and analyze your fir
     **Database Compatibility**
     
     - :simple-neo4j: **Neo4j**: Industry-standard graph database
-    - :material-graph: **Memgraph**: High-performance in-memory graph database
+
 
 ## Use Case Examples
 
@@ -52,7 +54,7 @@ Get up and running with Cirro in minutes. Install, collect, and analyze your fir
 
 <div class="admonition example" markdown>
 <p class="admonition-title">Security Testing</p>
-Map Azure environments during security assessments to identify:
+Map cloud environments during security assessments to identify:
 
 - Privilege escalation paths
 - Misconfigured permissions
@@ -63,7 +65,7 @@ Map Azure environments during security assessments to identify:
 
 <div class="admonition example" markdown>
 <p class="admonition-title">Defensive Security</p>
-Strengthen Azure environments by analyzing:
+Strengthen cloud environments by analyzing:
 
 - Security posture assessment
 - Access control validation

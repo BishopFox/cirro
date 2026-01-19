@@ -1,0 +1,22 @@
+name: "Virtual Machine Applications"
+label: "{{ LABELS.VMApplication }}"
+table_name: "resources"
+resource_type: "microsoft.compute/virtualmachines/vmapplications"
+properties:
+  - "/id"
+  - "/properties"
+cypher: |
+    UNWIND $batch AS row
+    MERGE (obj:{{ LABELS.ArmResource }} {id: row.id})
+    SET obj:{{ LABELS.VMApplication }}
+    SET obj += {
+        enableAutomaticUpgrade: row.properties.enableAutomaticUpgrade,
+        manuallyManaged: row.properties.manuallyManaged,
+        treatFailureAsDeploymentFailure: row.properties.treatFailureAsDeploymentFailure
+    }
+    MERGE (o:{{ LABELS.GalleryAppVersion }} {id: row.properties.packageReferenceId})
+    MERGE (obj)-[:{{ REL.REFERENCES_PACKAGE }}]->(o)
+
+    WITH obj, row, split(toLower(obj.id), '/vmapplications/')[0] AS vmId
+        MERGE (vm:{{ LABELS.VirtualMachine }} {id: vmId})
+        MERGE (vm)-[:{{ REL.HAS_VMAPP }}]->(obj)

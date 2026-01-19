@@ -1,6 +1,6 @@
 # Cirro CLI Reference
 
-The `cirro` command-line tool is the primary data collection component that gathers information from Azure Resource Manager (ARM) APIs and Microsoft Graph APIs.
+The `cirro` command-line tool is the primary data collection component designed to gather information from multiple cloud platforms. Currently, it supports Azure environments by collecting data from Azure Resource Manager (ARM) APIs and Microsoft Graph APIs.
 
 ## Synopsis
 
@@ -117,7 +117,7 @@ cirro collect user-pass --upn <UPN> --password <PASSWORD> [OPTIONS]
 
 ### Enumeration Mode (`--mode`)
 
-Specifies which APIs to query during data collection.
+Specifies which APIs to query during Azure data collection.
 
 - `both` (default) - Collect from both ARM and Graph APIs
 - `arm` - Collect only from Azure Resource Manager APIs
@@ -167,16 +167,16 @@ cirro enrich --storage-keys azcli
 ### Basic Collection
 
 ```bash
-# Collect using Azure CLI authentication
+# Collect from Azure using CLI authentication
 cirro collect azcli
 
-# Collect with specific tenant and subscription
+# Collect with specific Azure tenant and subscription
 cirro collect azcli --tenant-id "12345678-1234-1234-1234-123456789012" --subscription-id "87654321-4321-4321-4321-210987654321"
 
-# Collect only ARM resources
+# Collect only Azure ARM resources
 cirro collect azcli --mode arm
 
-# Collect only Graph data
+# Collect only Azure Graph data
 cirro collect azcli --mode graph
 ```
 
@@ -241,8 +241,8 @@ cirro collect azcli \
 
 ## Notes
 
-- Ensure you have appropriate permissions for the target Azure environment
+- Ensure you have appropriate permissions for the target cloud environment (currently Azure)
 - The access token authentication mode has limited options compared to other methods
 - Debug mode provides detailed logging but may expose sensitive information
 - The output database file will be created if it doesn't exist
-- Some authentication modes require specific Azure AD application configurations
+- Some authentication modes require specific cloud provider application configurations (Azure AD for Azure)

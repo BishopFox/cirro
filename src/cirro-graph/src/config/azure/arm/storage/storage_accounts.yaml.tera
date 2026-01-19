@@ -1,0 +1,28 @@
+name: "Storage Accounts"
+label: "{{ LABELS.StorageAccount }}"
+table_name: "resources"
+resource_type: "microsoft.storage/storageaccounts"
+properties:
+  - "/id"
+  - "/properties"
+cypher: |
+    UNWIND $batch AS row
+    MERGE (obj:{{ LABELS.ArmResource }} {id: row.id})
+    SET obj:{{ LABELS.StorageAccount }}
+    SET obj += {
+        accessTier: row.properties.accessTier,
+        primaryLocation : row.properties.primaryLocation,
+        publicNetworkAccess: row.properties.publicNetworkAccess,
+        defaultToOAuthAuthentication: row.properties.defaultToOAuthAuthentication,
+        allowBlobPublicAccess: row.properties.allowBlobPublicAccess,
+        allowCrossTenantReplication: row.properties.allowCrossTenantReplication,
+        allowSharedKeyAccess: row.properties.allowSharedKeyAccess,
+        largeFileSharesState : row.properties.largeFileSharesState,
+        isLocalUserEnabled: row.properties.isLocalUserEnabled,
+        isNfsV3Enabled: row.properties.isNfsV3Enabled,
+        isSftpEnabled: row.properties.isSftpEnabled,
+        supportsHttpsTrafficOnly: row.properties.supportsHttpsTrafficOnly,
+        minimumTlsVersion: row.properties.minimumTlsVersion,
+        networkAclBypass: row.properties.networkAcls.bypass,
+        networkAclDefaultAction: row.properties.networkAcls.defaultAction
+    }

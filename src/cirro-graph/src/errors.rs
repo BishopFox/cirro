@@ -47,4 +47,16 @@ pub enum CirroGraphError {
 
     #[error("WHOIS error: {0}")]
     WhoisError(String),
+
+    #[error("UTF-8 error: {0}")]
+    Utf8(#[from] std::str::Utf8Error),
+
+    #[error("YAML parse error: {0}")]
+    Yaml(#[from] serde_yaml::Error),
+
+    #[error("Tera error: {0}")]
+    Tera(#[from] tera::Error),
+
+    #[error("Config error: {0}")]
+    Config(String),
 }

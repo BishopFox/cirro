@@ -6,6 +6,10 @@ name = "cirro"
 repository.workspace = true
 version.workspace = true
 
+[features]
+azure = []
+default = ["azure"]
+
 [dependencies]
 async-trait = "0.1.78"
 base64 = "0.22.1"

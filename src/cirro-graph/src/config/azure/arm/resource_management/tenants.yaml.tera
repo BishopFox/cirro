@@ -1,0 +1,28 @@
+name: "Tenants"
+label: "{{ LABELS.Tenant }}"
+table_name: "tenants"
+properties:
+  - "/id"
+  - "/displayName"
+  - "/tenantId"
+  - "/countryCode"
+  - "/domains"
+  - "/defaultDomain"
+  - "/tenantCategory"
+  - "/tenantType"
+cypher: |
+    UNWIND $batch AS row
+    MERGE (obj:{{ LABELS.Tenant }} {id: row.id})
+    SET obj += {
+        displayName: row.displayName,
+        tenantId: row.tenantId,
+        countryCode: row.countryCode,
+        domains: row.domains,
+        defaultDomain: row.defaultDomain,
+        tenantCategory: row.tenantCategory,
+        tenantType: row.tenantType
+    }
+
+    MERGE (o:{{ LABELS.GraphOrg }} {id: row.tenantId})
+    MERGE (o)-[:{{ REL.ASSOCIATED_WITH }}]->(t)
+    MERGE (t)-[:{{ REL.ASSOCIATED_WITH }}]->(o)

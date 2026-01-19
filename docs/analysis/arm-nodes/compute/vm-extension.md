@@ -11,6 +11,7 @@ Represents virtual machine extensions (not an ARM resource itself).
 - `type` - Extension type
 - `location` - Extension location
 - `provisioningState` - Provisioning state
+- `settings` - Extension settings
 
 **Relationships:**
 - `HAS_EXTENSION` ← VirtualMachine

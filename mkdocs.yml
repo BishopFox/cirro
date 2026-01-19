@@ -75,6 +75,7 @@ nav:
         - analysis/arm-nodes.md
         - Automation:
           - analysis/arm-nodes/automation/automation-account.md
+          - analysis/arm-nodes/automation/automation-runbook.md
         - Azure Arc:
           - analysis/arm-nodes/azurearc/arc-sql-server.md
           - analysis/arm-nodes/azurearc/arc-sql-database.md
@@ -107,6 +108,7 @@ nav:
           - analysis/arm-nodes/datafactory/data-factory.md
         - Event Grid:
           - analysis/arm-nodes/eventgrid/event-grid-topic.md
+          - analysis/arm-nodes/eventgrid/event-grid-system-topic.md
         - Hybrid Compute:
           - analysis/arm-nodes/hybridcompute/hybrid-machine.md
           - analysis/arm-nodes/hybridcompute/hybrid-ip-address.md
@@ -154,9 +156,13 @@ nav:
         - analysis/additional-nodes/network-route.md
         - analysis/additional-nodes/nsg-rule.md
         - analysis/additional-nodes/private-link-service-connection.md
+        - analysis/additional-nodes/runbook-parameter.md
         - analysis/additional-nodes/storage-account-key.md
         - analysis/additional-nodes/subnet.md
         - analysis/additional-nodes/verified-domain.md
+        - analysis/additional-nodes/hybrid-extension.md
+        - analysis/additional-nodes/hybrid-ip-address.md
+        - analysis/additional-nodes/service-principal-endpoint.md
       - Edges:
         - RBAC:
           - analysis/edges/rbac-roles.md
