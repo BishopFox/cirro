@@ -13,11 +13,11 @@ installers = ["shell", "powershell"]
 targets = [
     "aarch64-apple-darwin",
     "aarch64-unknown-linux-gnu",
-    "aarch64-unknown-windows-gnullvm",
+    "aarch64-unknown-linux-musl",
     "x86_64-apple-darwin",
     "x86_64-unknown-linux-gnu",
     "x86_64-unknown-linux-musl",
-    "x86_64-pc-windows-gnullvm",
+    "x86_64-pc-windows-msvc",
 ]
 # Path that installers should place binaries in
 install-path = "CARGO_HOME"
@@ -25,7 +25,5 @@ install-path = "CARGO_HOME"
 install-updater = false
 
 [dist.github-custom-runners]
-aarch64-pc-windows-gnullvm.container = "ghcr.io/rust-cross/cargo-zigbuild"
 aarch64-unknown-linux-gnu.container = "ghcr.io/rust-cross/cargo-zigbuild"
 aarch64-unknown-linux-musl.container = "ghcr.io/rust-cross/cargo-zigbuild"
-x86_64-pc-windows-gnullvm.container = "ghcr.io/rust-cross/cargo-zigbuild"

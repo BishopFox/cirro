@@ -10,9 +10,9 @@ You can check out the [Documentation](https://crispy-adventure-qre5p1k.pages.git
 - **Multi-source Data Collection**: Gather data from both Azure Resource Manager (ARM) APIs and Microsoft Graph APIs
 - **Flexible Authentication**: Support for multiple authentication methods including Azure CLI, access tokens, client secrets, and client certificates
 - **Graph Database Support**: Compatible with both **Neo4j** and **Memgraph** graph databases
-- **Data Enrichment**: Additional data collection capabilities for storage accounts, containers, and blob analysis
 - **Multi-cloud Support**: Works with Azure Public, China, Germany, and US Government clouds
 - **Cross-platform**: Available for Windows, macOS, and Linux
+- **Modular Design**: Optional Azure functionality through feature flags
 
 ## Architecture
 
@@ -20,6 +20,29 @@ Cirro consists of two main components:
 
 - **`cirro`**: The primary data collection tool that gathers information from Azure and Microsoft Graph APIs
 - **`cirro-graph`**: The ingestion tool that loads collected data into graph databases (Neo4j or Memgraph)
+
+## CLI Structure
+
+Cirro uses a hierarchical command structure organized by platform:
+
+```
+cirro <platform> <action> <auth-method> [options]
+```
+
+### Azure Commands
+
+All Azure-related functionality is accessed through the `az` subcommand:
+
+```bash
+# Data collection
+cirro az collect <auth-method> [options]
+
+# Available authentication methods:
+cirro az collect azcli           # Azure CLI authentication
+cirro az collect client-secret   # Client ID and secret
+cirro az collect client-cert     # Client certificate
+cirro az collect access-token    # Pre-obtained access token
+```
 
 ## Installation
 
@@ -29,8 +52,6 @@ Download the latest release for your platform from the [releases page](https://g
 
 ### Building from Source
 
-Requires Rust 1.70 or later:
-
 ```bash
 git clone https://github.com/bishopfox/cirro.git
 cd cirro
@@ -39,124 +60,38 @@ cargo build --release
 
 Binaries will be available in `target/release/`.
 
-## Quick Start
+#### Build Options
 
-### 1. Data Collection
-
-Collect Azure and Entra ID data using one of the supported authentication methods:
-
-#### Azure CLI Authentication
-Uses existing Azure CLI authentication. Ensure you're logged in with `az login` before running.
+By default, Cirro includes all functionality. To build with specific platform support:
 
 ```bash
-# Collect from current Azure CLI context
-cirro collect azcli
+# Build without Azure features
+cargo build --release --no-default-features
+
+# Build with specific features
+cargo build --release --features azure
 ```
 
-#### Client Secret Authentication
-Authenticate using an Azure AD application's client ID and secret.
-```bash
-cirro collect client-secret \
-  --client-id <CLIENT_ID> \
-  --client-secret <CLIENT_SECRET> \
-  --tenant-id <TENANT_ID>
-```
+## Data Ingestion
 
-#### Client Certificate Authentication
-Authenticate using an Azure AD application's client ID and certificate (PEM format).
-```bash
-cirro collect client-cert \
-  --client-id <CLIENT_ID> \
-  --certificate <CERT_PATH> \
-  --tenant-id <TENANT_ID>
-```
-
-#### Access Token Authentication
-Use a pre-obtained access token.
-```bash
-cirro collect access-token --token <ACCESS_TOKEN>
-```
-
-### 2. Data Ingestion
-
-Both Neo4j and Memgraph are supported as graph database backends. Set up your preferred database before ingesting data. There are two docker-compose files in the [tools](/tools/) directory to assist with containerized databases. `cirro-graph` defaults to Neo4j configurations but you might consider using Memgraph for faster ingestion and performance.
+Neo4j is supported as the graph database. There are two docker-compose files in the [tools](/tools/) directory to assist with containerized databases. 
 
 After collecting data, ingest it into your graph database:
 
-#### Neo4j
 ```bash
 cirro-graph --file cirro_output.db
 ```
 
-#### Memgraph
-```bash
-cirro-graph --file cirro_output.db \
-  --graph-type memgraph \
-  --user cirro \
-  --password cirro
-```
+## Dashboard
 
-## Collection Modes
+CirroDash can be located here: [https://github.com/bishopfox/cirrodash](CirroDash)
 
-- **`both`** (default): Collect from both ARM and Graph APIs
-- **`arm`**: Collect only from Azure Resource Manager APIs
-- **`graph`**: Collect only from Microsoft Graph APIs
-
-## Data Enrichment
-
-Cirro supports additional data enrichment capabilities that will add additional nodes to the graph:
-
-```bash
-# Collect storage account keys
-cirro enrich azcli --storage-keys
-```
-
-## Cloud Support
-
-Cirro supports multiple Azure cloud environments:
-
-- **`public`** (default): Azure Public Cloud
-- **`china`**: Azure China Cloud
-- **`germany`**: Azure Germany Cloud
-- **`usgov`**: Azure US Government Cloud
-
-```bash
-cirro collect azcli --cloud usgov
-```
-
-## Configuration Options
-
-### Global Options
-
-- `--output-path`: Specify the output SQLite database file (default: `cirro_output.db`)
-- `--debug`: Enable debug logging for troubleshooting
-- `--mode`: Set collection mode (`both`, `arm`, `graph`)
-- `--cloud`: Specify Azure cloud environment
-
-### Ingestion Options
-
-- `--file`: Path to the Cirro SQLite database
-- `--graph-type`: Database type (`neo4j` or `memgraph`)
-- `--server`: Database server URL (bolt://, neo4j://, etc.)
-- `--user`: Database username
-- `--password`: Database password
-- `--db-name`: Database name (optional, defaults based on graph type)
-
-
-## Troubleshooting
-
-### Common Issues
-
-1. **Authentication Failures**: Ensure your credentials have appropriate permissions
-2. **HTTP 429 Errors**: This can occur in large Azure environments. Retries are implemented in code but please report if you are still getting these errors.
-3. **Access Token Authentication**: Ensure your access token has the appropriate audience for Microsoft Graph or Azure Resource Manager.
-   
-### Debug Mode
+## Debug Mode
 
 Enable debug logging for detailed information:
 
 ```bash
-cirro collect azcli --debug
+cirro az collect azcli --debug
 cirro-graph --file cirro_output.db --debug
 ```
 
