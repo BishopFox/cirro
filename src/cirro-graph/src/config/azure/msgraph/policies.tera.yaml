@@ -16,9 +16,9 @@ column_mappings:
   id: "_uniq_id"
 cypher: |
   UNWIND $batch as row
-  WITH row, split(row._uniq_id, '/policies/')[0] AS organization_id, split(row._uniq_id, '/policies/')[1] AS policy_type
+  WITH row, split(row._uniq_id, '_')[0] AS organization_id, split(row._uniq_id, '_')[1] AS policy_type
       MERGE (obj:{{ LABELS.GraphPolicy }} {id: row._uniq_id})
-      WITH obj, organization_id, policy_type, row WHERE policy_type = "authorizationpolicy"
+      WITH obj, organization_id, policy_type, row WHERE toLower(policy_type) = "authorizationpolicy"
           SET obj += {
               displayName: row.displayName,
               description: row.description,
@@ -28,7 +28,11 @@ cypher: |
               allowedToSignUpEmailBasedSubscriptions: row.allowedToSignUpEmailBasedSubscriptions,
               allowedToUseSSPR: row.allowedToUseSSPR,
               blockMsolPowerShell: row.blockMsolPowerShell,
-              defaultUserRolePermissions: row.defaultUserRolePermissions,
+              allowedToCreateApps: row.defaultUserRolePermissions.allowedToCreateApps,
+              allowedToCreateSecurityGroups: row.defaultUserRolePermissions.allowedToCreateSecurityGroups,
+              allowedToCreateTenants: row.defaultUserRolePermissions.allowedToCreateTenants,
+              allowedToReadOtherUsers: row.defaultUserRolePermissions.allowedToReadOtherUsers,
+              allowedToReadBitlockerKeysForOwnedDevices: row.defaultUserRolePermissions.allowedToReadBitlockerKeysForOwnedDevices,
               policyType: policy_type
           }
           WITH obj, row, organization_id
