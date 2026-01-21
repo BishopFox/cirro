@@ -1,7 +1,4 @@
 {
-  "files.associations": {
-    "*.yaml.tera": "yaml"
-  },
   "yaml.schemas": {
     "https://squidfunk.github.io/mkdocs-material/schema.json": "mkdocs.yml"
   },
@@ -15,5 +12,6 @@
     "tag:yaml.org,2002:python/object/apply:pymdownx.slugs.slugify mapping"
   ],
   "python-envs.defaultEnvManager": "ms-python.python:system",
-  "python-envs.pythonProjects": []
+  "python-envs.pythonProjects": [],
+  "rust-analyzer.cargo.target": "x86_64-pc-windows-gnu"
 }

@@ -1,8 +1,11 @@
 use crate::errors::CirroGraphError;
 use crate::specs::azure::types::CirroAzureIngestSpec;
 use crate::specs::configs::{
-    ALL_SPEC_CONFIGS, CIRRO_AZURE_SPEC_CONFIG, GenericSpecSource, SpecConfig,
+    ALL_SPEC_CONFIGS, CIRRO_AZURE_SPEC_CONFIG, CIRRO_POST_PROCESSING_SPEC_CONFIG,
+    CIRRO_TAILSCALE_STATUS_SPEC_CONFIG, GenericSpecSource, SpecConfig,
 };
+use crate::specs::core::types::CirroPostProcessingSpec;
+use crate::specs::tailscale::types::CirroTailscaleStatusIngestSpec;
 
 #[cfg(debug_assertions)]
 use crate::specs::sources::GenericDiskSpecSource;
@@ -14,6 +17,8 @@ use crate::specs::sources::GenericEmbeddedSpecSource;
 #[derive(Debug)]
 pub struct SpecRegistry {
     pub cirro_azure_specs: Vec<CirroAzureIngestSpec>,
+    pub cirro_tailscale_status_specs: Vec<CirroTailscaleStatusIngestSpec>,
+    pub cirro_post_processing_specs: Vec<CirroPostProcessingSpec>,
 }
 
 /// Unified spec loader that can load any spec type
@@ -28,7 +33,7 @@ impl SpecLoader {
         #[cfg(debug_assertions)]
         {
             Box::new(GenericDiskSpecSource::new(
-                concat!(env!("CARGO_MANIFEST_DIR"), "/src/config/constants.yml").to_string(),
+                concat!(env!("CARGO_MANIFEST_DIR"), "/src/config/constants.yaml").to_string(),
             ))
         }
 
@@ -73,11 +78,31 @@ impl SpecLoader {
             }
         };
 
+        let cirro_tailscale_status_specs = match Self::load(&CIRRO_TAILSCALE_STATUS_SPEC_CONFIG) {
+            Ok(specs) => specs,
+            Err(e) => {
+                errors.push(e);
+                Vec::new()
+            }
+        };
+
+        let cirro_post_processing_specs = match Self::load(&CIRRO_POST_PROCESSING_SPEC_CONFIG) {
+            Ok(specs) => specs,
+            Err(e) => {
+                errors.push(e);
+                Vec::new()
+            }
+        };
+
         if !errors.is_empty() {
             return Err(CirroGraphError::MultipleErrors(errors));
         }
 
-        Ok(SpecRegistry { cirro_azure_specs })
+        Ok(SpecRegistry {
+            cirro_azure_specs,
+            cirro_tailscale_status_specs,
+            cirro_post_processing_specs,
+        })
     }
 
     /// Get information about all registered spec configurations

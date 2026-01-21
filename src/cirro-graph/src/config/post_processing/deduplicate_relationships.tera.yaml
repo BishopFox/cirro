@@ -1,0 +1,19 @@
+name: "Remove Duplicate Relationships"
+label: "PostProcessingDeduplicateRelationships"
+priority: 1
+cypher: |
+  CALL apoc.periodic.iterate(
+    "
+    MATCH (a)-[r]->(b)
+    WITH a, b, type(r) AS relType, collect(r) AS rels
+    WHERE size(rels) > 1
+    RETURN rels
+    ",
+    "
+    WITH rels
+    CALL apoc.refactor.mergeRelationships(rels, {properties: 'overwrite'})
+    YIELD rel
+    RETURN 1
+    ",
+    {batchSize: 200, parallel: false}
+  )

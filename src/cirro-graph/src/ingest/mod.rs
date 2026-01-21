@@ -1,6 +1,7 @@
 pub mod ingestor;
 
 pub mod azure;
+pub mod tailscale;
 
 const CREATE_CONSTRAINT_QUERY: &str =
     "CREATE CONSTRAINT IF NOT EXISTS FOR (n:{}) REQUIRE n.id IS UNIQUE ";

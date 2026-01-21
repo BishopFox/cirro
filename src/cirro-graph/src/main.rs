@@ -5,6 +5,7 @@ pub mod specs;
 pub mod styles;
 
 use crate::errors::CirroGraphError;
+use crate::ingest::ingestor::IngestType;
 use crate::logger::setup_logger;
 
 use clap::{ColorChoice, Parser, Subcommand, crate_authors, crate_description, crate_version};
@@ -32,7 +33,11 @@ struct Cli {
 enum Commands {
     /// Ingest data into the database
     Ingest {
-        /// Cirro results database file
+        /// Type of data to ingest
+        #[arg(short, long, value_enum)]
+        r#type: IngestType,
+
+        /// File to ingest
         #[arg(short, long, value_name = "FILE", value_hint = clap::ValueHint::FilePath)]
         file: PathBuf,
 
@@ -79,6 +84,7 @@ _|"""""|_|"""""|_|"""""|_|"""""|_|"""""|
     println!("{}", logo.blue().bold());
     match cli.command {
         Commands::Ingest {
+            r#type,
             file,
             server,
             user,
@@ -104,7 +110,8 @@ _|"""""|_|"""""|_|"""""|_|"""""|_|"""""|
 
             // Create the ingestor
             let mut ingestor =
-                ingest::ingestor::CirroIngestor::new(file, server, user, password, db_name).await;
+                ingest::ingestor::CirroIngestor::new(r#type, file, server, user, password, db_name)
+                    .await;
 
             // Run the ingestor
             if let Err(e) = ingestor.run().await {

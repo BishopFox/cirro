@@ -163,6 +163,11 @@ nav:
         - analysis/additional-nodes/hybrid-extension.md
         - analysis/additional-nodes/hybrid-ip-address.md
         - analysis/additional-nodes/service-principal-endpoint.md
+      - Tailscale Nodes:
+        - analysis/tailscale-nodes.md
+        - analysis/tailscale-nodes/ts-user.md
+        - analysis/tailscale-nodes/ts-device.md
+        - analysis/tailscale-nodes/ts-tailnet.md
       - Edges:
         - RBAC:
           - analysis/edges/rbac-roles.md
@@ -216,6 +221,7 @@ nav:
         - analysis/edges/registered-owner.md
         - analysis/edges/registered-user.md
         - analysis/edges/represented-by.md
+        - analysis/edges/same-user.md
         - analysis/edges/uses.md
         - analysis/edges/verified-domain.md
   - Dashboard: analysis/dashboard.md

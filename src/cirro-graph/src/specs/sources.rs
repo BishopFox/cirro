@@ -116,7 +116,7 @@ impl GenericEmbeddedSpecSource {
         for path in EmbeddedConfig::iter() {
             let path = path.as_ref();
 
-            if !(path.ends_with(".yaml.tera")) {
+            if !(path.ends_with(".tera.yaml")) {
                 continue;
             }
 

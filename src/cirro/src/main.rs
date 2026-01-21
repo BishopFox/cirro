@@ -1,13 +1,18 @@
-#[cfg(feature = "azure")]
-pub mod azure;
 pub mod errors;
 pub mod logger;
 pub mod styles;
 
 #[cfg(feature = "azure")]
+pub mod azure;
+#[cfg(feature = "azure")]
 use crate::azure::cli::{AzureCommands, handle_azure_command};
-use crate::errors::CirroError;
 
+#[cfg(feature = "tailscale")]
+pub mod tailscale;
+#[cfg(feature = "tailscale")]
+use crate::tailscale::cli::{TailscaleCommands, handle_tailscale_command};
+
+use crate::errors::CirroError;
 use clap::{ColorChoice, Parser, Subcommand, crate_authors, crate_description, crate_version};
 use colored::Colorize;
 use tokio;
@@ -30,11 +35,17 @@ struct Cli {
 
 #[derive(Debug, Subcommand)]
 enum Commands {
-    /// Azure cloud platform commands
+    /// Azure commands
     #[cfg(feature = "azure")]
     Az {
         #[command(subcommand)]
         command: AzureCommands,
+    },
+    /// Tailscale commands
+    #[cfg(feature = "tailscale")]
+    Ts {
+        #[command(subcommand)]
+        command: TailscaleCommands,
     },
 }
 
@@ -57,6 +68,10 @@ _|"""""|_|"""""|_|"""""|_|"""""|_|"""""|
         #[cfg(feature = "azure")]
         Some(Commands::Az { command }) => {
             handle_azure_command(command).await?;
+        }
+        #[cfg(feature = "tailscale")]
+        Some(Commands::Ts { command }) => {
+            handle_tailscale_command(command).await?;
         }
         None => {}
     }

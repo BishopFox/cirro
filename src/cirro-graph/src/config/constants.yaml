@@ -46,6 +46,7 @@ REL:
   REGISTERED_OWNER: "REGISTERED_OWNER"
   REGISTERED_USER: "REGISTERED_USER"
   REPRESENTED_BY: "REPRESENTED_BY"
+  SAME_USER: "SAME_USER"  
   VERIFIED_DOMAIN: "VERIFIED_DOMAIN"
 
 LABELS:
@@ -109,7 +110,7 @@ LABELS:
   GraphPolicy: "GraphPolicy"
   GraphAdministrativeUnit: "GraphAdministrativeUnit"
 
-  # Specialized node types. These are not ARM resources or Graph objects but are created from properties of those.
+  # Specialized Azure node types. These are not ARM resources or Graph objects but are created from properties of those.
   BastionIPConfig: "BastionIPConfig"
   Certificate: "Certificate"
   ClientSecret: "ClientSecret"
@@ -131,4 +132,9 @@ LABELS:
   Subnet: "Subnet"
   VerifiedDomain: "VerifiedDomain"
   VMExtension: "VMExtension"
+
+  # Tailscale nodes
+  TSUser: "TSUser"
+  TSDevice: "TSDevice"
+  TSTailnet: "TSTailnet"
   

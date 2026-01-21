@@ -46,9 +46,9 @@ rust-project.json
 *.db
 *.db-wal
 *.db-shm
+cirro_*.json
 
 *.bin
 neo4j/
 site/
 *.csv
-enrich_config.json

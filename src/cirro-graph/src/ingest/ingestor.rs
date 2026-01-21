@@ -1,12 +1,22 @@
 use crate::errors::CirroGraphError;
 use crate::specs::{SpecLoader, SpecRegistry, SpecTrait};
 
+use clap::ValueEnum;
 use log::{debug, info};
 use neo4rs::*;
 use rusqlite::{Connection, Result};
 use std::path::PathBuf;
 
+#[derive(Debug, Clone, ValueEnum)]
+pub enum IngestType {
+    /// Azure data ingestion
+    Az,
+    /// Tailscale status data ingestion  
+    TsStatus,
+}
+/// Ingestor used by all Cirro ingestion processes to manage database connections and ingestion specs
 pub struct CirroIngestor {
+    pub r#type: IngestType,
     pub file: PathBuf,
     pub host: String,
     pub user: String,
@@ -21,6 +31,7 @@ pub struct CirroIngestor {
 impl std::fmt::Debug for CirroIngestor {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("CirroIngestor")
+            .field("type", &self.r#type)
             .field("file", &self.file)
             .field("host", &self.host)
             .field("user", &self.user)
@@ -34,6 +45,7 @@ impl std::fmt::Debug for CirroIngestor {
 
 impl CirroIngestor {
     pub async fn new(
+        r#type: IngestType,
         file: PathBuf,
         host: String,
         user: String,
@@ -78,6 +90,7 @@ impl CirroIngestor {
             .ok();
 
         let ingestor = CirroIngestor {
+            r#type,
             file: file,
             host,
             user,
@@ -97,9 +110,10 @@ impl CirroIngestor {
         debug!("Ingestion started at: {:?}", start_time);
 
         // Run the main ingestion logic
-        self.process_cirro_azure_ingest().await?;
-
-        info!("Running final post-processing merge query");
+        match self.r#type {
+            IngestType::Az => self.process_cirro_azure_ingest().await?,
+            IngestType::TsStatus => self.process_cirro_tailscale_status_ingest().await?,
+        }
         self.generic_post_process().await?;
 
         // Calculate the total time taken for the ingestion process
@@ -142,75 +156,21 @@ impl CirroIngestor {
     }
 
     async fn generic_post_process(&mut self) -> Result<(), CirroGraphError> {
-        debug!("Running post-processing merge query");
+        info!("Running post-processing queries");
 
-        // Merge all nodes with the same ID - Neo4j only
-        debug!("Merging nodes with the same ID in Neo4j");
-        let _ = self
-            .graph
-            .run(query(
-                r#"CALL apoc.periodic.iterate(
-                    "
-                    MATCH (n)
-                    WHERE n.id IS NOT NULL
-                    WITH toLower(n.id) AS lid, collect(n) AS ns
-                    WHERE size(ns) > 1
-                    RETURN lid, ns
-                    ",
-                    "
-                    WITH lid, ns
-                    WITH
-                        head(ns) AS keep,
-                        tail(ns) AS dups,
-                        lid
-                    UNWIND dups AS d
-                    CALL apoc.refactor.mergeNodes(
-                        [keep, d],
-                        {properties:'combine', mergeRels:true}
-                    )
-                    YIELD node
-                    // Ensure ids are lowercase
-                    SET keep.id = lid
-                    RETURN 1
-                    ",
-                    {batchSize: 200, parallel: false}
-                    );"#,
-            ))
-            .await
-            .map_err(|e| {
+        // First, order the post-processing specs by priority
+        let mut post_processing_specs = self.specs.cirro_post_processing_specs.clone();
+        post_processing_specs.sort_by_key(|spec| spec.priority);
+
+        for spec in &post_processing_specs {
+            debug!("Running post-processing spec: {}", spec.name);
+            let _ = self.graph.run(query(&spec.cypher)).await.map_err(|e| {
                 CirroGraphError::DatabaseError(format!(
-                    "Failed to run post-processing merge query: {}",
-                    e
+                    "Failed to execute post-processing query for spec {}: {}",
+                    spec.name, e
                 ))
             })?;
-        // Merge relationships with the same label from the same node
-        debug!("Merging relationships with the same label in Neo4j");
-        let _ = self
-            .graph
-            .run(query(
-                r#"CALL apoc.periodic.iterate(
-                    "
-                    MATCH (a)-[r]->(b)
-                    WITH a, b, type(r) AS relType, collect(r) AS rels
-                    WHERE size(rels) > 1
-                    RETURN rels
-                    ",
-                    "
-                    WITH rels
-                    CALL apoc.refactor.mergeRelationships(rels, {properties: 'overwrite'})
-                    YIELD rel
-                    RETURN 1
-                    ",
-                    {batchSize: 200, parallel: false}
-                );"#,
-            ))
-            .await
-            .map_err(|e| {
-                CirroGraphError::DatabaseError(format!(
-                    "Failed to run post-processing merge relationships query: {}",
-                    e
-                ))
-            })?;
+        }
         Ok(())
     }
 }

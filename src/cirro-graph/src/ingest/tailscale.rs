@@ -1,0 +1,73 @@
+use crate::errors::CirroGraphError;
+use crate::ingest::ingestor::CirroIngestor;
+use log::{debug, info};
+use neo4rs::{BoltType, query};
+use serde_json;
+
+impl CirroIngestor {
+    /// Process ingest
+    pub async fn process_cirro_tailscale_status_ingest(&self) -> Result<(), CirroGraphError> {
+        info!(
+            "Starting Cirro Tailscale Status ingest on file: {:?}",
+            self.file.as_path().file_name().unwrap()
+        );
+
+        // Load the JSON data from the specified file
+        let data = tokio::fs::read_to_string(&self.file)
+            .await
+            .map_err(|e| CirroGraphError::IoError(e))?;
+
+        // Parse the JSON data
+        let json_data: serde_json::Value = serde_json::from_str(&data).map_err(|e| {
+            CirroGraphError::InvalidData(format!(
+                "Failed to parse Tailscale status JSON data: {}",
+                e
+            ))
+        })?;
+
+        let bolt_data = BoltType::try_from(json_data)?;
+
+        // Process the Tailscale Status spec
+        // Status could be written in one spec, but multiple specs are used for modularity
+        for spec in &self.specs.cirro_tailscale_status_specs {
+            // If spec has a label, create constraints and indexes
+            if !spec.label.is_empty() {
+                self.create_constraints_and_indexes(spec).await?;
+            } else {
+                debug!(
+                    "Spec {} does not have a label defined, skipping constraint and index creation",
+                    spec.name
+                );
+            }
+
+            let mut result = self
+                .graph
+                .execute(query(&spec.cypher).param("status_data", bolt_data.clone()))
+                .await
+                .map_err(|e| {
+                    CirroGraphError::DatabaseError(format!(
+                        "Failed to execute Tailscale status ingest query: {}",
+                        e
+                    ))
+                })?;
+
+            // There is only row returned with count
+            let row = result.next().await.map_err(|e| {
+                CirroGraphError::DatabaseError(format!(
+                    "Error retrieving row from Tailscale status ingest query: {}",
+                    e
+                ))
+            })?;
+
+            let count: i64 = row.unwrap().get("count").map_err(|e| {
+                CirroGraphError::DatabaseError(format!(
+                    "Failed to convert count to i64 in Tailscale status ingest query result: {}",
+                    e
+                ))
+            })?;
+
+            info!("Processed {:>5} : {}", count, spec.name);
+        }
+        Ok(())
+    }
+}
