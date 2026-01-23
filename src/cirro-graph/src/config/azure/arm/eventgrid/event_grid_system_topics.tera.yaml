@@ -7,9 +7,10 @@ properties:
   - "/properties"
 cypher: |
     UNWIND $batch AS row
-    MERGE (obj:{{ LABELS.ArmResource }} {id: row.id})
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
     SET obj:{{ LABELS.EventGridTopic }}
     SET obj += {
         topicType: row.properties.topicType
     }
-    MERGE (obj)-[:{{ REL.HAS_SOURCE }}]->(s:{{ LABELS.ArmResource }} {id: row.properties.source})
+    MERGE (s:{{ LABELS.ArmResource }} {id: toLower(row.properties.source)})
+    MERGE (obj)-[:{{ REL.HAS_SOURCE }}]->(s)

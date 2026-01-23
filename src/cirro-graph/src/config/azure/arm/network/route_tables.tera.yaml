@@ -7,7 +7,7 @@ properties:
   - "/properties"
 cypher: |
     UNWIND $batch AS row
-    MERGE (obj:{{ LABELS.ArmResource }} {id: row.id})
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
     SET obj:{{ LABELS.RouteTable }}
     SET obj += {
         disableBgpRoutePropagation: row.properties.disableBgpRoutePropagation
@@ -17,7 +17,7 @@ cypher: |
         CALL {
             WITH obj, row
             UNWIND coalesce(row.properties.routes, []) AS route
-            MERGE (r:{{ LABELS.NetworkRoute }} {id: route.id})
+            MERGE (r:{{ LABELS.NetworkRoute }} {id: toLower(route.id)})
             SET r += {
                 name: route.name,
                 type: route.type,
@@ -34,7 +34,7 @@ cypher: |
         CALL {
             WITH obj, row
             UNWIND coalesce(row.properties.subnets, []) AS subnet
-            MERGE (s:{{ LABELS.Subnet }} {id: subnet.id})
+            MERGE (s:{{ LABELS.Subnet }} {id: toLower(subnet.id)})
             MERGE (s)-[:{{ REL.HAS_ROUTE_TABLE }}]->(obj)
             RETURN count(*) AS _
         }

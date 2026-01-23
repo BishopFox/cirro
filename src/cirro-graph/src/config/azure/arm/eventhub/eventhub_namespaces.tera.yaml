@@ -1,0 +1,21 @@
+name: "Event Hub Namespaces"
+label: "{{ LABELS.EventHubNamespace }}"
+table_name: "resources"
+resource_type: "microsoft.eventhub/namespaces"
+properties:
+  - "/id"
+  - "/properties"
+cypher: |
+    UNWIND $batch AS row
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+    SET obj:{{ LABELS.EventHubNamespace }}
+    SET obj += {
+        createdAt: row.properties.createdAt,
+        disableLocalAuth: row.properties.disableLocalAuth,
+        isAutoInflateEnabled: row.properties.isAutoInflateEnabled,
+        kafkaEnabled: row.properties.kafkaEnabled,
+        publicNetworkAccess: row.properties.publicNetworkAccess,
+        serviceBusEndpoint: row.properties.serviceBusEndpoint,
+        status: row.properties.status,
+        updatedAt: row.properties.updatedAt
+    }

@@ -7,7 +7,7 @@ properties:
   - "/properties"
 cypher: |
    UNWIND $batch AS row
-    MERGE (obj:{{ LABELS.ArmResource }} {id: row.id})
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
     SET obj:{{ LABELS.ArcSqlDB }}
     SET obj += {
         dataFileSizeMB: row.properties.dataFileSizeMB,
@@ -18,5 +18,5 @@ cypher: |
     }
 
     WITH obj, row, split(toLower(obj.id), '/databases/')[0] AS serverId
-        MERGE (s:{{ LABELS.ArcSqlServer }} {id: serverId})
+        MERGE (s:{{ LABELS.ArcSqlServer }} {id: toLower(serverId)})
         MERGE (s)-[:{{ REL.HAS_DB }}]->(obj)

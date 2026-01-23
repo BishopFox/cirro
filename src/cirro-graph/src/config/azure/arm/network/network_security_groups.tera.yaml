@@ -7,14 +7,14 @@ properties:
   - "/properties"
 cypher: |
     UNWIND $batch AS row
-    MERGE (obj:{{ LABELS.ArmResource }} {id: row.id})
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
     SET obj:{{ LABELS.NetworkSecurityGroup }}
 
     WITH obj, row
         CALL {
             WITH obj, row
             UNWIND coalesce(row.properties.defaultSecurityRules, []) AS rule
-            MERGE (r:{{ LABELS.NSGRule }} {id: rule.id})
+            MERGE (r:{{ LABELS.NSGRule }} {id: toLower(rule.id)})
             SET r += {
                 name: rule.name,
                 type: rule.type,
@@ -40,7 +40,7 @@ cypher: |
         CALL {
             WITH obj, row
             UNWIND coalesce(row.properties.securityRules, []) AS rule
-            MERGE (r:{{ LABELS.NSGRule }} {id: rule.id})
+            MERGE (r:{{ LABELS.NSGRule }} {id: toLower(rule.id)})
             SET r += {
                 name: rule.name,
                 type: rule.type,

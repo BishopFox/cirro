@@ -7,7 +7,7 @@ properties:
   - "/properties"
 cypher: |
   UNWIND $batch AS row  
-  MERGE (obj:{{ LABELS.ArmResource }} {id: row.id})
+  MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
   SET obj:{{ LABELS.WebSite }}
   SET obj += {
       adminEnabled: row.properties.adminEnabled,
@@ -23,12 +23,16 @@ cypher: |
       inboundIpAddress: row.properties.inboundIpAddress,
       inboundIpv6Address: row.properties.inboundIpv6Address,
       ipMode: row.properties.ipMode,
+      repositorySiteName: row.properties.repositorySiteName,
       keyVaultReferenceIdentity: row.properties.keyVaultReferenceIdentity,
       kind: row.properties.kind,
       lastModifiedTimeUtc: row.properties.lastModifiedTimeUtc,
       publicNetworkAccess: row.properties.publicNetworkAccess,
-      linuxFxVersion: row.properties.siteConfig.linuxFxVersion
+      linuxFxVersion: row.properties.siteConfig.linuxFxVersion,
+      windowsFxVersion: row.properties.siteConfig.windowsFxVersion,
+      sku: row.properties.siteConfig.sku
   }
 
-  MERGE (sf:{{ LABELS.ServerFarm }} {id: row.properties.serverFarmId})
+  MERGE (sf:{{ LABELS.ArmResource }} {id: toLower(row.properties.serverFarmId)})
+  SET sf:{{ LABELS.ServerFarm }}
   MERGE (sf)-[:HOSTS_SITE]->(obj)

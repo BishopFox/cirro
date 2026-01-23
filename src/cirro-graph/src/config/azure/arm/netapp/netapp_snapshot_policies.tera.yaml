@@ -1,0 +1,37 @@
+name: "NetApp Account Snapshot Policies"
+label: "{{ LABELS.NetAppSnapshotPolicy }}"
+table_name: "resources"
+resource_type: "microsoft.netapp/netappaccounts/snapshotpolicies"
+properties:
+  - "/id"
+  - "/properties"
+cypher: |
+    UNWIND $batch AS row
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+    SET obj:{{ LABELS.NetAppSnapshotPolicy }}
+    SET obj += {
+        enabled: row.properties.enabled,
+        // Schedules are maps based on daily, hourly, weekly, monthly
+        dailyScheduleHour: row.properties.dailySchedule.hour,
+        dailyScheduleMinute: row.properties.dailySchedule.minute,
+        dailyScheduleSnapshotsToKeep: row.properties.dailySchedule.snapshotsToKeep,
+        hourlyScheduleMinute: row.properties.hourlySchedule.minute,
+        hourlyScheduleSnapshotsToKeep: row.properties.hourlySchedule.snapshotsToKeep,
+        weeklyScheduleDay: row.properties.weeklySchedule.day,
+        weeklyScheduleHour: row.properties.weeklySchedule.hour,
+        weeklyScheduleMinute: row.properties.weeklySchedule.minute,
+        weeklyScheduleSnapshotsToKeep: row.properties.weeklySchedule.snapshotsToKeep,
+        monthlyScheduleDaysOfMonth: row.properties.monthlySchedule.daysOfMonth,
+        monthlyScheduleHour: row.properties.monthlySchedule.hour,
+        monthlyScheduleMinute: row.properties.monthlySchedule.minute,
+        monthlyScheduleSnapshotsToKeep: row.properties.monthlySchedule.snapshotsToKeep
+    }
+
+    // Create relationship to NetApp Account
+    WITH obj, row, split(toLower(row.id), '/snapshotpolicies/')[0] AS netappAccountId
+    MERGE (n:{{ LABELS.ArmResource }} {id: toLower(netappAccountId)})
+    SET n:{{ LABELS.NetAppAccount }}
+    MERGE (n)-[:{{ REL.HAS_POLICY }}]->(obj)
+
+
+    RETURN count(*) AS _

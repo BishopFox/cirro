@@ -26,5 +26,5 @@ cypher: |
     SET keep.id = lid
     RETURN 1
   ",
-  {batchSize: 200, parallel: false}
+  {batchSize: 1000, parallel: false}
   )

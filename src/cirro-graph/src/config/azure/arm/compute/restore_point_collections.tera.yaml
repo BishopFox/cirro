@@ -7,8 +7,8 @@ properties:
   - "/properties"
 cypher: |
     UNWIND $batch AS row
-    MERGE (obj:{{ LABELS.ArmResource }} {id: row.id})
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
     SET obj:{{ LABELS.RestorePointCollection }}
 
-    MERGE (vm:{{ LABELS.ArmResource }} {id: row.properties.source.id})
+    MERGE (vm:{{ LABELS.ArmResource }} {id: toLower(row.properties.source.id)})
     MERGE (vm)-[:{{ REL.HAS_RESTOREPOINT }}]->(obj)

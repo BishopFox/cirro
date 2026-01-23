@@ -5,7 +5,7 @@ cypher: |
 
   // First create the tailnet node
   // Older tailnet IDs use domains but should be unique
-  MERGE (tn:{{ LABELS.TSTailnet }} {id: data.CurrentTailnet.Name})
+  MERGE (tn:{{ LABELS.TSTailnet }} {id: toLower(data.CurrentTailnet.Name)})
   SET tn += {
       magicDnsEnabled: data.CurrentTailnet.MagicDNSEnabled,
       magicDnsSuffix: data.CurrentTailnet.MagicDNSSuffix

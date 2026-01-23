@@ -9,7 +9,7 @@ properties:
   - "/subscriptionId"
 cypher: |
     UNWIND $batch AS row
-    MERGE (s:{{ LABELS.ArmResource }} {id: row.id})
+    MERGE (s:{{ LABELS.ArmResource }} {id: toLower(row.id)})
     SET s:{{ LABELS.Subscription }}
     SET s += {
         displayName : row.displayName,

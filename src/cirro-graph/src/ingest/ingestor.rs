@@ -164,7 +164,7 @@ impl CirroIngestor {
 
         for spec in &post_processing_specs {
             debug!("Running post-processing spec: {}", spec.name);
-            let _ = self.graph.run(query(&spec.cypher)).await.map_err(|e| {
+            let _ = self.graph.execute(query(&spec.cypher)).await.map_err(|e| {
                 CirroGraphError::DatabaseError(format!(
                     "Failed to execute post-processing query for spec {}: {}",
                     spec.name, e

@@ -7,7 +7,7 @@ properties:
   - "/properties"
 cypher: |
     UNWIND $batch AS row
-    MERGE (obj:{{ LABELS.ArmResource }} {id: row.id})
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
     SET obj:{{ LABELS.Gallery }}
     SET obj += {
         uniqueName: row.properties.identifier.uniqueName

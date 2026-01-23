@@ -1,0 +1,26 @@
+name: "NetApp Account Capacity Pools"
+label: "{{ LABELS.NetAppCapacityPool }}"
+table_name: "resources"
+resource_type: "microsoft.netapp/netappaccounts/capacitypools"
+properties:
+  - "/id"
+  - "/properties"
+cypher: |
+    UNWIND $batch AS row
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+    SET obj:{{ LABELS.NetAppCapacityPool }}
+    SET obj += {
+        coolAccess: row.properties.coolAccess,
+        encryptionType: row.properties.encryptionType,
+        poolId: row.properties.poolId,
+        qosType: row.properties.qosType,
+        size: row.properties.size
+    }
+
+    // Create relationship to NetApp Account
+    WITH obj, row, split(toLower(row.id), '/capacitypools/')[0] AS netappAccountId
+    MERGE (n:{{ LABELS.ArmResource }} {id: toLower(netappAccountId)})
+    SET n:{{ LABELS.NetAppAccount }}
+    MERGE (n)-[:{{ REL.CONTAINS }}]->(obj)
+    
+    RETURN count(*) AS _

@@ -15,7 +15,7 @@ properties:
 cypher: |
   UNWIND $batch as row
   WITH row
-      MERGE (obj:{{ LABELS.GraphObject }} {id: row.id})
+      MERGE (obj:{{ LABELS.GraphObject }} {id: toLower(row.id)})
       SET obj:{{ LABELS.GraphAdministrativeUnit }}
       SET obj += {
           description: row.description,
@@ -32,7 +32,7 @@ cypher: |
       CALL {
           WITH row, obj
           UNWIND coalesce(row.members, []) AS member
-          MERGE (m:{{ LABELS.GraphObject }} {id: member})
+          MERGE (m:{{ LABELS.GraphObject }} {id: toLower(member)})
           MERGE (m)-[:{{ REL.MEMBER_OF }}]->(obj)
           RETURN count(*) AS _
       }
@@ -42,8 +42,8 @@ cypher: |
       CALL {
           WITH row, obj
           UNWIND coalesce(row.scopedRoleMembers, []) AS scopedRole
-          MERGE (sr:{{ LABELS.GraphObject }} {id: scopedRole.roleMemberInfo.id})
-          MERGE (role:{{ LABELS.GraphObject }} {id: scopedRole.roleId})
+          MERGE (sr:{{ LABELS.GraphObject }} {id: toLower(scopedRole.roleMemberInfo.id)})
+          MERGE (role:{{ LABELS.GraphObject }} {id: toLower(scopedRole.roleId)})
           MERGE (sr)-[:{{ REL.HAS_ROLE }}]->(role)
           WITH sr, role, obj, scopedRole
           MERGE (sr)-[r:{{ REL.HAS_ROLE }}]->(obj)

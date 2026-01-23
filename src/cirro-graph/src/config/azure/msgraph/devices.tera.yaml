@@ -22,7 +22,7 @@ properties:
 cypher: |
   UNWIND $batch as row
   WITH row
-      MERGE (obj:{{ LABELS.GraphObject }} {id: row.id})
+      MERGE (obj:{{ LABELS.GraphObject }} {id: toLower(row.id)})
       SET obj:{{ LABELS.GraphDevice }}
       SET obj += {
           displayName: row.displayName,
@@ -45,7 +45,7 @@ cypher: |
       CALL {
           WITH row, obj
           UNWIND coalesce(row.memberOf, []) AS memberOf
-          MERGE (m:{{ LABELS.GraphObject }} {id: memberOf})
+          MERGE (m:{{ LABELS.GraphObject }} {id: toLower(memberOf)})
           MERGE (obj)-[:{{ REL.MEMBER_OF }}]->(m)
           RETURN count(*) AS _
       }
@@ -55,7 +55,7 @@ cypher: |
       CALL {
           WITH row, obj
           UNWIND coalesce(row.registeredUsers, []) AS registeredUser
-          MERGE (u:{{ LABELS.GraphObject }} {id: registeredUser})
+          MERGE (u:{{ LABELS.GraphObject }} {id: toLower(registeredUser)})
           MERGE (u)-[:{{ REL.REGISTERED_USER }}]->(obj)
           RETURN count(*) AS _
       }
@@ -65,7 +65,7 @@ cypher: |
       CALL {
           WITH row, obj
           UNWIND coalesce(row.registeredOwners, []) AS registeredOwner
-          MERGE (o:{{ LABELS.GraphObject }} {id: registeredOwner})
+          MERGE (o:{{ LABELS.GraphObject }} {id: toLower(registeredOwner)})
           MERGE (o)-[:{{ REL.REGISTERED_OWNER }}]->(obj)
           RETURN count(*) AS _
       }

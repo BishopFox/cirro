@@ -14,7 +14,7 @@ properties:
 cypher: |
   UNWIND $batch as row
   WITH row
-      MERGE (obj:{{ LABELS.GraphOrg }} {id: row.id})
+      MERGE (obj:{{ LABELS.GraphOrg }} {id: toLower(row.id)})
       SET obj += {
           businessPhones: row.businessPhones,
           createdDateTime: row.createdDateTime,
@@ -24,7 +24,7 @@ cypher: |
           onPremisesSyncEnabled: row.onPremisesSyncEnabled,
           tenantType: row.tenantType
       }
-      MERGE (tenant:{{ LABELS.Tenant }} {id: '/tenants/' + row.id})
+      MERGE (tenant:{{ LABELS.Tenant }} {id: toLower('/tenants/' + row.id)})
       MERGE (obj)-[:{{ REL.ASSOCIATED_WITH }}]->(tenant)
       MERGE (tenant)-[:{{ REL.ASSOCIATED_WITH }}]->(obj)
 

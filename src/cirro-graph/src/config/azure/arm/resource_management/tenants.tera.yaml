@@ -12,7 +12,7 @@ properties:
   - "/tenantType"
 cypher: |
     UNWIND $batch AS row
-    MERGE (obj:{{ LABELS.Tenant }} {id: row.id})
+    MERGE (obj:{{ LABELS.Tenant }} {id: toLower(row.id)})
     SET obj += {
         displayName: row.displayName,
         tenantId: row.tenantId,
@@ -23,6 +23,6 @@ cypher: |
         tenantType: row.tenantType
     }
 
-    MERGE (o:{{ LABELS.GraphOrg }} {id: row.tenantId})
+    MERGE (o:{{ LABELS.GraphOrg }} {id: toLower(row.tenantId)})
     MERGE (o)-[:{{ REL.ASSOCIATED_WITH }}]->(t)
     MERGE (t)-[:{{ REL.ASSOCIATED_WITH }}]->(o)

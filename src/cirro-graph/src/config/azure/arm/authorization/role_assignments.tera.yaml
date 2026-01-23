@@ -10,7 +10,7 @@ properties:
   - "/properties"
 cypher: |
     UNWIND $batch AS row
-    MERGE (o:GraphObject {id: row.properties.principalId})
+    MERGE (o:GraphObject {id: toLower(row.properties.principalId)})
     MERGE (r:ArmResource {id: toLower(row.properties.scope)})
     WITH o, r, row
         CALL apoc.merge.relationship(o, replace(row.roleName, " ", ""), {}, {}, r) YIELD rel

@@ -8,7 +8,7 @@ properties:
   - "/properties"
 cypher: |
     UNWIND $batch AS row
-    MERGE (obj:{{ LABELS.ArmResource }} {id: row.id})
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
     SET obj:{{ LABELS.VirtualMachine }}
     SET obj += {
         vmSize: row.properties.hardwareProfile.vmSize,
@@ -25,7 +25,7 @@ cypher: |
         CALL {
             WITH obj, row
             UNWIND coalesce(row.properties.networkProfile.networkInterfaces, []) AS nic
-            MERGE (n:{{ LABELS.ArmResource }} {id: nic.id})
+            MERGE (n:{{ LABELS.ArmResource }} {id: toLower(nic.id)})
             SET n:{{ LABELS.NetworkInterface }}
             MERGE (obj)-[:{{ REL.HAS_NIC }}]->(n)
             RETURN count(*) AS _
@@ -36,9 +36,8 @@ cypher: |
             WITH obj, row
             UNWIND coalesce(row.resources, []) AS resource
             WITH obj, resource WHERE toLower(resource.type) = "microsoft.compute/virtualmachines/extensions"
-                MERGE (e:{{ LABELS.VMExtension }} {id: resource.id})
+                MERGE (e:{{ LABELS.VMExtension }} {id: toLower(resource.id)})
                 SET e += {
-                    id: resource.id,
                     name: resource.name,
                     type: resource.type,
                     location: resource.location,

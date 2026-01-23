@@ -7,7 +7,7 @@ properties:
   - "/properties"
 cypher: |
     UNWIND $batch AS row
-    MERGE (obj:{{ LABELS.VMExtension }} {id: row.id})
+    MERGE (obj:{{ LABELS.VMExtension }} {id: toLower(row.id)})
 
     SET obj += {
         autoUpgradeMinorVersion: row.properties.autoUpgradeMinorVersion,

@@ -102,13 +102,18 @@ nav:
           - analysis/arm-nodes/compute/restore-point-collection.md
           - analysis/arm-nodes/compute/ssh-public-key.md
           - analysis/arm-nodes/compute/vm-extension.md
+          - analysis/arm-nodes/compute/compute-image.md
+          - analysis/arm-nodes/compute/vm-run-command.md
         - Container:
           - analysis/arm-nodes/container/container-registry.md
+          - analysis/arm-nodes/container/container-group.md
         - Data Factory:
           - analysis/arm-nodes/datafactory/data-factory.md
         - Event Grid:
           - analysis/arm-nodes/eventgrid/event-grid-topic.md
           - analysis/arm-nodes/eventgrid/event-grid-system-topic.md
+        - Event Hub:
+          - analysis/arm-nodes/eventhub/eventhub-namespace.md
         - Hybrid Compute:
           - analysis/arm-nodes/hybridcompute/hybrid-machine.md
           - analysis/arm-nodes/hybridcompute/hybrid-ip-address.md
@@ -130,6 +135,11 @@ nav:
           - analysis/arm-nodes/network/route-table.md
           - analysis/arm-nodes/network/subnet.md
           - analysis/arm-nodes/network/virtual-network.md
+        - NetApp:
+          - analysis/arm-nodes/netapp/netapp-account.md
+          - analysis/arm-nodes/netapp/netapp-capacity-pool.md
+          - analysis/arm-nodes/netapp/netapp-volume.md
+          - analysis/arm-nodes/netapp/netapp-snapshot-policy.md
         - Recovery Services:
           - analysis/arm-nodes/recoveryservices/recovery-vault.md
         - SQL:
@@ -147,22 +157,26 @@ nav:
         - analysis/additional-nodes/bastion-ip-config.md
         - analysis/additional-nodes/certificate.md
         - analysis/additional-nodes/client-secret.md
+        - analysis/additional-nodes/container.md
         - analysis/additional-nodes/custom-dns-config.md
         - analysis/additional-nodes/federated-identity-credential.md
         - analysis/additional-nodes/graph-app-role.md
+        - analysis/additional-nodes/hybrid-extension.md
+        - analysis/additional-nodes/hybrid-ip-address.md
         - analysis/additional-nodes/ip-config.md
+        - analysis/additional-nodes/netapp-account-ad-domain.md
+        - analysis/additional-nodes/netapp-volume-mount.md
         - analysis/additional-nodes/network-gateway.md
         - analysis/additional-nodes/network-peering.md
         - analysis/additional-nodes/network-route.md
         - analysis/additional-nodes/nsg-rule.md
         - analysis/additional-nodes/private-link-service-connection.md
         - analysis/additional-nodes/runbook-parameter.md
+        - analysis/additional-nodes/service-principal-endpoint.md
         - analysis/additional-nodes/storage-account-key.md
         - analysis/additional-nodes/subnet.md
         - analysis/additional-nodes/verified-domain.md
-        - analysis/additional-nodes/hybrid-extension.md
-        - analysis/additional-nodes/hybrid-ip-address.md
-        - analysis/additional-nodes/service-principal-endpoint.md
+        - analysis/additional-nodes/vm-run-command-parameter.md
       - Tailscale Nodes:
         - analysis/tailscale-nodes.md
         - analysis/tailscale-nodes/ts-user.md
@@ -187,6 +201,7 @@ nav:
         - analysis/edges/has-endpoint.md
         - analysis/edges/has-entity.md
         - analysis/edges/has-extension.md
+        - analysis/edges/has-gallery-image.md
         - analysis/edges/has-gateway.md
         - analysis/edges/has-identity.md
         - analysis/edges/has-ip.md
@@ -203,6 +218,7 @@ nav:
         - analysis/edges/has-route.md
         - analysis/edges/has-route-table.md
         - analysis/edges/has-rule.md
+        - analysis/edges/has-run-command.md
         - analysis/edges/has-runbook.md
         - analysis/edges/has-snapshot.md
         - analysis/edges/has-source.md
@@ -213,8 +229,10 @@ nav:
         - analysis/edges/has-vmapp.md
         - analysis/edges/hosts.md
         - analysis/edges/hosts-site.md
+        - analysis/edges/is-deployed.md
         - analysis/edges/manages.md
         - analysis/edges/member-of.md
+        - analysis/edges/mounts.md
         - analysis/edges/owns.md
         - analysis/edges/peer-to.md
         - analysis/edges/references-package.md

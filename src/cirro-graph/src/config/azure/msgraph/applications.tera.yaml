@@ -20,7 +20,7 @@ properties:
 cypher: |
   UNWIND $batch as row
   WITH row
-      MERGE (obj:{{ LABELS.GraphObject }} {id: row.id})
+      MERGE (obj:{{ LABELS.GraphObject }} {id: toLower(row.id)})
       SET obj:{{ LABELS.GraphApplication }}
       SET obj += {
           displayName: row.displayName,
@@ -39,7 +39,7 @@ cypher: |
       CALL {
           WITH row, obj
           UNWIND coalesce(row.appRoles, []) AS appRole
-          MERGE (ar:{{ LABELS.GraphAppRole }} {id: appRole.id})
+          MERGE (ar:{{ LABELS.GraphAppRole }} {id: toLower(appRole.id)})
           SET ar += {
               allowedMemberTypes: appRole.allowedMemberTypes,
               description: appRole.description,
@@ -59,7 +59,7 @@ cypher: |
       CALL {
           WITH row, obj
           UNWIND coalesce(row.appRoleAssignedTo, []) AS assignedTo
-          MERGE (o:{{ LABELS.GraphObject }} {id: assignedTo.principalId})
+          MERGE (o:{{ LABELS.GraphObject }} {id: toLower(assignedTo.principalId)})
           MERGE (o)-[a:{{ REL.APPROLE }} {appRoleId: assignedTo.appRoleId}]->(obj)
           RETURN count(*) AS _
       }
@@ -69,7 +69,7 @@ cypher: |
       CALL {
           WITH row, obj
           UNWIND coalesce(row.owners, []) AS owner
-          MERGE (o:{{ LABELS.GraphObject }} {id: owner})
+          MERGE (o:{{ LABELS.GraphObject }} {id: toLower(owner)})
           MERGE (o)-[:{{ REL.OWNS }}]->(obj)
           RETURN count(*) AS _
       }
@@ -79,7 +79,7 @@ cypher: |
       CALL {
           WITH row, obj
           UNWIND coalesce(row.federatedIdentityCredentials, []) AS fidc
-          MERGE (f:{{ LABELS.FederatedIdentityCredential }} {id: fidc.id})
+          MERGE (f:{{ LABELS.FederatedIdentityCredential }} {id: toLower(fidc.id)})
           SET f += {
               audiences: fidc.audiences,
               description: fidc.description,

@@ -1,0 +1,45 @@
+name: "ExpressRoute Circuits"
+label: "{{ LABELS.ExpressRouteCircuit }}"
+table_name: "resources"
+resource_type: "microsoft.network/expressroutecircuits"
+properties:
+  - "/id"
+  - "/properties"
+cypher: |
+  UNWIND $batch AS row  
+  MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+  SET obj:{{ LABELS.ExpressRouteCircuit }}
+  SET obj += {
+      allowClassicOperations: row.properties.allowClassicOperations,
+      allowGlobalReach: row.properties.allowGlobalReach,
+      authorizationKey: row.properties.authorizationKey,
+      circuitProvisioningState: row.properties.circuitProvisioningState,
+      serviceProviderProvisioningState: row.properties.serviceProviderProvisioningState,
+      bandwidthInMbps: row.properties.serviceProviderProperties.bandwidthInMbps,
+      peeringLocation: row.properties.serviceProviderProperties.peeringLocation,
+      serviceProviderName: row.properties.serviceProviderProperties.serviceProviderName
+  }
+
+  // Create relationships to Peerings
+  WITH obj, row
+  CALL {
+      WITH obj, row
+      UNWIND coalesce(row.properties.peerings, []) AS peering
+      MERGE (p:{{ LABELS.ExpressRouteCircuitPeering }} {id: toLower(peering.id)})
+      SET p += {
+          name: peering.name,
+          azureASN: peering.properties.azureASN,
+          peerASN: peering.properties.peerASN,
+          primaryPeerAddressPrefix: peering.properties.primaryPeerAddressPrefix,
+          secondaryPeerAddressPrefix: peering.properties.secondaryPeerAddressPrefix,
+          primaryAzurePort: peering.properties.primaryAzurePort,
+          secondaryAzurePort: peering.properties.secondaryAzurePort,
+          vlanId: peering.properties.vlanId,
+          peeringType: peering.properties.peeringType,
+          state: peering.properties.state
+      }
+      MERGE (obj)-[:{{ REL.HAS_PEERING }}]->(p)
+      RETURN count(*) AS _
+  }
+ 
+  RETURN count(*) AS _

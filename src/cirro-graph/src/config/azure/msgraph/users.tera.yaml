@@ -34,7 +34,7 @@ properties:
 cypher: |
   UNWIND $batch as row
   WITH row
-      MERGE (obj:{{ LABELS.GraphObject }} {id: row.id})
+      MERGE (obj:{{ LABELS.GraphObject }} {id: toLower(row.id)})
       SET obj:{{ LABELS.GraphUser }}
       SET obj += {
           accountEnabled: row.accountEnabled,
@@ -70,7 +70,7 @@ cypher: |
       CALL {
           WITH row, obj
           UNWIND coalesce(row.memberOf, []) AS memberOf
-          MERGE (m:{{ LABELS.GraphObject }} {id: memberOf})
+          MERGE (m:{{ LABELS.GraphObject }} {id: toLower(memberOf)})
           MERGE (obj)-[:{{ REL.MEMBER_OF }}]->(m)
           RETURN count(*) AS _
       }

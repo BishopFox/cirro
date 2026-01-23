@@ -7,7 +7,7 @@ properties:
   - "/properties"
 cypher: |
   UNWIND $batch AS row  
-  MERGE (obj:{{ LABELS.ArmResource }} {id: row.id})
+  MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
   SET obj:{{ LABELS.BastionHost }}
   SET obj += {
       disableCopyPaste: row.properties.disableCopyPaste,
@@ -25,15 +25,16 @@ cypher: |
   CALL {
       WITH obj, row
       UNWIND coalesce(row.properties.ipConfigurations, []) AS ipconfig
-      MERGE (b:{{ LABELS.BastionIPConfig }} {id: ipconfig.id})
+      MERGE (b:{{ LABELS.BastionIPConfig }} {id: toLower(ipconfig.id)})
       SET b += {
           privateIPAllocationMethod: ipconfig.properties.privateIPAllocationMethod
       }
       MERGE (obj)-[:{{ REL.HAS_CONFIG }}]->(b)
-      MERGE (i:{{ LABELS.PublicIPAddress }} {id: ipconfig.properties.publicIPAddress.id})
+      MERGE (i:{{ LABELS.ArmResource }} {id: toLower(ipconfig.properties.publicIPAddress.id)})
+      SET i:{{ LABELS.PublicIPAddress }}
       MERGE (b)-[:{{ REL.HAS_IP }}]->(i)
       
-      MERGE (sub:{{ LABELS.Subnet }} {id: ipconfig.properties.subnet.id})
+      MERGE (sub:{{ LABELS.Subnet }} {id: toLower(ipconfig.properties.subnet.id)})
       MERGE (sub)-[:{{ REL.CONTAINS }}]->(b)
 
       RETURN count(*) AS _

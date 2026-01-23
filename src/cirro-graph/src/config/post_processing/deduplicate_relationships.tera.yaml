@@ -1,6 +1,6 @@
 name: "Remove Duplicate Relationships"
 label: "PostProcessingDeduplicateRelationships"
-priority: 1
+priority: 2
 cypher: |
   CALL apoc.periodic.iterate(
     "

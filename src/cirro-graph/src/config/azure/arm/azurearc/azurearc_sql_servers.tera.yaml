@@ -7,7 +7,7 @@ properties:
   - "/properties"
 cypher: |
     UNWIND $batch AS row
-    MERGE (obj:{{ LABELS.ArcSqlServer }} {id: row.id})
+    MERGE (obj:{{ LABELS.ArcSqlServer }} {id: toLower(row.id)})
     SET obj:{{ LABELS.ArcSqlServer }}
     SET obj += {
         azureDefenderStatus: row.properties.azureDefenderStatus,
@@ -25,5 +25,5 @@ cypher: |
         version: row.properties.version
     }
 
-    MERGE (h:{{ LABELS.ArmResource }} {id: row.properties.containerResourceId})
+    MERGE (h:{{ LABELS.ArmResource }} {id: toLower(row.properties.containerResourceId)})
     MERGE (h)-[:{{ REL.HOSTS }}]->(obj)

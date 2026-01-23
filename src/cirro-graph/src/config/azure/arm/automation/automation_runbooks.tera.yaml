@@ -7,7 +7,7 @@ properties:
   - "/properties"
 cypher: |
     UNWIND $batch AS row
-    MERGE (obj:{{ LABELS.ArmResource }} {id: row.id})
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
     SET obj:{{ LABELS.AutomationRunbook }}
     SET obj += {
         creationTime: row.properties.creationTime,
@@ -20,7 +20,7 @@ cypher: |
     }
 
     WITH obj, row, split(toLower(obj.id), '/runbooks/')[0] AS runbookId
-        MERGE (a:{{ LABELS.ArmResource }} {id: runbookId})
+        MERGE (a:{{ LABELS.ArmResource }} {id: toLower(runbookId)})
         SET a:{{ LABELS.AutomationAccount }}
         MERGE (a)-[:{{ REL.HAS_RUNBOOK }}]->(obj)
 
@@ -32,7 +32,7 @@ cypher: |
                 WITH obj, paramName, parameters[paramName] AS paramMap
 
                 // Create a unique identifier for the parameter to avoid name collisions
-                MERGE (p:RunbookParameter {id: obj.id + "/param/" + paramName})
+                MERGE (p:RunbookParameter {id: toLower(obj.id + "/param/" + paramName)})
                 SET p += {
                     name: paramName,
                     defaultValue: paramMap.defaultValue,

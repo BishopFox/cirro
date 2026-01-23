@@ -7,7 +7,7 @@ properties:
   - "/properties"
 cypher: |
     UNWIND $batch AS row
-    MERGE (obj:{{ LABELS.ArmResource }} {id: row.id})
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
     SET obj:{{ LABELS.PrivateEndpoint }}
     SET obj += {
         customNetworkInterfaceName: row.properties.customNetworkInterfaceName,
@@ -30,7 +30,8 @@ cypher: |
     CALL {
         WITH obj, row
         UNWIND coalesce(row.properties.networkInterfaces, []) AS interface
-        MERGE (n:{{ LABELS.NetworkInterface }} {id: interface.id})
+        MERGE (n:{{ LABELS.ArmResource }} {id: toLower(interface.id)})
+        SET n:{{ LABELS.NetworkInterface }}
         RETURN count(*) AS _
     }
 
@@ -38,7 +39,7 @@ cypher: |
     CALL {
         WITH obj, row 
         WITH obj, row WHERE row.properties.subnet.id IS NOT NULL
-        MERGE (s:{{ LABELS.Subnet }} {id: row.properties.subnet.id})
+        MERGE (s:{{ LABELS.Subnet }} {id: toLower(row.properties.subnet.id)})
         MERGE (s)-[:{{ REL.CONTAINS }}]->(obj)
         RETURN count(*) AS _
     }
@@ -47,13 +48,13 @@ cypher: |
     CALL {
         WITH obj, row
         UNWIND coalesce(row.properties.privateLinkServiceConnections, []) AS conn
-        MERGE (p:{{ LABELS.PrivateLinkServiceConnection }} {id: conn.id})
+        MERGE (p:{{ LABELS.PrivateLinkServiceConnection }} {id: toLower(conn.id)})
         SET p += {
             name: conn.name,
             type: conn.type,
             groupIds: conn.properties.groupIds
         }
-        MERGE (r:{{ LABELS.ArmResource }} {id: conn.properties.privateLinkServiceId})
+        MERGE (r:{{ LABELS.ArmResource }} {id: toLower(conn.properties.privateLinkServiceId)})
         MERGE (r)-[:{{ REL.HAS_PRIVATE_ENDPOINT }}]->(obj)
         RETURN count(*) AS _
     }

@@ -70,17 +70,16 @@ pub enum TailscaleCommands {
         /// Debug output
         #[arg(long = "debug", action = clap::ArgAction::SetTrue)]
         debug: bool,
-    },
-    /// Collect data using Tailscale API
-    Api {
-        /// Tailscale API key
-        #[arg(short, long, value_name = "API_KEY")]
-        tailscale_key: String,
+    }, // Collect data using Tailscale API
+       // Api {
+       //     /// Tailscale API key
+       //     #[arg(short, long, value_name = "API_KEY")]
+       //     tailscale_key: String,
 
-        /// Debug output
-        #[arg(long = "debug", action = clap::ArgAction::SetTrue)]
-        debug: bool,
-    },
+       //     /// Debug output
+       //     #[arg(long = "debug", action = clap::ArgAction::SetTrue)]
+       //     debug: bool,
+       // },
 }
 
 pub async fn handle_tailscale_command(command: TailscaleCommands) -> Result<(), CirroError> {
@@ -96,17 +95,16 @@ pub async fn handle_tailscale_command(command: TailscaleCommands) -> Result<(), 
             let path = socket_path.unwrap_or_else(|| PathBuf::from(default_tailscaled_socket()));
             let collector = TSSocketCollector::new(path, output_path).await?;
             collector.run().await?;
-        }
-        TailscaleCommands::Api {
-            tailscale_key,
-            debug,
-        } => {
-            if let Err(e) = setup_logger(debug) {
-                return Err(CirroError::Unknown(e.to_string()));
-            }
-            println!("Collecting data using Tailscale API key: {}", tailscale_key);
-            // Implement API data collection logic here
-        }
+        } // TailscaleCommands::Api {
+          //     tailscale_key,
+          //     debug,
+          // } => {
+          //     if let Err(e) = setup_logger(debug) {
+          //         return Err(CirroError::Unknown(e.to_string()));
+          //     }
+          //     println!("Collecting data using Tailscale API key: {}", tailscale_key);
+          //     // Implement API data collection logic here
+          // }
     }
     Ok(())
 }

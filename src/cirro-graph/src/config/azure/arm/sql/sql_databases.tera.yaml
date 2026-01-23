@@ -7,7 +7,7 @@ properties:
   - "/properties"
 cypher: |
     UNWIND $batch AS row
-    MERGE (obj:{{ LABELS.ArmResource }} {id: row.id})
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
     SET obj:{{ LABELS.SqlDatabase }}
     SET obj += {
         collation: row.properties.collation,
@@ -20,6 +20,6 @@ cypher: |
     }
 
     WITH obj, row, split(toLower(obj.id), '/databases/')[0] AS serverId
-        MERGE (s:{{ LABELS.ArmResource }} {id: serverId})
+        MERGE (s:{{ LABELS.ArmResource }} {id: toLower(serverId)})
         SET s:{{ LABELS.SqlServer }}
         MERGE (s)-[:{{ REL.HAS_DB }}]->(obj)

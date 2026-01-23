@@ -5,7 +5,7 @@ cypher: |
   WITH [k IN keys(data.User) | data.User[k]] AS users
   UNWIND users AS row
 
-  MERGE (u:{{ LABELS.TSUser }} {id: toString(row.ID)})
+  MERGE (u:{{ LABELS.TSUser }} {id: toLower(toString(row.ID))})
   SET u += {
     loginName: row.LoginName,
     displayName: row.DisplayName

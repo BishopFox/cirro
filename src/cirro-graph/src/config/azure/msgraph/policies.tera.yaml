@@ -17,7 +17,7 @@ column_mappings:
 cypher: |
   UNWIND $batch as row
   WITH row, split(row._uniq_id, '_')[0] AS organization_id, split(row._uniq_id, '_')[1] AS policy_type
-      MERGE (obj:{{ LABELS.GraphPolicy }} {id: row._uniq_id})
+      MERGE (obj:{{ LABELS.GraphPolicy }} {id: toLower(row._uniq_id)})
       WITH obj, organization_id, policy_type, row WHERE toLower(policy_type) = "authorizationpolicy"
           SET obj += {
               displayName: row.displayName,
@@ -36,5 +36,5 @@ cypher: |
               policyType: policy_type
           }
           WITH obj, row, organization_id
-          MATCH (org:{{ LABELS.GraphOrg }} {id: organization_id})
+          MATCH (org:{{ LABELS.GraphOrg }} {id: toLower(organization_id)})
           MERGE (org)-[:{{ REL.HAS_POLICY }}]->(obj)

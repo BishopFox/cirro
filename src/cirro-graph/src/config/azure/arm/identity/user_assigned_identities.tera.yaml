@@ -7,11 +7,12 @@ properties:
   - "/properties"
 cypher: |
     UNWIND $batch AS row
-    MERGE (obj:{{ LABELS.ArmResource }} {id: row.id})
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
     SET obj:{{ LABELS.UserAssignedIdentity }}
     SET obj += {
         clientId: row.properties.clientId,
         tenantId: row.properties.tenantId
     }
     MERGE (o:{{ LABELS.GraphObject }} {appId: row.properties.clientId})
+    SET o:{{ LABELS.GraphServicePrincipal }}
     MERGE (obj)-[:{{ REL.REPRESENTED_BY }}]->(o)

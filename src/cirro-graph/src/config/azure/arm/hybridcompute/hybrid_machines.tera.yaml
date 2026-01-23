@@ -8,7 +8,7 @@ properties:
   - "/properties"
 cypher: |
     UNWIND $batch AS row
-    MERGE (obj:{{ LABELS.ArmResource }} {id: row.id})
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
     SET obj:{{ LABELS.HybridMachine }}
     SET obj += {
         adFqdn: row.properties.adFqdn,
@@ -49,7 +49,7 @@ cypher: |
             WITH obj, row
             UNWIND coalesce(row.resources, []) AS resource
             WITH obj, resource WHERE toLower(resource.type) = "microsoft.hybridcompute/machines/extensions"
-                MERGE (e:{{ LABELS.HybridExtension }} {id: resource.id})
+                MERGE (e:{{ LABELS.HybridExtension }} {id: toLower(resource.id)})
                 SET e += {
                     name: resource.name,
                     type: resource.type,

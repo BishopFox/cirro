@@ -7,14 +7,26 @@ properties:
   - "/properties"
 cypher: |
     UNWIND $batch AS row
-    MERGE (obj:{{ LABELS.ArmResource }} {id: row.id})
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
     SET obj:{{ LABELS.Disk }}
     SET obj += {
         diskSizeGB: row.properties.diskSizeGB,
         diskState: row.properties.diskState,
         osType: row.properties.osType,
+        hyperVGeneration: row.properties.hyperVGeneration,
         networkAccessPolicy: row.properties.networkAccessPolicy,
         publicNetworkAccess: row.properties.publicNetworkAccess,
         timeCreated: row.properties.timeCreated,
         uniqueId: row.properties.uniqueId
     }
+
+    // If properties.creationData.createOption is 'FromImage', link to the source image
+    // Not sure how to handle a relationship here, so just storing the image ID on the disk node
+    WITH obj, row
+    CALL {
+        WITH obj, row
+        WITH obj, row WHERE row.properties.creationData.createOption = 'FromImage' AND row.properties.creationData.imageReference.id IS NOT NULL
+        SET obj.fromImage = toLower(row.properties.creationData.imageReference.id)
+    }
+
+    RETURN count(*) AS _

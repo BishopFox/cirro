@@ -1,0 +1,27 @@
+name: "Gallery Images"
+label: "{{ LABELS.GalleryImage }}"
+table_name: "resources"
+resource_type: "microsoft.compute/galleries/images"
+properties:
+  - "/id"
+  - "/properties"
+cypher: |
+    UNWIND $batch AS row
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+    SET obj:{{ LABELS.GalleryImage }}
+    SET obj += {
+        architecture: row.properties.architecture,
+        osType: row.properties.osType,
+        hyperVGeneration: row.properties.hyperVGeneration,
+        offer: row.properties.identifier.offer,
+        publisher: row.properties.identifier.publisher,
+        sku: row.properties.identifier.sku,
+        osState: row.properties.osState,
+        provisioningState: row.properties.provisioningState
+    }
+
+    WITH obj, split(toLower(obj.id), '/images/')[0] AS galleryId
+    MERGE (g:{{ LABELS.ArmResource }} {id: toLower(galleryId)})
+    SET g:{{ LABELS.Gallery }}
+    MERGE (g)-[:{{ REL.HAS_GALLERY_IMAGE }}]->(obj)
+    RETURN count(*) AS _

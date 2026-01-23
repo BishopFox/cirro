@@ -1,0 +1,42 @@
+name: "Compute Images"
+label: "{{ LABELS.ComputeImage }}"
+table_name: "resources"
+resource_type: "microsoft.compute/images"
+properties:
+  - "/id"
+  - "/properties"
+cypher: |
+    UNWIND $batch AS row
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+    SET obj:{{ LABELS.ComputeImage }}
+    SET obj += {
+        hyperVGeneration: row.properties.hyperVGeneration,
+        provisioningState: row.properties.provisioningState
+    }
+
+    // If there is a source virtual machine, link to it
+    WITH obj, row
+    CALL {
+      WITH obj, row
+      WITH obj, row WHERE row.properties.sourceVirtualMachine.id IS NOT NULL
+      MERGE (vm:{{ LABELS.ArmResource }} {id: toLower(row.properties.sourceVirtualMachine.id)})
+      SET vm:{{ LABELS.VirtualMachine }}
+      MERGE (obj)-[:{{ REL.HAS_SOURCE }}]->(vm)
+      RETURN count(*) AS _
+    }
+
+    // If there is a blob uri, set it
+    WITH obj, row
+    CALL {
+      WITH obj, row
+      WITH obj, row WHERE row.properties.storageProfile.osDisk.blobUri IS NOT NULL
+      SET obj += {
+          blobUri: row.properties.storageProfile.osDisk.blobUri,
+          osType: row.properties.storageProfile.osDisk.osType,
+          osState: row.properties.storageProfile.osDisk.osState,
+          diskSizeGB: row.properties.storageProfile.osDisk.diskSizeGB
+      }
+      RETURN count(*) AS _
+    }
+
+    RETURN count(*) AS _

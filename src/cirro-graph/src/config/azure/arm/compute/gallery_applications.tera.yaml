@@ -7,7 +7,7 @@ properties:
   - "/properties"
 cypher: |
     UNWIND $batch AS row
-    MERGE (obj:{{ LABELS.ArmResource }} {id: row.id})
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
     SET obj:{{ LABELS.GalleryApp }}
     SET obj += {
         supportedOSType: row.properties.supportedOSType
@@ -15,5 +15,6 @@ cypher: |
 
     WITH obj, row
     WITH obj, row, split(row.id, '/applications/')[0] AS galleryId
-    MERGE (g:{{ LABELS.Gallery }} {id: galleryId})
+    MERGE (g:{{ LABELS.ArmResource }} {id: toLower(galleryId)})
+    SET g:{{ LABELS.Gallery }}
     MERGE (g)-[:{{ REL.HAS_APPLICATION }}]->(obj)

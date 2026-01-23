@@ -7,7 +7,7 @@ properties:
   - "/properties"
 cypher: |
     UNWIND $batch AS row
-    MERGE (obj:{{ LABELS.ArmResource }} {id: row.id})
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
     SET obj:{{ LABELS.VirtualNetwork }}
     SET obj += {
         resourceGuid: row.properties.resourceGuid,
@@ -21,7 +21,7 @@ cypher: |
         CALL {
             WITH obj, row
             UNWIND coalesce(row.properties.subnets, []) AS subnet
-            MERGE (s:{{ LABELS.Subnet }} {id: subnet.id})
+            MERGE (s:{{ LABELS.Subnet }} {id: toLower(subnet.id)})
             SET s += {
                 name: subnet.name,
                 addressPrefix: subnet.properties.addressPrefix,
@@ -31,11 +31,11 @@ cypher: |
             MERGE (obj)-[:{{ REL.CONTAINS }}]->(s)
 
             WITH s, subnet WHERE subnet.properties.routeTable IS NOT NULL
-                MERGE (rt:{{ LABELS.ArmResource }} {id: subnet.properties.routeTable.id})
+                MERGE (rt:{{ LABELS.ArmResource }} {id: toLower(subnet.properties.routeTable.id)})
                 MERGE (s)-[:{{ REL.HAS_CONFIG }}]->(rt)
 
             WITH s, subnet WHERE subnet.properties.networkSecurityGroup IS NOT NULL
-                MERGE (nsg:{{ LABELS.ArmResource }} {id: subnet.properties.networkSecurityGroup.id})
+                MERGE (nsg:{{ LABELS.ArmResource }} {id: toLower(subnet.properties.networkSecurityGroup.id)})
                 MERGE (s)-[:{{ REL.HAS_NSG }}]->(nsg)
             RETURN count(*) AS _
         }
@@ -44,7 +44,7 @@ cypher: |
         CALL {
             WITH obj, row
             UNWIND coalesce(row.properties.virtualNetworkPeerings, []) AS peering
-            MERGE (p:{{ LABELS.NetworkPeering }} {id: peering.id})
+            MERGE (p:{{ LABELS.NetworkPeering }} {id: toLower(peering.id)})
             SET p += {
                 name: peering.name,
                 allowVirtualNetworkAccess: peering.properties.allowVirtualNetworkAccess,
@@ -56,7 +56,7 @@ cypher: |
             MERGE (obj)-[:{{ REL.HAS_PEERING }}]->(p)
 
             WITH p, peering WHERE peering.properties.remoteVirtualNetwork IS NOT NULL
-                MERGE (remote:{{ LABELS.ArmResource }} {id: peering.properties.remoteVirtualNetwork.id})
+                MERGE (remote:{{ LABELS.ArmResource }} {id: toLower(peering.properties.remoteVirtualNetwork.id)})
                 MERGE (p)-[:{{ REL.PEERS_WITH }}]->(remote)
             RETURN count(*) AS _
         }

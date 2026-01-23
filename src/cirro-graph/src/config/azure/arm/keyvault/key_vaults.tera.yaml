@@ -7,7 +7,7 @@ properties:
   - "/properties"
 cypher: |
     UNWIND $batch AS row
-    MERGE (obj:{{ LABELS.ArmResource }} {id: row.id})
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
     SET obj:{{ LABELS.KeyVault }}
     SET obj += {
         enableRbacAuthorization: row.properties.enableRbacAuthorization,
@@ -22,7 +22,7 @@ cypher: |
         CALL {
             WITH obj, row
             UNWIND coalesce(row.properties.accessPolicies, []) AS policy
-            MERGE (p:{{ LABELS.GraphObject }} {id: policy.objectId})
+            MERGE (p:{{ LABELS.GraphObject }} {id: toLower(policy.objectId)})
             MERGE (p)-[r:{{ REL.HAS_POLICY }}]->(obj)
 
             SET r += {

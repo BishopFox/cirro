@@ -9,7 +9,7 @@ properties:
   - "/type"
 cypher: |
     UNWIND $batch AS row
-    MERGE (obj:{{ LABELS.ArmResource }} {id: row.id})
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
     SET obj:{{ LABELS.ResourceGroup }}
     SET obj += {
         name : row.name,
@@ -17,6 +17,6 @@ cypher: |
         type : row.type
     }
     WITH obj, row, split(toLower(obj.id), '/resourcegroups/')[0] AS subscriptionId
-    MERGE (s:{{ LABELS.ArmResource }} {id: subscriptionId})
+    MERGE (s:{{ LABELS.ArmResource }} {id: toLower(subscriptionId)})
     SET s:{{ LABELS.Subscription }}
     MERGE (s)-[:{{ REL.CONTAINS }}]->(obj)
