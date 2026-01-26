@@ -20,6 +20,7 @@ These nodes are not direct objects in Entra ID or Azure but are created as a res
 - **[NSGRule](additional-nodes/nsg-rule.md)** - Network security group rules
 - **[PrivateLinkServiceConnection](additional-nodes/private-link-service-connection.md)** - Private link service connections
 - **[StorageAccountKey](additional-nodes/storage-account-key.md)** - Storage account access keys
+- **[StorageAccountDFS](additional-nodes/storage-account-dfs.md)** - Data Lake Storage Gen2 filesystems
 - **[Subnet](additional-nodes/subnet.md)** - Virtual network subnets
 - **[VerifiedDomain](additional-nodes/verified-domain.md)** - Verified domains for Azure AD organizations
 - **[VMRunCommandParameter](additional-nodes/vm-run-command-parameter.md)** - Parameters for virtual machine run commands

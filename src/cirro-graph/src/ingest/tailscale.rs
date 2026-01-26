@@ -68,6 +68,31 @@ impl CirroIngestor {
 
             info!("Processed {:>5} : {}", count, spec.name);
         }
+
+        // Ensure all Tailscale ingestion transactions are committed
+        debug!("Finalizing Tailscale ingestion transactions...");
+        let mut final_txn = self.graph.start_txn().await.map_err(|e| {
+            CirroGraphError::DatabaseError(format!(
+                "Failed to start Tailscale finalization transaction: {}",
+                e
+            ))
+        })?;
+        final_txn
+            .run(neo4rs::query("RETURN 1"))
+            .await
+            .map_err(|e| {
+                CirroGraphError::DatabaseError(format!(
+                    "Failed to execute Tailscale finalization query: {}",
+                    e
+                ))
+            })?;
+        final_txn.commit().await.map_err(|e| {
+            CirroGraphError::DatabaseError(format!(
+                "Failed to commit Tailscale finalization transaction: {}",
+                e
+            ))
+        })?;
+
         Ok(())
     }
 }

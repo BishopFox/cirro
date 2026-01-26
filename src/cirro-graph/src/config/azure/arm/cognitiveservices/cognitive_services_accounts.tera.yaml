@@ -10,7 +10,7 @@ cypher: |
     MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
     SET obj:{{ LABELS.CognitiveServices }}
     SET obj += {
-        customSubdomain: row.properties.customSubDomainName,
+        customSubDomainName: row.properties.customSubDomainName,
         endpoint: row.properties.endpoint,
         publicNetworkAccess: row.properties.publicNetworkAccess
     }

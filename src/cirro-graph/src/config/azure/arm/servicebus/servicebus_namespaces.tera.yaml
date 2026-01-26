@@ -1,0 +1,17 @@
+name: "Service Bus Namespaces"
+label: "{{ LABELS.ServiceBusNamespace }}"
+table_name: "resources"
+resource_type: "microsoft.servicebus/namespaces"
+properties:
+  - "/id"
+  - "/properties"
+cypher: |
+    UNWIND $batch AS row
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+    SET obj:{{ LABELS.ServiceBusNamespace }}
+    SET obj += {
+      createdAt: row.properties.createdAt,
+      disableLocalAuth: row.properties.disableLocalAuth,
+      serviceBusEndpoint: row.properties.serviceBusEndpoint,
+      publicNetworkAccess: row.properties.publicNetworkAccess
+    }

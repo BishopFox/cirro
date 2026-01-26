@@ -1,0 +1,21 @@
+name: "Grafana Dashboards"
+label: "{{ LABELS.GrafanaDashboard }}"
+table_name: "resources"
+resource_type: "microsoft.dashboard/grafana"
+properties:
+  - "/id"
+  - "/properties"
+cypher: |
+    UNWIND $batch AS row
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+    SET obj:{{ LABELS.GrafanaDashboard }}
+    SET obj += {
+        apiKey: row.properties.apiKey,
+        creatorCanAdmin: row.properties.creatorCanAdmin,
+        deterministicOutboundIp: row.properties.deterministicOutboundIP,
+        endpoint: row.properties.endpoint,
+        smtpEnabled: row.properties.grafanaConfigurations.smtp.enabled,
+        grafanaMajorVersion: row.properties.grafanaVersionMajor,
+        grafanaVersion: row.properties.grafanaVersion,
+        publicNetworkAccess: row.properties.publicNetworkAccess
+    }

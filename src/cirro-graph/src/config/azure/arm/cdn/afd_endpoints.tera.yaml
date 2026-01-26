@@ -1,0 +1,23 @@
+name: "AFD Endpoints"
+label: "{{ LABELS.AfdEndpoint }}"
+table_name: "resources"
+resource_type: "microsoft.cdn/profiles/afdendpoints"
+properties:
+  - "/id"
+  - "/properties"
+  - "/sku"
+cypher: |
+    UNWIND $batch AS row
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+    SET obj:{{ LABELS.AfdEndpoint }}
+    SET obj += {
+        deploymentStatus: row.properties.deploymentStatus,
+        hostName: row.properties.hostName,
+        enabledState: row.properties.enabledState,
+        enforceMtls: row.properties.enforceMtls
+    }
+
+    WITH obj, row, split(toLower(obj.id), '/afdendpoints/')[0] AS profileId
+      MERGE (a:{{ LABELS.ArmResource }} {id: toLower(profileId)})
+      SET a:{{ LABELS.CdnProfile }}
+      MERGE (a)-[:{{ REL.HAS_ENDPOINT }}]->(obj) 

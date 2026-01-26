@@ -1,0 +1,17 @@
+name: "B2C Directories"
+label: "{{ LABELS.B2CDirectory }}"
+table_name: "resources"
+resource_type: "microsoft.azureactivedirectory/b2cdirectories"
+properties:
+  - "/id"
+  - "/properties"
+cypher: |
+    UNWIND $batch AS row
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+    SET obj:{{ LABELS.B2CDirectory }}
+    SET obj += {
+        tenantId: row.properties.tenantId
+    }
+
+    MERGE (t:{{ LABELS.Tenant }} {id: toLower(row.properties.tenantId)})
+    MERGE (obj)-[:{{ REL.ASSOCIATED_WITH }}]->(t)

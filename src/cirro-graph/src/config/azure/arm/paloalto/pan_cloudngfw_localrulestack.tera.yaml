@@ -1,0 +1,25 @@
+name: "Palo Alto Cloud NGFW Local Rulestacks"
+label: "{{ LABELS.PanCloudNgfwLocalRulestack }}"
+table_name: "resources"
+resource_type: "paloaltonetworks.cloudngfw/localrulestacks"
+properties:
+  - "/id"
+  - "/properties"
+cypher: |
+  UNWIND $batch AS row  
+  MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+  SET obj:{{ LABELS.PanCloudNgfwLocalRulestack }}
+  SET obj += {
+      defaultMode: row.properties.defaultMode,
+      description: row.properties.description,
+      minAppIdVersion: row.properties.minAppIdVersion,
+      provisioningState: row.properties.provisioningState,
+      scope: row.properties.scope,
+      antiSpywareProfile: row.properties.antiSpywareProfile,
+      antiVirusProfile: row.properties.antiVirusProfile,
+      dnsSubscription: row.properties.dnsSubscription,
+      fileBlockingProfile: row.properties.fileBlockingProfile,
+      urlFilteringProfile: row.properties.urlFilteringProfile,
+      vulnerabilityProfile: row.properties.vulnerabilityProfile
+  }
+  RETURN count(*) AS _

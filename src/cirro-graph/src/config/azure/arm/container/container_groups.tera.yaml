@@ -15,6 +15,8 @@ cypher: |
         restartPolicy: row.properties.restartPolicy,
         provisioningState: row.properties.provisioningState,
         ipAddress: row.properties.ipAddress.ip,
+        dnsNameLabel: row.properties.ipAddress.dnsNameLabel,
+        fqdn: row.properties.ipAddress.fqdn,
         ipAddressType: row.properties.ipAddress.type,
         ipAddressPorts: [port IN coalesce(row.properties.ipAddress.ports, []) | port.port + "/" + port.protocol]
     }
@@ -28,7 +30,7 @@ cypher: |
       SET c += {
           name: container.name,
           environmentVariables: [envVar IN coalesce(container.properties.environmentVariables, []) | envVar.name + ":" + coalesce(envVar.value, "")],
-          ports: [port IN coalesce(container.properties.ports, []) | port.port + "/" + port.protocol]
+          ports: [port IN coalesce(container.properties.ports, []) | port.port + "/" + coalesce(port.protocol, "")]
       }
       
       MERGE (obj)-[:{{ REL.HAS_CONTAINER }}]->(c)

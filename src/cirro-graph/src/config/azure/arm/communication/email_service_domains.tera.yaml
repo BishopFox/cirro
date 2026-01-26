@@ -1,5 +1,5 @@
 name: "Email Service Domains"
-label: "{{ LABELS.EmailServiceDomain }}"
+label: "{{ LABELS.CommServiceDomain }}"
 table_name: "resources"
 resource_type: "microsoft.communication/emailservices/domains"
 properties:
@@ -8,7 +8,7 @@ properties:
 cypher: |
     UNWIND $batch AS row
     MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
-    SET obj:{{ LABELS.EmailServiceDomain }}
+    SET obj:{{ LABELS.CommServiceDomain }}
     SET obj += {
         dataLocation: row.properties.dataLocation,
         domainManagement: row.properties.domainManagement,

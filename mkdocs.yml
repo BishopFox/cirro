@@ -79,11 +79,16 @@ nav:
         - Azure Arc:
           - analysis/arm-nodes/azurearc/arc-sql-server.md
           - analysis/arm-nodes/azurearc/arc-sql-database.md
+        - Azure Active Directory:
+          - analysis/arm-nodes/azureactivedirectory/b2c-directory.md
         - Azure Core:
           - analysis/arm-nodes/azure-core/tenant.md
           - analysis/arm-nodes/azure-core/subscription.md
           - analysis/arm-nodes/azure-core/resource-group.md
           - analysis/arm-nodes/azure-core/management-group.md
+        - CDN:
+          - analysis/arm-nodes/cdn/cdn-profile.md
+          - analysis/arm-nodes/cdn/afd-endpoint.md
         - Cognitive Services:
           - analysis/arm-nodes/cognitiveservices/cognitive-services-account.md
         - Communication:
@@ -107,6 +112,8 @@ nav:
         - Container:
           - analysis/arm-nodes/container/container-registry.md
           - analysis/arm-nodes/container/container-group.md
+        - Dashboard:
+          - analysis/arm-nodes/dashboard/grafana-dashboard.md
         - Data Factory:
           - analysis/arm-nodes/datafactory/data-factory.md
         - Event Grid:
@@ -146,9 +153,15 @@ nav:
           - analysis/arm-nodes/sql/sql-server.md
           - analysis/arm-nodes/sql/sql-database.md
           - analysis/arm-nodes/sql/sql-virtual-machine.md
+        - SaaS:
+          - analysis/arm-nodes/saas/saas-resource.md
         - Storage:
           - analysis/arm-nodes/storage/storage-account.md
           - analysis/arm-nodes/storage/classic-storage-account.md
+        - Synapse:
+          - analysis/arm-nodes/synapse/synapse-workspace.md
+        - Visual Studio:
+          - analysis/arm-nodes/visualstudio/visualstudio-account.md
         - Web:
           - analysis/arm-nodes/web/server-farm.md
           - analysis/arm-nodes/web/web-site.md
@@ -174,6 +187,7 @@ nav:
         - analysis/additional-nodes/runbook-parameter.md
         - analysis/additional-nodes/service-principal-endpoint.md
         - analysis/additional-nodes/storage-account-key.md
+        - analysis/additional-nodes/storage-account-dfs.md
         - analysis/additional-nodes/subnet.md
         - analysis/additional-nodes/verified-domain.md
         - analysis/additional-nodes/vm-run-command-parameter.md
@@ -196,6 +210,7 @@ nav:
         - analysis/edges/has-config.md
         - analysis/edges/has-container.md
         - analysis/edges/has-db.md
+        - analysis/edges/has-dfs-filesystem.md
         - analysis/edges/has-disk.md
         - analysis/edges/has-dns-config.md
         - analysis/edges/has-endpoint.md
@@ -241,6 +256,7 @@ nav:
         - analysis/edges/represented-by.md
         - analysis/edges/same-user.md
         - analysis/edges/uses.md
+        - analysis/edges/uses-storage-dfs.md
         - analysis/edges/verified-domain.md
   - Dashboard: analysis/dashboard.md
   - FAQ: faq.md

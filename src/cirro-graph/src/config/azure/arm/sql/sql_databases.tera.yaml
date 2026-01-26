@@ -14,6 +14,8 @@ cypher: |
         creationDate: row.properties.creationDate,
         currentServiceObjectiveName: row.properties.currentServiceObjectiveName,
         databaseId: row.properties.databaseId,
+        pausedDate: row.properties.pausedDate,
+        earliestRestoreDate: row.properties.earliestRestoreDate,
         isInfraEncryptionEnabled: row.properties.isInfraEncryptionEnabled,
         maxSizeBytes: row.properties.maxSizeBytes,
         status: row.properties.status

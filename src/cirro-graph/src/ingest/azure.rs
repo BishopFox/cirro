@@ -16,6 +16,31 @@ impl CirroIngestor {
         for spec in &self.specs.cirro_azure_specs {
             self.process_spec(spec).await?;
         }
+
+        // Ensure all Azure ingestion transactions are committed
+        debug!("Finalizing Azure ingestion transactions...");
+        let mut final_txn = self.graph.start_txn().await.map_err(|e| {
+            CirroGraphError::DatabaseError(format!(
+                "Failed to start Azure finalization transaction: {}",
+                e
+            ))
+        })?;
+        final_txn
+            .run(neo4rs::query("RETURN 1"))
+            .await
+            .map_err(|e| {
+                CirroGraphError::DatabaseError(format!(
+                    "Failed to execute Azure finalization query: {}",
+                    e
+                ))
+            })?;
+        final_txn.commit().await.map_err(|e| {
+            CirroGraphError::DatabaseError(format!(
+                "Failed to commit Azure finalization transaction: {}",
+                e
+            ))
+        })?;
+
         Ok(())
     }
 

@@ -1,0 +1,25 @@
+name: "SaaS Resources"
+label: "{{ LABELS.SaasResource }}"
+table_name: "resources"
+resource_type: "microsoft.saas/resources"
+properties:
+  - "/id"
+  - "/properties"
+cypher: |
+    UNWIND $batch AS row
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+    SET obj:{{ LABELS.SaasResource }}
+    SET obj += {
+      beneficiaryEmail: row.properties.beneficiaryEmail,
+      created: row.properties.created,
+      lastModified: row.properties.lastModified,
+      offerId: row.properties.offerId,
+      offerName: row.properties.offerName,
+      publisherId: row.properties.publisherId,
+      publisherName: row.properties.publisherName,
+      purchaserEmail: row.properties.purchaserEmail,
+      saasResourceName: row.properties.saasResourceName,
+      saasSubscriptionId: row.properties.saasSubscriptionId,
+      status: row.properties.status,
+      storeFront: row.properties.storeFront
+    }

@@ -10,5 +10,5 @@ cypher: |
     MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
     SET obj:{{ LABELS.EmailService }}
     SET obj += {
-        dataLocation: row.properties.dataLocation,
+        dataLocation: row.properties.dataLocation
     }

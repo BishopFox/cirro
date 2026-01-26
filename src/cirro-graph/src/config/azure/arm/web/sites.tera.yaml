@@ -36,3 +36,19 @@ cypher: |
   MERGE (sf:{{ LABELS.ArmResource }} {id: toLower(row.properties.serverFarmId)})
   SET sf:{{ LABELS.ServerFarm }}
   MERGE (sf)-[:HOSTS_SITE]->(obj)
+
+  // Link to Web Certificates
+  WITH obj, row
+  CALL {
+    WITH obj, row
+    WITH obj, row WHERE row.properties.hostNameSslStates IS NOT NULL
+    UNWIND row.properties.hostNameSslStates AS sslState
+
+    WITH obj, row, sslState WHERE sslState.sslState IN ['SniEnabled'] AND sslState.certificateResourceId IS NOT NULL
+    MERGE (wc:{{ LABELS.ArmResource }} {id: toLower(sslState.certificateResourceId)})
+    SET wc:{{ LABELS.WebCertificate }}
+    MERGE (obj)-[:USES_CERTIFICATE]->(wc)
+    RETURN count(*) AS _
+  }
+
+  RETURN count(*) AS _

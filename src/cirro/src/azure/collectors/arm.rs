@@ -176,7 +176,12 @@ pub async fn paged_arm_request(
         };
 
         let response = result.map_err(|e| {
-            CirroError::HttpError(format!("Failed to send request to {}: {}", arm_url, e))
+            CirroError::HttpError(format!(
+                "Failed to send request to {}: {:?} - {}",
+                arm_url,
+                e.status(),
+                e
+            ))
         })?;
 
         let status = response.status();

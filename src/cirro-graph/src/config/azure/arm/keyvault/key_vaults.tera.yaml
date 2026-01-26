@@ -15,7 +15,9 @@ cypher: |
         enabledForDeployment: row.properties.enabledForDeployment,
         publicNetworkAccess: row.properties.publicNetworkAccess,
         softDeleteRetentionInDays: row.properties.softDeleteRetentionInDays,
-        vaultUri: row.properties.vaultUri
+        vaultUri: row.properties.vaultUri,
+        networkAclBypass: row.properties.networkAcls.bypass,
+        networkAclDefaultAction: row.properties.networkAcls.defaultAction
     }
 
     WITH obj, row

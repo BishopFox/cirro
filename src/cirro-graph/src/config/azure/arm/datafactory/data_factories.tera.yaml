@@ -18,5 +18,8 @@ cypher: |
         repoDisablePublish: row.properties.repoConfiguration.disablePublish,
         repoHostname: row.properties.repoConfiguration.hostname,
         repoLastCommitId: row.properties.repoConfiguration.lastCommitId,
-        repoName: row.properties.repoConfiguration.repositoryName
+        repoName: row.properties.repoConfiguration.repositoryName,
+        repoRootFolder: row.properties.repoConfiguration.rootFolder,
+        repoTenantId: row.properties.repoConfiguration.tenantId,
+        repoType: row.properties.repoConfiguration.type
     }

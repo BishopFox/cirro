@@ -1,0 +1,54 @@
+name: "Synapse Workspaces"
+label: "{{ LABELS.SynapseWorkspace }}"
+table_name: "resources"
+resource_type: "microsoft.synapse/workspaces"
+properties:
+  - "/id"
+  - "/properties"
+cypher: |
+    UNWIND $batch AS row
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+    SET obj:{{ LABELS.SynapseWorkspace }}
+    SET obj += {
+        azureADOnlyAuthentication: row.properties.azureADOnlyAuthentication,
+        publicNetworkAccess: row.properties.publicNetworkAccess,
+        sqlAdministratorLogin: row.properties.sqlAdministratorLogin,
+        defaultDLSAccount: row.properties.defaultDataLakeStorage.accountUrl,
+        defaultDLSFilesystem: row.properties.defaultDataLakeStorage.filesystem
+    }
+
+    // Create Storage Account based on resource ID or storage account name (unique)
+    WITH obj, row
+    CALL {
+      WITH obj, row
+      WITH obj, row WHERE row.properties.defaultDataLakeStorage.resourceId IS NOT NULL
+      MERGE (sa:{{ LABELS.ArmResource }} {id: toLower(row.properties.defaultDataLakeStorage.resourceId)})
+      SET sa:{{ LABELS.StorageAccount }}
+
+      // Create Storage Account DFS
+      MERGE (dfs:{{ LABELS.StorageAccountDFS }} {id: toLower(row.properties.defaultDataLakeStorage.resourceId) + '/filesystem/' + toLower(row.properties.defaultDataLakeStorage.filesystem)})
+      SET dfs += {
+        name: row.properties.defaultDataLakeStorage.filesystem
+      }
+      MERGE (sa)-[:{{ REL.HAS_DFS_FILESYSTEM }}]->(dfs)
+      MERGE (obj)-[:{{ REL.USES_STORAGE_DFS }}]->(dfs)
+    }
+
+    // Handle case where resourceId is null - extract storage account name from URL
+    WITH obj, row
+    CALL {
+      WITH obj, row
+      WITH obj, row WHERE row.properties.defaultDataLakeStorage.resourceId IS NULL AND row.properties.defaultDataLakeStorage.accountUrl IS NOT NULL
+      WITH obj, row, split(row.properties.defaultDataLakeStorage.accountUrl, '.')[0] AS urlPart
+      WITH obj, row, split(urlPart, '//')[1] AS storageAccountName
+      
+      // Storage account names are unique, so this should be okay
+      MERGE (sa:{{ LABELS.StorageAccount }} {name: storageAccountName})
+ 
+      // Create Storage Account DFS
+      // We don't have a way to map IDs now, so we'll handle in post-processing
+      MERGE (dfs:{{ LABELS.StorageAccountDFS }} {name: row.properties.defaultDataLakeStorage.filesystem})
+
+      MERGE (sa)-[:{{ REL.HAS_DFS_FILESYSTEM }}]->(dfs)
+      MERGE (obj)-[:{{ REL.USES_STORAGE_DFS }}]->(dfs)
+    }

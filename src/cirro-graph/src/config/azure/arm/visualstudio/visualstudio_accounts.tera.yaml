@@ -1,0 +1,14 @@
+name: "VisualStudio Account"
+label: "{{ LABELS.VisualStudioAccount }}"
+table_name: "resources"
+resource_type: "microsoft.visualstudio/account"
+properties:
+  - "/id"
+  - "/properties"
+cypher: |
+    UNWIND $batch AS row
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+    SET obj:{{ LABELS.VisualStudioAccount }}
+    SET obj += {
+        accountURL: row.properties.accountUrl
+    }

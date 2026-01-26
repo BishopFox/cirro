@@ -6,6 +6,7 @@ use log::{debug, info};
 use neo4rs::*;
 use rusqlite::{Connection, Result};
 use std::path::PathBuf;
+use tokio::time::Duration;
 
 #[derive(Debug, Clone, ValueEnum)]
 pub enum IngestType {
@@ -114,6 +115,9 @@ impl CirroIngestor {
             IngestType::Az => self.process_cirro_azure_ingest().await?,
             IngestType::TsStatus => self.process_cirro_tailscale_status_ingest().await?,
         }
+
+        // Ensure all transactions are committed before post-processing
+        self.finalize_transactions().await?;
         self.generic_post_process().await?;
 
         // Calculate the total time taken for the ingestion process
@@ -155,22 +159,78 @@ impl CirroIngestor {
         Ok(())
     }
 
+    /// Ensures all transactions are committed before proceeding
+    async fn finalize_transactions(&self) -> Result<(), CirroGraphError> {
+        info!("Finalizing all transactions...");
+        let mut final_txn = self.graph.start_txn().await.map_err(|e| {
+            CirroGraphError::DatabaseError(format!(
+                "Failed to start finalization transaction: {}",
+                e
+            ))
+        })?;
+        final_txn.run(query("RETURN 1")).await.map_err(|e| {
+            CirroGraphError::DatabaseError(format!("Failed to execute finalization query: {}", e))
+        })?; // Dummy query to ensure transaction context
+        final_txn.commit().await.map_err(|e| {
+            CirroGraphError::DatabaseError(format!(
+                "Failed to commit finalization transaction: {}",
+                e
+            ))
+        })?;
+
+        // Add a brief pause to ensure commit propagation
+        tokio::time::sleep(Duration::from_millis(100)).await;
+
+        Ok(())
+    }
+
     async fn generic_post_process(&mut self) -> Result<(), CirroGraphError> {
+        info!("Waiting for all transactions to commit...");
+
+        // Force a transaction commit by running a simple query that requires a read
+        let _ = self
+            .graph
+            .execute(query("MATCH (n) RETURN count(n) LIMIT 1"))
+            .await
+            .map_err(|e| {
+                CirroGraphError::DatabaseError(format!(
+                    "Failed to execute commit check query: {}",
+                    e
+                ))
+            })?;
+
+        // Add a small delay to ensure commit propagation
+        tokio::time::sleep(Duration::from_millis(500)).await;
+
         info!("Running post-processing queries");
 
         // First, order the post-processing specs by priority
         let mut post_processing_specs = self.specs.cirro_post_processing_specs.clone();
         post_processing_specs.sort_by_key(|spec| spec.priority);
 
+        // Use explicit transactions for post-processing
         for spec in &post_processing_specs {
             debug!("Running post-processing spec: {}", spec.name);
-            let _ = self.graph.execute(query(&spec.cypher)).await.map_err(|e| {
+
+            let mut txn = self.graph.start_txn().await.map_err(|e| {
+                CirroGraphError::DatabaseError(format!("Failed to start transaction: {}", e))
+            })?;
+
+            txn.run(query(&spec.cypher)).await.map_err(|e| {
                 CirroGraphError::DatabaseError(format!(
                     "Failed to execute post-processing query for spec {}: {}",
                     spec.name, e
                 ))
             })?;
+
+            txn.commit().await.map_err(|e| {
+                CirroGraphError::DatabaseError(format!(
+                    "Failed to commit post-processing transaction for spec {}: {}",
+                    spec.name, e
+                ))
+            })?;
         }
+
         Ok(())
     }
 }

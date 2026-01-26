@@ -19,3 +19,26 @@ Base properties inherited by all Azure Resource Manager resources.
 
 **Relationships:**
 - `HAS_IDENTITY` → GraphObject (for managed identities)
+
+## New Node Types
+
+The following ARM resource types have been recently added:
+
+### Azure Active Directory
+- **B2CDirectory** - Azure AD B2C directories
+
+### CDN (Content Delivery Network)
+- **CdnProfile** - Azure CDN profiles
+- **AfdEndpoint** - Azure Front Door endpoints
+
+### Dashboard & Monitoring
+- **GrafanaDashboard** - Azure Managed Grafana instances
+
+### SaaS (Software as a Service)
+- **SaasResource** - Azure Marketplace SaaS resources
+
+### Analytics
+- **SynapseWorkspace** - Azure Synapse Analytics workspaces
+
+### Development Tools
+- **VisualStudioAccount** - Azure DevOps/Visual Studio accounts

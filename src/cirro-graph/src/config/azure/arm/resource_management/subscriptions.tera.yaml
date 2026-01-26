@@ -5,6 +5,7 @@ properties:
   - "/id"
   - "/displayName"
   - "/authorizationSource"
+  - "/managedByTenants"
   - "/state"
   - "/subscriptionId"
 cypher: |
@@ -17,4 +18,12 @@ cypher: |
         state : row.state,
         subscriptionId : row.subscriptionId,
         tenantId : row.tenantId
+    }
+
+    WITH s, row
+    CALL {
+        WITH s, row
+        UNWIND coalesce(row.managedByTenants, []) AS tenant
+        MERGE (t:{{ LABELS.Tenant }} {id: toLower(tenant.tenantId)})
+        MERGE (t)-[:{{ REL.MANAGES }}]->(t)
     }

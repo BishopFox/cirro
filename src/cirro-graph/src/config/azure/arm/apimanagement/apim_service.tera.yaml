@@ -1,0 +1,36 @@
+name: "APIM Service"
+label: "{{ LABELS.ApimService }}"
+table_name: "resources"
+resource_type: "microsoft.apimanagement/service"
+properties:
+  - "/id"
+  - "/properties"
+cypher: |
+    UNWIND $batch AS row
+    MERGE (s:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+    SET s:{{ LABELS.ApimService }}
+    SET s += {
+        createdAt: row.properties.createdAt,
+        developerPortalStatus: row.properties.developerPortalStatus,
+        developerPortalUrl: row.properties.developerPortalUrl,
+        gatewayRegionalUrl: row.properties.gatewayRegionalUrl,
+        gatewayUrl: row.properties.gatewayUrl,
+        legacyPortalStatus: row.properties.legacyPortalStatus,
+        managementApiUrl: row.properties.managementApiUrl,
+        outboundPublicIpAddresses: row.properties.outboundPublicIpAddresses,
+        portalUrl: row.properties.portalUrl,
+        publicIpAddresses: row.properties.publicIPAddresses,
+        publicNetworkAccess: row.properties.publicNetworkAccess,
+        publisherEmail: row.properties.publisherEmail,
+        publisherName: row.properties.publisherName,
+        publisherChannel: row.properties.publisherChannel,
+        scmUrl: row.properties.scmUrl
+    }
+
+    WITH s, row
+    CALL {
+        WITH s, row
+        UNWIND coalesce(row.managedByTenants, []) AS tenant
+        MERGE (t:{{ LABELS.Tenant }} {id: toLower(tenant.tenantId)})
+        MERGE (t)-[:{{ REL.MANAGES }}]->(t)
+    }
