@@ -1,6 +1,6 @@
 # GraphDevice
 
-Represents Azure AD devices collected from Microsoft Graph.
+Represents Entra ID devices collected from Microsoft Graph.
 
 **Labels:** `:GraphObject:GraphDevice`
 

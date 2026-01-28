@@ -1,6 +1,6 @@
 # GraphGroup
 
-Represents Azure AD groups collected from Microsoft Graph.
+Represents Entra ID groups collected from Microsoft Graph.
 
 **Labels:** `:GraphObject:GraphGroup`
 

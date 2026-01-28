@@ -1,4 +1,121 @@
-# Cirro CLI Reference
+# Data Collection
+
+Cirro's collection functionality gathers data from various cloud platforms and services.
+
+## Command Structure
+
+```bash
+cirro collect <platform> <auth-method> [options]
+```
+
+## Azure Collection
+
+### Authentication Methods
+
+#### Azure CLI
+
+Use your existing Azure CLI authentication:
+
+```bash
+cirro collect az azcli [options]
+```
+
+**Options:**
+- `--tenant-id`: Specific tenant ID to use
+- `--subscription-id`: Specific subscription ID to target
+- `--mode`: Enumeration mode (`both`, `graph`, `arm`)
+- `--cloud`: Azure cloud environment (`public`, `china`, `germany`, `usgov`)
+- `--output-path`: Output database file (default: `cirro_output.db`)
+- `--debug`: Enable debug logging
+
+#### Client Secret
+
+Authenticate using a service principal with client secret:
+
+```bash
+cirro collect az client-secret \
+  --client-id <client-id> \
+  --client-secret <secret> \
+  --tenant-id <tenant-id> \
+  [options]
+```
+
+#### Client Certificate
+
+Authenticate using a service principal with certificate:
+
+```bash
+cirro collect az client-cert \
+  --client-id <client-id> \
+  --certificate <path-to-cert.pem> \
+  --tenant-id <tenant-id> \
+  [options]
+```
+
+#### Access Token
+
+Use a pre-obtained access token:
+
+```bash
+cirro collect az access-token \
+  --token <access-token> \
+  [options]
+```
+
+#### Username/Password
+
+Authenticate with username and password:
+
+```bash
+cirro collect az user-pass \
+  --upn <user@domain.com> \
+  --password <password> \
+  [options]
+```
+
+### Enumeration Modes
+
+- `both` (default): Collects both Microsoft Graph and ARM data
+- `graph`: Only collects Microsoft Graph data (users, groups, applications, etc.)
+- `arm`: Only collects Azure Resource Manager data (VMs, networks, storage, etc.)
+
+### Examples
+
+```bash
+# Collect everything using Azure CLI
+cirro collect az azcli --output-path azure-data.db
+
+# Collect only Graph data for a specific tenant
+cirro collect az azcli --tenant-id <tenant-id> --mode graph
+
+# Collect ARM data for US Government cloud
+cirro collect az client-secret \
+  --client-id <id> \
+  --client-secret <secret> \
+  --tenant-id <tenant> \
+  --cloud usgov \
+  --mode arm
+
+# Debug mode
+cirro collect az azcli --debug
+```
+
+## Tailscale Collection
+
+Collect Tailscale network topology data:
+
+```bash
+cirro collect ts <auth-method> [options]
+```
+
+**Options:**
+- `--output-path`: Output database file (default: `cirro_output.db`)
+- `--debug`: Enable debug logging
+
+## Output
+
+All collection commands output to a SQLite database file (default: `cirro_output.db`) that can be ingested into a graph database using `cirro graph ingest`.
+ CLI Reference
 
 The `cirro` command-line tool is the primary data collection component designed to gather information from multiple cloud platforms. Currently, it supports Azure environments by collecting data from Azure Resource Manager (ARM) APIs and Microsoft Graph APIs.
 
@@ -245,4 +362,4 @@ cirro collect azcli \
 - The access token authentication mode has limited options compared to other methods
 - Debug mode provides detailed logging but may expose sensitive information
 - The output database file will be created if it doesn't exist
-- Some authentication modes require specific cloud provider application configurations (Azure AD for Azure)
+- Some authentication modes require specific cloud provider application configurations (Entra ID for Azure)

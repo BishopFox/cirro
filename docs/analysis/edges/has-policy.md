@@ -1,6 +1,6 @@
 # HAS_POLICY
 
-Represents policy relationships in Azure AD and Azure resources.
+Represents policy relationships in Entra ID and Azure resources.
 
 **Direction:** 
 - `(graphObject)-[:HAS_POLICY]->(keyVault)` - Key Vault access policies
@@ -9,7 +9,7 @@ Represents policy relationships in Azure AD and Azure resources.
 **Description:** This relationship has two main contexts:
 
 1. **Key Vault Access Policies**: Indicates that a Graph object (user, service principal, or group) has an access policy defined for a specific Key Vault.
-2. **Organization Policies**: Links Azure AD organizations to their configured policies that define organizational settings, user permissions, and security rules.
+2. **Organization Policies**: Links Entra ID organizations to their configured policies that define organizational settings, user permissions, and security rules.
 
 ## Key Vault Access Policies
 

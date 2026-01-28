@@ -55,8 +55,8 @@ nav:
   - Architecture: architecture.md
   - Usage:
       - Quick Start: usage/quick-start.md
-      - Cirro: usage/cirro.md
-      - cirro-graph: usage/cirro-graph.md
+      - Collection: usage/cirro.md
+      - Graph Operations: usage/cirro-graph.md
   - Analysis:
       - Overview: analysis/cirro-graph-analysis.md
   - Nodes and Edges:

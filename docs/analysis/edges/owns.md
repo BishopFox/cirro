@@ -1,6 +1,6 @@
 # OWNS
 
-Represents ownership relationships in Azure AD.
+Represents ownership relationships in Entra ID.
 
 **Direction:** `(user/servicePrincipal)-[:OWNS]->(application/group/servicePrincipal)`
 

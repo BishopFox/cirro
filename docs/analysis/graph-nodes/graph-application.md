@@ -1,6 +1,6 @@
 # GraphApplication
 
-Represents Azure AD applications collected from Microsoft Graph.
+Represents Entra ID applications collected from Microsoft Graph.
 
 **Labels:** `:GraphObject:GraphApplication`
 

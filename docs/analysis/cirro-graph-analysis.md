@@ -4,11 +4,11 @@ This document provides an overview of the analysis capabilities built into Cirro
 
 ## DNS Security Analysis
 
-The DNS security analysis module performs comprehensive checks on domain configurations within cloud identity providers (currently Azure AD) and application registrations to identify potential security vulnerabilities related to domain ownership and DNS misconfigurations.
+The DNS security analysis module performs comprehensive checks on domain configurations within cloud identity providers (currently Entra ID) and application registrations to identify potential security vulnerabilities related to domain ownership and DNS misconfigurations.
 
 ### Purpose
 
-The DNS analysis functionality helps security teams identify potential domain takeover risks and misconfigured domain settings that could be exploited by attackers. It focuses on domains referenced in cloud platform configurations (currently Azure AD) that may be vulnerable due to:
+The DNS analysis functionality helps security teams identify potential domain takeover risks and misconfigured domain settings that could be exploited by attackers. It focuses on domains referenced in cloud platform configurations (currently Entra ID) that may be vulnerable due to:
 
 - Expired or unregistered domains
 - Domains that resolve to non-existent DNS records (NXDOMAIN)
@@ -20,7 +20,7 @@ The DNS analysis functionality helps security teams identify potential domain ta
     Some Microsoft-owned domains (such as those ending in `.azureedge.net`, `.azurewebsites.net`, or other Azure-specific domains) may report as "available". These should be considered false positives and are not actually vulnerable to domain takeover attacks. Users should focus on third-party domains and custom organizational domains when evaluating results.
 
 **Verified Domains**
-- Analyzes organizational verified domains in Azure AD
+- Analyzes organizational verified domains in Entra ID
 - Checks both the primary domain and root domain for DNS resolution
 - Identifies domains that may have expired or become available for re-registration
 
@@ -30,7 +30,7 @@ The DNS analysis functionality helps security teams identify potential domain ta
 - Identifies potential federation hijacking opportunities
 
 **Application Redirect URIs**
-- Scans redirect URIs configured in Azure AD application registrations
+- Scans redirect URIs configured in Entra ID application registrations
 - Checks for domains that may be vulnerable to takeover
 - Helps identify potential OAuth flow hijacking risks
 

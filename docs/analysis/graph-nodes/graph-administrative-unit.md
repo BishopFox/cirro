@@ -1,6 +1,6 @@
 # GraphAdministrativeUnit
 
-Represents Azure AD administrative units collected from Microsoft Graph.
+Represents Entra ID administrative units collected from Microsoft Graph.
 
 **Labels:** `:GraphObject:GraphAdministrativeUnit`
 

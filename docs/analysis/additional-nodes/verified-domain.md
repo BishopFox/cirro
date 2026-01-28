@@ -1,6 +1,6 @@
 # VerifiedDomain
 
-Represents verified domains associated with Azure AD organizations. These are domains that have been verified as belonging to the organization.
+Represents verified domains associated with Entra ID organizations. These are domains that have been verified as belonging to the organization.
 
 **Labels:** `:VerifiedDomain`
 

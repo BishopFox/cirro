@@ -1,6 +1,6 @@
 # GraphUser
 
-Represents Azure AD users collected from Microsoft Graph.
+Represents Entra ID users collected from Microsoft Graph.
 
 **Labels:** `:GraphObject:GraphUser`
 

@@ -4,7 +4,7 @@ Connects GraphOrg nodes to their VerifiedDomain nodes, representing the domains 
 
 **Direction:** `(org:GraphOrg)-[:VERIFIED_DOMAIN]->(domain:VerifiedDomain)`
 
-**Description:** This relationship links Azure AD organizations to their verified domains. Verified domains are important for understanding email routing, user identity, and organizational boundaries within Azure AD.
+**Description:** This relationship links Entra ID organizations to their verified domains. Verified domains are important for understanding email routing, user identity, and organizational boundaries within Entra ID.
 
 **Properties:** None
 

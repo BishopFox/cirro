@@ -1,6 +1,6 @@
 # GraphOrg
 
-Represents Azure AD organizations collected from Microsoft Graph. This node provides detailed information about the organization/tenant structure within Azure Active Directory.
+Represents Entra ID organizations collected from Microsoft Graph. This node provides detailed information about the organization/tenant structure within Azure Active Directory.
 
 **Labels:** `:GraphOrg`
 

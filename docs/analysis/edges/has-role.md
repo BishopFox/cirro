@@ -1,6 +1,6 @@
 # HAS_ROLE
 
-Represents role assignments in Azure AD.
+Represents role assignments in Entra ID.
 
 **Direction:** `(user)-[:HAS_ROLE]->(role)`
 

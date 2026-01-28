@@ -1,6 +1,6 @@
 # GraphAppRole
 
-Represents application roles within Azure AD applications.
+Represents application roles within Entra ID applications.
 
 **Labels:** `:GraphAppRole`
 

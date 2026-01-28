@@ -1,6 +1,6 @@
 # GraphRole
 
-Represents Azure AD directory roles collected from Microsoft Graph.
+Represents Entra ID directory roles collected from Microsoft Graph.
 
 **Labels:** `:GraphObject:GraphRole`
 

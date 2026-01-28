@@ -13,7 +13,7 @@ This relationship is established through post-processing analysis that correlate
 ## Examples
 
 ### TSUser → GraphUser
-Links Tailscale users to their corresponding Azure AD user accounts when they can be matched by login name (case-insensitive comparison). This allows correlation between a user's identity in Tailscale and their corporate Azure AD identity.
+Links Tailscale users to their corresponding Entra ID user accounts when they can be matched by login name (case-insensitive comparison). This allows correlation between a user's identity in Tailscale and their corporate Entra ID identity.
 
 ## Use Cases
 

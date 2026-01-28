@@ -25,7 +25,7 @@ Base properties inherited by all Azure Resource Manager resources.
 The following ARM resource types have been recently added:
 
 ### Azure Active Directory
-- **B2CDirectory** - Azure AD B2C directories
+- **B2CDirectory** - Entra ID B2C directories
 
 ### CDN (Content Delivery Network)
 - **CdnProfile** - Azure CDN profiles

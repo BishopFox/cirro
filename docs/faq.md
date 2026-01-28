@@ -89,7 +89,7 @@ The **data plane** deals with the actual data and operations within those resour
 
 <h4>Use both when:</h4>
 - You want complete coverage of both identity and infrastructure
-- Your assessment scope includes both Azure AD and Azure resources
+- Your assessment scope includes both Entra ID and Azure resources
 - You need to correlate identity privileges with resource access
 - You're performing comprehensive cloud security assessments
 

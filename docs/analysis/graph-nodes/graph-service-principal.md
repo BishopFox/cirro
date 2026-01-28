@@ -1,6 +1,6 @@
 # GraphServicePrincipal
 
-Represents Azure AD service principals collected from Microsoft Graph.
+Represents Entra ID service principals collected from Microsoft Graph.
 
 **Labels:** `:GraphObject:GraphServicePrincipal`
 

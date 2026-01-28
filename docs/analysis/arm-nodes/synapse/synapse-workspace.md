@@ -7,7 +7,7 @@ Represents Azure Synapse Analytics workspaces.
 **Properties:**
 
 - `id` - Synapse workspace resource ID (primary key)
-- `azureADOnlyAuthentication` - Whether Azure AD-only authentication is enabled
+- `azureADOnlyAuthentication` - Whether Entra ID-only authentication is enabled
 - `publicNetworkAccess` - Public network access setting
 - `sqlAdministratorLogin` - SQL administrator login name
 - `defaultDLSAccount` - Default Data Lake Storage account URL

@@ -15,52 +15,62 @@ You can check out the [Documentation](https://crispy-adventure-qre5p1k.pages.git
 
 ## Architecture
 
-Cirro consists of two main components:
+Cirro has two main functional areas:
 
-- **`cirro`**: The primary data collection tool that gathers information from various platforms and APIs
-- **`cirro-graph`**: The ingestion tool that loads collected data into graph databases (Neo4j or Memgraph)
+- **Collection (`cirro collect`)**: Gathers information from various platforms and APIs
+- **Graph Operations (`cirro graph`)**: Manages graph database operations including data ingestion and export
 
-The modular architecture allows for easy extension to support additional platforms beyond the currently supported ones.
+The modular architecture uses feature flags to enable platform-specific functionality, allowing users to build only the components they need.
 
 ## CLI Structure
 
-Cirro uses a hierarchical command structure organized by platform:
+Cirro uses a hierarchical command structure organized by function and platform:
 
 ```
-cirro <platform> <action> <auth-method> [options]
+cirro <function> <platform> <command> [options]
 ```
 
-### Supported Platforms
+### Data Collection
 
-**Azure (az)**
-All Azure-related functionality is accessed through the `az` subcommand:
+**Azure (collect az)**
 
 ```bash
-# Data collection
-cirro az collect <auth-method> [options]
-
 # Available authentication methods:
-cirro az collect azcli           # Azure CLI authentication
-cirro az collect client-secret   # Client ID and secret
-cirro az collect client-cert     # Client certificate
-cirro az collect access-token    # Pre-obtained access token
+cirro collect az azcli           # Azure CLI authentication
+cirro collect az client-secret   # Client ID and secret
+cirro collect az client-cert     # Client certificate
+cirro collect az access-token    # Pre-obtained access token
+cirro collect az user-pass       # Username and password
 ```
 
-**Tailscale (ts)**
-Network topology analysis for Tailscale environments:
+**Tailscale (collect ts)**
 
 ```bash
 # Tailscale data collection
-cirro ts collect <auth-method> [options]
+cirro collect ts <auth-method> [options]
 ```
 
-*Additional platforms can be added through the extensible plugin architecture.*
+### Graph Operations
+
+**Data Ingestion (graph ingest)**
+
+```bash
+# Ingest collected data into graph database
+cirro graph ingest --type <platform> --file <data-file> [database options]
+```
+
+**Data Export (graph export)**
+
+```bash
+# Export graph data to various formats
+cirro graph export --format <format> [options]
+```
 
 ## Installation
 
 ### Pre-built Binaries
 
-Download the latest release for your platform from the [releases page](https://github.com/bishopfox/cirro/releases).
+Download the latest release for your platform from the [releases page](https://github.com/bishopfox/cirro/releases). The releases are built with all features enabled.
 
 ### Building from Source
 
@@ -70,30 +80,42 @@ cd cirro
 cargo build --release
 ```
 
-**NOTE: BUILDING WITH --RELEASE IS IMPORTANT SINCE CIRRO-GRAPH WILL EMBED THE YAML FILES IN THE BINARY!**
+**NOTE: BUILDING WITH --RELEASE IS IMPORTANT FOR GRAPH FUNCTIONALITY SINCE IT EMBEDS YAML CONFIGURATION FILES IN THE BINARY!**
 
-Binaries will be available in `target/release/`.
+The binary will be available at `target/release/cirro`.
 
 #### Build Options
 
-By default, Cirro includes all available platform support. To build with specific platform features:
+By default, Cirro includes all available functionality. To build with specific features:
 
 ```bash
+# Build with only collection features
+cargo build --release --no-default-features --features collector
+
+# Build with only graph features
+cargo build --release --no-default-features --features graph
+
 # Build with specific platform support
-cargo build --release --features azure
-cargo build --release --features tailscale
+cargo build --release --no-default-features --features "azure"
+cargo build --release --no-default-features --features "tailscale"
 ```
 
 ## Data Ingestion
 
-Neo4j and Memgraph are supported as graph databases. There are docker-compose files in the [tools](/tools/) directory to assist with containerized databases. 
+Cirro uses Neo4j as the backend database. There are docker-compose files in the [tools](/tools/) directory to assist with containerized databases. 
 
 After collecting data, ingest it into your graph database:
 
 ```bash
 # Ingest data for specific platforms
-cirro-graph ingest --file cirro_output.db --type az     # Azure data
-cirro-graph ingest --file cirro_output.db --type ts     # Tailscale data
+cirro graph ingest --type az --file cirro_output.db         # Azure data
+cirro graph ingest --type ts --file cirro_ts_socket.json    # Tailscale data
+
+# Specify custom database connection
+cirro graph ingest --type az --file cirro_output.db \
+  --server bolt://localhost:7687 \
+  --user neo4j \
+  --password password
 ```
 
 ## Dashboard
@@ -106,11 +128,10 @@ Enable debug logging for detailed information:
 
 ```bash
 # Collection debug mode
-cirro az collect azcli --debug
-cirro ts collect api-key --debug
+cirro collect az azcli --debug
 
 # Ingestion debug mode
-cirro-graph ingest --file cirro_output.db --type az --debug
+cirro graph ingest --type az --file cirro_output.db --debug
 ```
 
 ---

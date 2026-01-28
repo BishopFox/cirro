@@ -1,6 +1,6 @@
 # GraphPolicy
 
-Represents Azure AD policies collected from Microsoft Graph. These policies define organizational settings and rules that govern user behavior and access within the Azure AD tenant.
+Represents Entra ID policies collected from Microsoft Graph. These policies define organizational settings and rules that govern user behavior and access within the Entra ID tenant.
 
 **Labels:** `:GraphPolicy`
 
