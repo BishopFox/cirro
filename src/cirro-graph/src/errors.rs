@@ -59,4 +59,7 @@ pub enum CirroGraphError {
 
     #[error("Config error: {0}")]
     Config(String),
+
+    #[error("Serialization error: {0}")]
+    SerializationError(String),
 }

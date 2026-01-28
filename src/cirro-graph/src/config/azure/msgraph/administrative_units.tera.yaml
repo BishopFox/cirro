@@ -14,7 +14,7 @@ properties:
   - "/visibility"
 cypher: |
   UNWIND $batch as row
-  WITH row
+  CALL (row) {
       MERGE (obj:{{ LABELS.GraphObject }} {id: toLower(row.id)})
       SET obj:{{ LABELS.GraphAdministrativeUnit }}
       SET obj += {
@@ -27,27 +27,15 @@ cypher: |
           visibility: row.visibility
       }
 
-  // Unwind members
-  WITH row, obj
-      CALL {
-          WITH row, obj
-          UNWIND coalesce(row.members, []) AS member
-          MERGE (m:{{ LABELS.GraphObject }} {id: toLower(member)})
-          MERGE (m)-[:{{ REL.MEMBER_OF }}]->(obj)
-          RETURN count(*) AS _
-      }
+      // Unwind members
+      WITH row, obj
+      UNWIND coalesce(row.members, []) AS member
+      MERGE (m:{{ LABELS.GraphObject }} {id: toLower(member)})
+      MERGE (m)-[:{{ REL.MEMBER_OF }}]->(obj)
 
-  // Unwind scoped role members
-  WITH row, obj
-      CALL {
-          WITH row, obj
-          UNWIND coalesce(row.scopedRoleMembers, []) AS scopedRole
-          MERGE (sr:{{ LABELS.GraphObject }} {id: toLower(scopedRole.roleMemberInfo.id)})
-          MERGE (role:{{ LABELS.GraphObject }} {id: toLower(scopedRole.roleId)})
-          MERGE (sr)-[:{{ REL.HAS_ROLE }}]->(role)
-          WITH sr, role, obj, scopedRole
-          MERGE (sr)-[r:{{ REL.HAS_ROLE }}]->(obj)
-          SET r.scope = "administrative-unit"
-          RETURN count(*) AS _
-      }
+      // TODO: Unwind scoped role members
+
+      RETURN count(*) AS _
+  } IN TRANSACTIONS OF 5000 ROWS
+
   RETURN count(*) AS _

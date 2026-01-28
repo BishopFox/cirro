@@ -2,6 +2,7 @@ use crate::ingest::ingestor::CirroIngestor;
 use crate::{errors::CirroGraphError, specs::CirroAzureIngestSpec};
 use log::{debug, error, info};
 use neo4rs::{BoltType, query};
+use rayon::prelude::*;
 use serde_json::Value;
 
 impl CirroIngestor {
@@ -12,8 +13,16 @@ impl CirroIngestor {
             self.file.as_path().file_name().unwrap()
         );
 
-        // List all the specs for Cirro Azure
-        for spec in &self.specs.cirro_azure_specs {
+        // Create constraints and indexes for ArmResource and GraphObject
+        self.create_constraints_and_indexes_by_name("ArmResource")
+            .await?;
+        self.create_constraints_and_indexes_by_name("GraphObject")
+            .await?;
+
+        // Sort specs by priority and process them
+        let mut specs = self.specs.cirro_azure_specs.clone();
+        specs.sort_by_key(|s| s.priority.unwrap_or(0));
+        for spec in &specs {
             self.process_spec(spec).await?;
         }
 
@@ -114,7 +123,7 @@ impl CirroIngestor {
 
         // If spec has a label, create constraints and indexes
         if !spec.label.is_empty() {
-            self.create_constraints_and_indexes(spec).await?;
+            self.create_constraints_and_indexes_by_spec(spec).await?;
         } else {
             debug!(
                 "Spec {} does not have a label defined, skipping constraint and index creation",
@@ -141,70 +150,67 @@ impl CirroIngestor {
                     .prepare(&select_query)
                     .unwrap();
 
-                // Execute the query and process each row
-                let rows = stmt.query_map([], |row| {
-                    let mut mapped_values = std::collections::HashMap::new();
+                // Execute the query and collect all rows first
+                let rows: Vec<_> = stmt
+                    .query_map([], |row| {
+                        let mut mapped_values = std::collections::HashMap::new();
 
-                    // Extract mapped column values if they exist
-                    if let Some(mappings) = &spec.column_mappings {
-                        for (i, cypher_param) in mappings.values().enumerate() {
-                            let value: String = row.get(i)?;
-                            mapped_values.insert(cypher_param.clone(), value);
+                        // Extract mapped column values if they exist
+                        if let Some(mappings) = &spec.column_mappings {
+                            for (i, cypher_param) in mappings.values().enumerate() {
+                                let value: String = row.get(i)?;
+                                mapped_values.insert(cypher_param.clone(), value);
+                            }
+                            // Get the data column (always last when mappings exist)
+                            let data: String = row.get(mapped_values.len())?;
+                            Ok((mapped_values, data))
+                        } else {
+                            // No mappings, just get the data column
+                            let data: String = row.get(0)?;
+                            Ok((mapped_values, data))
                         }
-                        // Get the data column (always last when mappings exist)
-                        let data: String = row.get(mapped_values.len())?;
-                        Ok((mapped_values, data))
-                    } else {
-                        // No mappings, just get the data column
-                        let data: String = row.get(0)?;
-                        Ok((mapped_values, data))
-                    }
-                })?;
-
-                let processed_values: Vec<Value> = rows
-                    .map(|result| {
-                        result.map(
-                            |(mapped_values, data): (
-                                std::collections::HashMap<String, String>,
-                                String,
-                            )| {
-                                // Deserialize the JSON string into a Value
-                                let value: Value = serde_json::from_str(&data)
-                                    .unwrap_or(Value::Object(serde_json::Map::new()));
-
-                                // Create a new Value to hold the processed data
-                                let mut new_value = Value::Object(serde_json::Map::new());
-
-                                // Add mapped column values first
-                                for (key, val) in mapped_values {
-                                    new_value
-                                        .as_object_mut()
-                                        .unwrap()
-                                        .insert(key, Value::String(val));
-                                }
-
-                                // For each property, set the value in the new Value
-                                for property in &spec.properties {
-                                    if let Some(val) = value.pointer(property) {
-                                        if *property == "/id" {
-                                            // Make sure the ID is always lowercase
-                                            new_value.as_object_mut().unwrap().insert(
-                                                property.trim_start_matches('/').to_string(),
-                                                val.as_str().unwrap_or("").to_lowercase().into(),
-                                            );
-                                        } else {
-                                            new_value.as_object_mut().unwrap().insert(
-                                                property.trim_start_matches('/').to_string(),
-                                                val.clone(),
-                                            );
-                                        }
-                                    }
-                                }
-                                new_value
-                            },
-                        )
-                    })
+                    })?
                     .collect::<Result<Vec<_>, _>>()?;
+
+                // Process rows in parallel
+                let processed_values: Vec<Value> = rows
+                    .par_iter()
+                    .map(|(mapped_values, data)| {
+                        // Deserialize the JSON string into a Value
+                        let value: Value = serde_json::from_str(data)
+                            .unwrap_or(Value::Object(serde_json::Map::new()));
+
+                        // Create a new Value to hold the processed data
+                        let mut new_value = Value::Object(serde_json::Map::new());
+
+                        // Add mapped column values first
+                        for (key, val) in mapped_values {
+                            new_value
+                                .as_object_mut()
+                                .unwrap()
+                                .insert(key.clone(), Value::String(val.clone()));
+                        }
+
+                        // For each property, set the value in the new Value
+                        for property in &spec.properties {
+                            if let Some(val) = value.pointer(property) {
+                                if *property == "/id" {
+                                    // Make sure the ID is always lowercase
+                                    new_value.as_object_mut().unwrap().insert(
+                                        property.trim_start_matches('/').to_string(),
+                                        val.as_str().unwrap_or("").to_lowercase().into(),
+                                    );
+                                } else {
+                                    new_value.as_object_mut().unwrap().insert(
+                                        property.trim_start_matches('/').to_string(),
+                                        val.clone(),
+                                    );
+                                }
+                            }
+                        }
+                        new_value
+                    })
+                    .collect();
 
                 // Insert the processed values into the graph
                 if !processed_values.is_empty() {

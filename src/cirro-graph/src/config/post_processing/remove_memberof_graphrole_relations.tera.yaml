@@ -1,0 +1,7 @@
+name: "Remove MemberOf GraphRole Relations"
+label: "PostProcessingRemoveMemberOfGraphRoleRelations"
+priority: 0
+cypher: |
+  // Remove all MEMBER_OF relationships to GraphRole nodes since we use HAS_ROLE
+  MATCH (:{{ LABELS.GraphObject }})-[r:{{ REL.MEMBER_OF }}]->(:{{ LABELS.GraphRole }})
+  DELETE r

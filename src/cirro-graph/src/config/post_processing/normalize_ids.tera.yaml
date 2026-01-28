@@ -12,5 +12,5 @@ cypher: |
   SET n.id = toLower(n.id)
   RETURN 1
   ",
-  {batchSize: 1000, parallel: false}
+  {batchSize: 1000, parallel: true}
   );

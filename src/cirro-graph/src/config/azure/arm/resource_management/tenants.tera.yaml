@@ -24,5 +24,4 @@ cypher: |
     }
 
     MERGE (o:{{ LABELS.GraphOrg }} {id: toLower(row.tenantId)})
-    MERGE (o)-[:{{ REL.ASSOCIATED_WITH }}]->(t)
-    MERGE (t)-[:{{ REL.ASSOCIATED_WITH }}]->(o)
+    MERGE (o)-[:{{ REL.ASSOCIATED_WITH }}]->(obj)

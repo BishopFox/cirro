@@ -32,7 +32,7 @@ impl CirroIngestor {
         for spec in &self.specs.cirro_tailscale_status_specs {
             // If spec has a label, create constraints and indexes
             if !spec.label.is_empty() {
-                self.create_constraints_and_indexes(spec).await?;
+                self.create_constraints_and_indexes_by_spec(spec).await?;
             } else {
                 debug!(
                     "Spec {} does not have a label defined, skipping constraint and index creation",

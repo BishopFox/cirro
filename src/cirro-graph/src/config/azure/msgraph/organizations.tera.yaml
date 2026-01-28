@@ -13,7 +13,7 @@ properties:
   - "/verifiedDomains"
 cypher: |
   UNWIND $batch as row
-  WITH row
+  CALL (row) {
       MERGE (obj:{{ LABELS.GraphOrg }} {id: toLower(row.id)})
       SET obj += {
           businessPhones: row.businessPhones,
@@ -26,20 +26,19 @@ cypher: |
       }
       MERGE (tenant:{{ LABELS.Tenant }} {id: toLower('/tenants/' + row.id)})
       MERGE (obj)-[:{{ REL.ASSOCIATED_WITH }}]->(tenant)
-      MERGE (tenant)-[:{{ REL.ASSOCIATED_WITH }}]->(obj)
 
-  WITH row, obj
-      CALL {
-          WITH row, obj
-          UNWIND coalesce(row.verifiedDomains, []) AS verifiedDomain
-          MERGE (vd:{{ LABELS.VerifiedDomain }} {name: verifiedDomain.name})
-          SET vd += {
-              capabilities: verifiedDomain.capabilities,
-              isDefault: verifiedDomain.isDefault,
-              isInitial: verifiedDomain.isInitial,
-              type: verifiedDomain.type
-          }
-          MERGE (obj)-[:{{ REL.VERIFIED_DOMAIN }}]->(vd)
-          RETURN count(*) AS _
+      WITH row, obj
+      UNWIND coalesce(row.verifiedDomains, []) AS verifiedDomain
+      MERGE (vd:{{ LABELS.VerifiedDomain }} {name: verifiedDomain.name})
+      SET vd += {
+          capabilities: verifiedDomain.capabilities,
+          isDefault: verifiedDomain.isDefault,
+          isInitial: verifiedDomain.isInitial,
+          type: verifiedDomain.type
       }
+      MERGE (obj)-[:{{ REL.VERIFIED_DOMAIN }}]->(vd)
+
+      RETURN count(*) AS _
+  } IN TRANSACTIONS OF 5000 ROWS
+
   RETURN count(*) AS _

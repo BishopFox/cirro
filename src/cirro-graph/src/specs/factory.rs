@@ -2,16 +2,11 @@ use crate::errors::CirroGraphError;
 use crate::specs::azure::types::CirroAzureIngestSpec;
 use crate::specs::configs::{
     ALL_SPEC_CONFIGS, CIRRO_AZURE_SPEC_CONFIG, CIRRO_POST_PROCESSING_SPEC_CONFIG,
-    CIRRO_TAILSCALE_STATUS_SPEC_CONFIG, GenericSpecSource, SpecConfig,
+    CIRRO_TAILSCALE_STATUS_SPEC_CONFIG, SpecConfig,
 };
 use crate::specs::core::types::CirroPostProcessingSpec;
+use crate::specs::sources::CirroSpecSource;
 use crate::specs::tailscale::types::CirroTailscaleStatusIngestSpec;
-
-#[cfg(debug_assertions)]
-use crate::specs::sources::GenericDiskSpecSource;
-
-#[cfg(not(debug_assertions))]
-use crate::specs::sources::GenericEmbeddedSpecSource;
 
 /// Container for all loaded spec types
 #[derive(Debug)]
@@ -25,42 +20,19 @@ pub struct SpecRegistry {
 pub struct SpecLoader;
 
 impl SpecLoader {
-    /// Internal helper to create a spec source
-    fn create_source<T>() -> Box<dyn GenericSpecSource<T>>
-    where
-        T: serde::de::DeserializeOwned + 'static,
-    {
-        #[cfg(debug_assertions)]
-        {
-            Box::new(GenericDiskSpecSource::new(
-                concat!(env!("CARGO_MANIFEST_DIR"), "/src/config/constants.yaml").to_string(),
-            ))
-        }
-
-        #[cfg(not(debug_assertions))]
-        {
-            Box::new(GenericEmbeddedSpecSource::new())
-        }
-    }
-
     /// Load specs of type T using the provided config
     pub fn load<T>(config: &SpecConfig) -> Result<Vec<T>, CirroGraphError>
     where
         T: serde::de::DeserializeOwned + 'static,
     {
-        let source = Self::create_source::<T>();
+        let source = CirroSpecSource::new();
 
-        #[cfg(debug_assertions)]
-        let path = config.disk_path;
-        #[cfg(not(debug_assertions))]
-        let path = config.embedded_prefix;
-
-        source.load_specs(path).map_err(|e| {
+        source.load_specs(config.path_prefix).map_err(|e| {
             CirroGraphError::IoError(std::io::Error::new(
                 std::io::ErrorKind::InvalidData,
                 format!(
                     "Failed to load config '{}' from path '{}': {}",
-                    config.name, path, e
+                    config.name, config.path_prefix, e
                 ),
             ))
         })

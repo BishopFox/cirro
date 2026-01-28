@@ -33,7 +33,7 @@ properties:
   - "/userType"
 cypher: |
   UNWIND $batch as row
-  WITH row
+  CALL (row) {
       MERGE (obj:{{ LABELS.GraphObject }} {id: toLower(row.id)})
       SET obj:{{ LABELS.GraphUser }}
       SET obj += {
@@ -66,12 +66,12 @@ cypher: |
           userType: row.userType
       }
   
-  WITH row, obj
-      CALL {
-          WITH row, obj
-          UNWIND coalesce(row.memberOf, []) AS memberOf
-          MERGE (m:{{ LABELS.GraphObject }} {id: toLower(memberOf)})
-          MERGE (obj)-[:{{ REL.MEMBER_OF }}]->(m)
-          RETURN count(*) AS _
-      }
+      WITH row, obj
+      UNWIND coalesce(row.memberOf, []) AS memberOf
+      MERGE (m:{{ LABELS.GraphObject }} {id: toLower(memberOf)})
+      MERGE (obj)-[:{{ REL.MEMBER_OF }}]->(m)
+
+      RETURN count(*) AS _
+  } IN TRANSACTIONS OF 5000 ROWS
+
   RETURN count(*) AS _

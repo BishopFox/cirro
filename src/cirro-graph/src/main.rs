@@ -1,10 +1,12 @@
 pub mod errors;
+pub mod export;
 pub mod ingest;
 pub mod logger;
 pub mod specs;
 pub mod styles;
 
 use crate::errors::CirroGraphError;
+use crate::export::types::ExportFormat;
 use crate::ingest::ingestor::IngestType;
 use crate::logger::setup_logger;
 
@@ -66,6 +68,41 @@ enum Commands {
         #[arg(long, action = clap::ArgAction::SetTrue)]
         debug: bool,
     },
+    /// Export database in different formats
+    Export {
+        /// Format to export
+        #[arg(short, long, value_name = "FORMAT")]
+        format: ExportFormat,
+
+        /// Output file path (default: ./cirro_export)
+        #[arg(short, long, value_name = "OUTPUT", default_value = "cirro_export", value_hint = clap::ValueHint::FilePath)]
+        output: PathBuf,
+
+        /// Database server. Possible schemes: bolt, bolt+s, bolt+ssc, neo4j, neo4j+s, neo4j+ssc
+        #[arg(
+            short,
+            long,
+            value_name = "SERVER",
+            default_value = "bolt://localhost:7687"
+        )]
+        server: String,
+
+        /// Database user
+        #[arg(short, long, value_name = "USER", default_value = "neo4j")]
+        user: String,
+
+        /// Database password
+        #[arg(short, long, value_name = "PASSWORD", default_value = "password")]
+        password: String,
+
+        /// Database name. Defaults to "neo4j".
+        #[arg(short, long, value_name = "NAME")]
+        db_name: Option<String>,
+
+        /// Enable debug logging
+        #[arg(long, action = clap::ArgAction::SetTrue)]
+        debug: bool,
+    },
 }
 
 #[tokio::main]
@@ -95,6 +132,29 @@ _|"""""|_|"""""|_|"""""|_|"""""|_|"""""|
             if let Err(e) = setup_logger(debug) {
                 return Err(CirroGraphError::LogSetupError(e));
             }
+
+            // Validate the file exists and is readable
+            if !file.exists() {
+                return Err(CirroGraphError::InvalidConfig(format!(
+                    "File does not exist: {}",
+                    file.display()
+                )));
+            }
+            if !file.is_file() {
+                return Err(CirroGraphError::InvalidConfig(format!(
+                    "Path is not a file: {}",
+                    file.display()
+                )));
+            }
+            // Check if file is readable by attempting to open it
+            std::fs::File::open(&file).map_err(|e| {
+                CirroGraphError::InvalidConfig(format!(
+                    "File is not readable: {} - {}",
+                    file.display(),
+                    e
+                ))
+            })?;
+
             // Validate the database host
             if !server.starts_with("bolt://")
                 && !server.starts_with("bolt+s://")
@@ -116,6 +176,47 @@ _|"""""|_|"""""|_|"""""|_|"""""|_|"""""|
             // Run the ingestor
             if let Err(e) = ingestor.run().await {
                 return Err(e);
+            }
+        }
+
+        Commands::Export {
+            format,
+            output,
+            server,
+            user,
+            password,
+            db_name,
+            debug,
+        } => {
+            match format {
+                ExportFormat::Opengraph => {
+                    if let Err(e) = setup_logger(debug) {
+                        return Err(CirroGraphError::LogSetupError(e));
+                    }
+                    // Validate the database host
+                    if !server.starts_with("bolt://")
+                        && !server.starts_with("bolt+s://")
+                        && !server.starts_with("bolt+ssc://")
+                        && !server.starts_with("neo4j://")
+                        && !server.starts_with("neo4j+s://")
+                        && !server.starts_with("neo4j+ssc://")
+                    {
+                        return Err(CirroGraphError::InvalidConfig(
+                    "Database host must start with bolt://, bolt+s://, bolt+ssc://, neo4j://, neo4j+s://, or neo4j+ssc://".into(),
+                ));
+                    }
+
+                    // Create the exporter
+                    let mut exporter = export::exporter::CirroExporter::new(
+                        format, output, server, user, password, db_name,
+                    )
+                    .await;
+
+                    // Run the exporter
+                    if let Err(e) = exporter.run().await {
+                        return Err(e);
+                    }
+                }
             }
         }
     }

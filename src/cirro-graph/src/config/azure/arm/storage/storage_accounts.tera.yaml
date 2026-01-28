@@ -12,7 +12,6 @@ cypher: |
     SET obj += {
         accessTier: row.properties.accessTier,
         primaryLocation : row.properties.primaryLocation,
-        primaryEndpoints: [e IN keys(row.properties.primaryEndpoints) | row.properties.primaryEndpoints[e]],
         publicNetworkAccess: row.properties.publicNetworkAccess,
         defaultToOAuthAuthentication: row.properties.defaultToOAuthAuthentication,
         allowBlobPublicAccess: row.properties.allowBlobPublicAccess,

@@ -47,6 +47,7 @@ rust-project.json
 *.db-wal
 *.db-shm
 cirro_*.json
+*_export
 
 *.bin
 neo4j/

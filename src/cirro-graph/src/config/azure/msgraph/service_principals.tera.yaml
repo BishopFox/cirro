@@ -24,105 +24,94 @@ properties:
   - "/servicePrincipalType"
 cypher: |
   UNWIND $batch as row
-
-  MERGE (obj:{{ LABELS.GraphObject }} {id: toLower(row.id)})
-  SET obj:{{ LABELS.GraphServicePrincipal }}
-  SET obj += {
-      displayName: row.displayName,
-      accountEnabled: row.accountEnabled,
-      alternativeNames: row.alternativeNames,
-      appId: row.appId,
-      appOwnerOrganizationId: row.appOwnerOrganizationId,
-      publisherName: row.publisherName,
-      servicePrincipalType: row.servicePrincipalType,
-      loginUrl: row.loginUrl,
-      logoutUrl: row.logoutUrl,
-      replyUrls: row.replyUrls,
-      servicePrincipalNames: row.servicePrincipalNames
-  }
-
-  WITH row, obj 
-      OPTIONAL MATCH (a:{{ LABELS.GraphApplication }} {appId: row.appId})
-      CALL {
-          WITH obj, a
-          WITH obj, a WHERE a IS NOT NULL
-          MERGE (a)-[:{{ REL.HAS_APPLICATION }}]->(obj)
-          RETURN count(*) AS _
+  CALL (row) {
+      MERGE (obj:{{ LABELS.GraphObject }} {id: toLower(row.id)})
+      SET obj:{{ LABELS.GraphServicePrincipal }}
+      SET obj += {
+          displayName: row.displayName,
+          accountEnabled: row.accountEnabled,
+          alternativeNames: row.alternativeNames,
+          appId: row.appId,
+          appOwnerOrganizationId: row.appOwnerOrganizationId,
+          publisherName: row.publisherName,
+          servicePrincipalType: row.servicePrincipalType,
+          loginUrl: row.loginUrl,
+          logoutUrl: row.logoutUrl,
+          replyUrls: row.replyUrls,
+          servicePrincipalNames: row.servicePrincipalNames
       }
 
-  WITH row, obj
-      CALL {
-          WITH row, obj
-          UNWIND coalesce(row.owners, []) AS owner
-          MERGE (o:{{ LABELS.GraphObject }} {id: toLower(owner)})
-          MERGE (o)-[:{{ REL.OWNS }}]->(obj)
-          RETURN count(*) AS _
-      }
+        // This match needs to happen with GraphApplication instead of GraphObject to avoid accidental merging with ServicePrincipal later
+        // Shouldn't interfere with constraints because either it already exists or it doesn't and will be merged later in post processing
+      WITH row, obj 
+      MERGE (a:{{ LABELS.GraphApplication }} {appId: row.appId})
+      MERGE (a)-[:{{ REL.REPRESENTED_BY }}]->(obj)
 
-  WITH row, obj
-      CALL {
-          WITH row, obj
-          UNWIND coalesce(row.appRoles, []) AS appRole
-          MERGE (ar:{{ LABELS.GraphAppRole }} {id: toLower(appRole.id)})
-          SET ar += {
-              allowedMemberTypes: appRole.allowedMemberTypes,
-              description: appRole.description,
-              displayName: appRole.displayName,
-              isEnabled: appRole.isEnabled,
-              isPreAuthorizationRequired: appRole.isPreAuthorizationRequired,
-              isPrivate: appRole.isPrivate,
-              origin: appRole.origin,
-              value: appRole.value
-          }
-          MERGE (obj)-[:{{ REL.HAS_APPROLE }}]->(ar)
-          RETURN count(*) AS _
-      }
+      // Unwind memberOf
+      WITH row, obj
+      UNWIND coalesce(row.memberOf, []) AS memberOf
+      MERGE (m:{{ LABELS.GraphObject }} {id: toLower(memberOf)})
+      MERGE (obj)-[:{{ REL.MEMBER_OF }}]->(m)
 
-  WITH row, obj
-      CALL {
-          WITH row, obj
-          UNWIND coalesce(row.memberOf, []) AS memberOf
-          MERGE (m:{{ LABELS.GraphObject }} {id: toLower(memberOf)})
-          MERGE (obj)-[:{{ REL.MEMBER_OF }}]->(m)
-          RETURN count(*) AS _
-      }
+      // Unwind owners
+      WITH row, obj
+      UNWIND coalesce(row.owners, []) AS owner
+      MERGE (o:{{ LABELS.GraphObject }} {id: toLower(owner)})
+      MERGE (o)-[:{{ REL.OWNS }}]->(obj)
 
-  WITH row, obj
-      CALL {
-          WITH row, obj
-          UNWIND coalesce(row.endpoints, []) AS endpoint
-          MERGE (e:{{ LABELS.ServicePrincipalEndpoint }} {uri: endpoint.uri})
-          SET e += {
-              capability: endpoint.capability,
-              providerId: endpoint.providerId,
-              providerName: endpoint.providerName,
-              providerResourceId: endpoint.providerResourceId,
-              uri: endpoint.uri
-          }
-          MERGE (obj)-[:{{ REL.HAS_ENDPOINT }}]->(e)
-          RETURN count(*) AS _
+      // App Roles
+      WITH row, obj
+      UNWIND coalesce(row.appRoles, []) AS appRole
+      MERGE (ar:{{ LABELS.GraphObject }} {id: toLower(appRole.id)})
+        SET ar:{{ LABELS.GraphAppRole }}
+      SET ar += {
+          allowedMemberTypes: appRole.allowedMemberTypes,
+          description: appRole.description,
+          displayName: appRole.displayName,
+          isEnabled: appRole.isEnabled,
+          isPreAuthorizationRequired: appRole.isPreAuthorizationRequired,
+          isPrivate: appRole.isPrivate,
+          origin: appRole.origin,
+          value: appRole.value
       }
+      MERGE (obj)-[:{{ REL.HAS_APPROLE }}]->(ar)
+
+      // AppRoleAssignedTo
+      WITH row, obj
+      UNWIND coalesce(row.appRoleAssignedTo, []) AS assignedTo
+      MERGE (o:{{ LABELS.GraphObject }} {id: toLower(assignedTo.principalId)})
+      MERGE (o)-[a:{{ REL.ASSIGNED_APPROLE }} {appRoleId: assignedTo.appRoleId}]->(obj)
+
+
+        // Endpoints
+      WITH row, obj
+      UNWIND coalesce(row.endpoints, []) AS endpoint
+      MERGE (e:{{ LABELS.ServicePrincipalEndpoint }} {uri: endpoint.uri})
+      SET e += {
+          capability: endpoint.capability,
+          providerId: endpoint.providerId,
+          providerName: endpoint.providerName,
+          providerResourceId: endpoint.providerResourceId,
+          uri: endpoint.uri
+      }
+      MERGE (obj)-[:{{ REL.HAS_ENDPOINT }}]->(e)
   
-  WITH row, obj
-      CALL {
-          WITH row, obj
-          UNWIND coalesce(row.passwordCredentials, []) AS passwordCredential
-          MERGE (p:{{ LABELS.ClientSecret }} {keyId: passwordCredential.keyId})
-          SET p += {
-              customKeyIdentifier: passwordCredential.customKeyIdentifier,
-              displayName: passwordCredential.displayName,
-              endDateTime: passwordCredential.endDateTime,
-              hint: passwordCredential.hint,
-              startDateTime: passwordCredential.startDateTime
-          }
-          MERGE (p)-[:{{ REL.AUTHENTICATES }}]->(obj)
-          RETURN count(*) AS _
+        // Password Credentials
+      WITH row, obj
+      UNWIND coalesce(row.passwordCredentials, []) AS passwordCredential
+      MERGE (p:{{ LABELS.ClientSecret }} {keyId: passwordCredential.keyId})
+      SET p += {
+          customKeyIdentifier: passwordCredential.customKeyIdentifier,
+          displayName: passwordCredential.displayName,
+          endDateTime: passwordCredential.endDateTime,
+          hint: passwordCredential.hint,
+          startDateTime: passwordCredential.startDateTime
       }
+      MERGE (p)-[:{{ REL.AUTHENTICATES }}]->(obj)
 
-  WITH row, obj, [c IN row.keyCredentials WHERE c.customKeyIdentifier IS NOT NULL] AS keyCredentials
-  CALL {
-      WITH obj, keyCredentials
-      UNWIND keyCredentials AS keyCredential
+        // Key Credentials
+      WITH row, obj
+      UNWIND [c IN row.keyCredentials WHERE c.customKeyIdentifier IS NOT NULL] AS keyCredential
       MERGE (k:{{ LABELS.Certificate }} {thumbprint: keyCredential.customKeyIdentifier})
       SET k += {
           displayName: keyCredential.displayName,
@@ -132,20 +121,8 @@ cypher: |
           usage: keyCredential.usage
       }
       MERGE (k)-[:{{ REL.AUTHENTICATES }}]->(obj)
+
       RETURN count(*) AS _
-  }
-  RETURN count(obj) AS _
-post_queries:
-  - |
-    // Find all APPROLE relationships
-    MATCH (:{{ LABELS.GraphObject }})-[r:{{ REL.APPROLE }}]->(o:{{ LABELS.GraphServicePrincipal }})-[:{{ REL.HAS_APPROLE }}]->(ar:{{ LABELS.GraphAppRole }})
-    WHERE r.appRoleId = ar.id
-    SET r += {
-        displayName: ar.displayName,
-        description: ar.description,
-        isEnabled: ar.isEnabled,
-        isPreAuthorizationRequired: ar.isPreAuthorizationRequired,
-        isPrivate: ar.isPrivate,
-        origin: ar.origin,
-        value: ar.value
-    }
+  } IN TRANSACTIONS OF 5000 ROWS
+
+  RETURN count(*) AS _

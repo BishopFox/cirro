@@ -70,6 +70,8 @@ cd cirro
 cargo build --release
 ```
 
+**NOTE: BUILDING WITH --RELEASE IS IMPORTANT SINCE CIRRO-GRAPH WILL EMBED THE YAML FILES IN THE BINARY!**
+
 Binaries will be available in `target/release/`.
 
 #### Build Options
@@ -77,9 +79,6 @@ Binaries will be available in `target/release/`.
 By default, Cirro includes all available platform support. To build with specific platform features:
 
 ```bash
-# Build minimal version without platform-specific features
-cargo build --release --no-default-features
-
 # Build with specific platform support
 cargo build --release --features azure
 cargo build --release --features tailscale

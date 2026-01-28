@@ -127,12 +127,11 @@ impl CirroIngestor {
         Ok(())
     }
 
-    pub async fn create_constraints_and_indexes<T>(&self, spec: &T) -> Result<(), CirroGraphError>
-    where
-        T: SpecTrait,
-    {
-        let constraint_query =
-            crate::ingest::CREATE_CONSTRAINT_QUERY.replace("{}", spec.get_label());
+    pub async fn create_constraints_and_indexes_by_name(
+        &self,
+        label_name: &str,
+    ) -> Result<(), CirroGraphError> {
+        let constraint_query = crate::ingest::CREATE_CONSTRAINT_QUERY.replace("{}", label_name);
         debug!("Executing query: {}", constraint_query);
         let _ = self
             .graph
@@ -141,21 +140,32 @@ impl CirroIngestor {
             .map_err(|e| {
                 CirroGraphError::DatabaseError(format!(
                     "Failed to create constraint for {}: {}",
-                    spec.get_name(),
-                    e
+                    label_name, e
                 ))
             })?;
         let index_query = crate::ingest::CREATE_INDEX_QUERY
-            .replace("{}", spec.get_label())
-            .replace("{}", spec.get_label());
+            .replace("{}", label_name)
+            .replace("{}", label_name);
         debug!("Executing query: {}", index_query);
         let _ = self.graph.run(query(&index_query)).await.map_err(|e| {
             CirroGraphError::DatabaseError(format!(
                 "Failed to create index for {}: {}",
-                spec.get_name(),
-                e
+                label_name, e
             ))
         })?;
+        Ok(())
+    }
+
+    pub async fn create_constraints_and_indexes_by_spec<T>(
+        &self,
+        spec: &T,
+    ) -> Result<(), CirroGraphError>
+    where
+        T: SpecTrait,
+    {
+        let label_name = spec.get_label();
+        self.create_constraints_and_indexes_by_name(&label_name)
+            .await?;
         Ok(())
     }
 

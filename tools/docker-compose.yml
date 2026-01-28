@@ -1,20 +1,19 @@
 services:
   cirro-neo4j:
-    build:
-      context: .
-      dockerfile: Dockerfile.neo4j
-    image: cirro-neo4j:latest
+    image: neo4j:latest
     container_name: cirro-neo4j
     restart: unless-stopped
     ports:
-      - "7474:7474"
-      - "7687:7687"
+      - "7477:7474"
+      - "7688:7687"
+    volumes:
+      - neo4j-data:/data
+    environment:
+      - NEO4J_AUTH=neo4j/password
+      - NEO4J_PLUGINS=["apoc"]
+      - NEO4J_server_memory_heap_initial__size=4G
+      - NEO4J_server_memory_heap_max__size=8G
 
-  cirro-neodash:
-    image: neo4jlabs/neodash:latest
-    container_name: cirro-neodash
-    restart: unless-stopped
-    depends_on:
-      - cirro-neo4j
-    ports:
-      - "5005:5005"
+volumes:
+  neo4j-data:
+
