@@ -42,21 +42,30 @@ cypher: |
     
     // Unwind memberOf
     WITH row, obj
-    UNWIND coalesce(row.memberOf, []) AS memberOf
-    MERGE (m:{{ LABELS.GraphObject }} {id: toLower(memberOf)})
-    MERGE (obj)-[:{{ REL.MEMBER_OF }}]->(m)
+    CALL {
+        WITH row, obj
+        UNWIND coalesce(row.memberOf, []) AS memberOf
+        MERGE (m:{{ LABELS.GraphObject }} {id: toLower(memberOf)})
+        MERGE (obj)-[:{{ REL.MEMBER_OF }}]->(m)
+    }
 
     // Unwind registered users
     WITH row, obj
-    UNWIND coalesce(row.registeredUsers, []) AS registeredUser
-    MERGE (u:{{ LABELS.GraphObject }} {id: toLower(registeredUser)})
-    MERGE (u)-[:{{ REL.REGISTERED_USER }}]->(obj)
+    CALL {
+        WITH row, obj
+        UNWIND coalesce(row.registeredUsers, []) AS registeredUser
+        MERGE (u:{{ LABELS.GraphObject }} {id: toLower(registeredUser)})
+        MERGE (u)-[:{{ REL.REGISTERED_USER }}]->(obj)
+    }
 
     // Unwind registered owners
     WITH row, obj
-    UNWIND coalesce(row.registeredOwners, []) AS registeredOwner
-    MERGE (o:{{ LABELS.GraphObject }} {id: toLower(registeredOwner)})
-    MERGE (o)-[:{{ REL.REGISTERED_OWNER }}]->(obj)
+    CALL {
+        WITH row, obj
+        UNWIND coalesce(row.registeredOwners, []) AS registeredOwner
+        MERGE (o:{{ LABELS.GraphObject }} {id: toLower(registeredOwner)})
+        MERGE (o)-[:{{ REL.REGISTERED_OWNER }}]->(obj)
+    }
 
   } IN TRANSACTIONS OF 5000 ROWS
 

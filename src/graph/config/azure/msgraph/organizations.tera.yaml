@@ -28,15 +28,18 @@ cypher: |
       MERGE (obj)-[:{{ REL.ASSOCIATED_WITH }}]->(tenant)
 
       WITH row, obj
-      UNWIND coalesce(row.verifiedDomains, []) AS verifiedDomain
-      MERGE (vd:{{ LABELS.VerifiedDomain }} {name: verifiedDomain.name})
-      SET vd += {
-          capabilities: verifiedDomain.capabilities,
-          isDefault: verifiedDomain.isDefault,
-          isInitial: verifiedDomain.isInitial,
-          type: verifiedDomain.type
+      CALL {
+          WITH row, obj
+          UNWIND coalesce(row.verifiedDomains, []) AS verifiedDomain
+          MERGE (vd:{{ LABELS.VerifiedDomain }} {name: verifiedDomain.name})
+          SET vd += {
+              capabilities: verifiedDomain.capabilities,
+              isDefault: verifiedDomain.isDefault,
+              isInitial: verifiedDomain.isInitial,
+              type: verifiedDomain.type
+          }
+          MERGE (obj)-[:{{ REL.VERIFIED_DOMAIN }}]->(vd)
       }
-      MERGE (obj)-[:{{ REL.VERIFIED_DOMAIN }}]->(vd)
 
       RETURN count(*) AS _
   } IN TRANSACTIONS OF 5000 ROWS

@@ -67,9 +67,12 @@ cypher: |
       }
   
       WITH row, obj
-      UNWIND coalesce(row.memberOf, []) AS memberOf
-      MERGE (m:{{ LABELS.GraphObject }} {id: toLower(memberOf)})
-      MERGE (obj)-[:{{ REL.MEMBER_OF }}]->(m)
+      CALL {
+          WITH row, obj
+          UNWIND coalesce(row.memberOf, []) AS memberOf
+          MERGE (m:{{ LABELS.GraphObject }} {id: toLower(memberOf)})
+          MERGE (obj)-[:{{ REL.MEMBER_OF }}]->(m)
+      }
 
       RETURN count(*) AS _
   } IN TRANSACTIONS OF 5000 ROWS

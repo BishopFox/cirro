@@ -47,21 +47,30 @@ cypher: |
 
         // Unwind memberOf
         WITH row, obj
-        UNWIND coalesce(row.memberOf, []) AS memberOf
-        MERGE (mo:{{ LABELS.GraphObject }} {id: toLower(memberOf)})
-        MERGE (obj)-[:{{ REL.MEMBER_OF }}]->(mo)
+        CALL {
+            WITH row, obj
+            UNWIND coalesce(row.memberOf, []) AS memberOf
+            MERGE (mo:{{ LABELS.GraphObject }} {id: toLower(memberOf)})
+            MERGE (obj)-[:{{ REL.MEMBER_OF }}]->(mo)
+        }
 
         // Unwind owners
         WITH row, obj
-        UNWIND coalesce(row.owners, []) AS owner
-        MERGE (o:{{ LABELS.GraphObject }} {id: toLower(owner)})
-        MERGE (o)-[:{{ REL.OWNS }}]->(obj)
+        CALL {
+            WITH row, obj
+            UNWIND coalesce(row.owners, []) AS owner
+            MERGE (o:{{ LABELS.GraphObject }} {id: toLower(owner)})
+            MERGE (o)-[:{{ REL.OWNS }}]->(obj)
+        }
         
         // Unwind members
         WITH row, obj
-        UNWIND coalesce(row.members, []) AS member
-        MERGE (m:{{ LABELS.GraphObject }} {id: toLower(member)})
-        MERGE (m)-[:{{ REL.MEMBER_OF }}]->(obj)
+        CALL {
+            WITH row, obj
+            UNWIND coalesce(row.members, []) AS member
+            MERGE (m:{{ LABELS.GraphObject }} {id: toLower(member)})
+            MERGE (m)-[:{{ REL.MEMBER_OF }}]->(obj)
+        }
 
         RETURN count(*) AS _
 

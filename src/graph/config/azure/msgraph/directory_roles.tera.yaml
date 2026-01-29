@@ -20,9 +20,12 @@ cypher: |
 
       // Unwind members
       WITH row, obj
-      UNWIND coalesce(row.members, []) AS member
-      MERGE (m:{{ LABELS.GraphObject }} {id: toLower(member)})
-      MERGE (m)-[:{{ REL.HAS_ROLE }}]->(obj)
+      CALL {
+          WITH row, obj
+          UNWIND coalesce(row.members, []) AS member
+          MERGE (m:{{ LABELS.GraphObject }} {id: toLower(member)})
+          MERGE (m)-[:{{ REL.HAS_ROLE }}]->(obj)
+      }
 
       RETURN count(*) AS _
   } IN TRANSACTIONS OF 5000 ROWS

@@ -29,9 +29,12 @@ cypher: |
 
       // Unwind members
       WITH row, obj
-      UNWIND coalesce(row.members, []) AS member
-      MERGE (m:{{ LABELS.GraphObject }} {id: toLower(member)})
-      MERGE (m)-[:{{ REL.MEMBER_OF }}]->(obj)
+      CALL {
+          WITH row, obj
+          UNWIND coalesce(row.members, []) AS member
+          MERGE (m:{{ LABELS.GraphObject }} {id: toLower(member)})
+          MERGE (m)-[:{{ REL.MEMBER_OF }}]->(obj)
+      }
 
       // TODO: Unwind scoped role members
 

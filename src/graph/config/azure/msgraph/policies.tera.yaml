@@ -32,9 +32,9 @@ cypher: |
               allowedToCreateSecurityGroups: row.defaultUserRolePermissions.allowedToCreateSecurityGroups,
               allowedToCreateTenants: row.defaultUserRolePermissions.allowedToCreateTenants,
               allowedToReadOtherUsers: row.defaultUserRolePermissions.allowedToReadOtherUsers,
-              allowedToReadBitlockerKeysForOwnedDevices: row.defaultUserRolePermissions.allowedToReadBitlockerKeysForOwnedDevices,
+              allowedToReadBitlockerKeysForOwnedDevice: row.defaultUserRolePermissions.allowedToReadBitlockerKeysForOwnedDevice,
               policyType: policy_type
           }
           WITH obj, row, organization_id
-          MATCH (org:{{ LABELS.GraphOrg }} {id: toLower(organization_id)})
+          MERGE (org:{{ LABELS.GraphOrg }} {id: toLower(organization_id)})
           MERGE (org)-[:{{ REL.HAS_POLICY }}]->(obj)
