@@ -573,29 +573,28 @@ pub async fn paged_graph_request(
         let response = match result {
             Ok(resp) => resp,
             Err(e) => {
-                if e.is_timeout() {
-                    // Handle timeout with retry logic
-                    // Sometimes there will be an IO timeout around the throttling limits so need to retry in a little bit
-                    // Guidance says 10 seconds, so we'll go with 12 seconds to be safe
-                    if retries >= max_retries {
-                        return Err(CirroError::IoError(std::io::Error::new(
-                            std::io::ErrorKind::TimedOut,
-                            format!("Request timed out after {} retries: {}", max_retries, e),
-                        )));
-                    }
-
-                    debug!(
-                        "Request timeout for {}, retrying after 15 seconds (attempt {})",
-                        graph_url,
-                        retries + 1
-                    );
-                    tokio::time::sleep(std::time::Duration::from_secs(15)).await;
-
-                    retries += 1;
-                    continue; // Retry the request after waiting
-                } else {
-                    return Err(CirroError::RequestError(e));
+                // Handle request errors, which may include timeouts or connection issues
+                // Sometimes there will be an IO timeout around the throttling limits so need to retry in a little bit
+                // Guidance says 10 seconds, so we'll go with 12 seconds to be safe
+                if retries >= max_retries {
+                    return Err(CirroError::IoError(std::io::Error::new(
+                        std::io::ErrorKind::TimedOut,
+                        format!(
+                            "Request to {} failed after {} retries: {}",
+                            graph_url, retries, e
+                        ),
+                    )));
                 }
+
+                debug!(
+                    "Request timeout for {}, retrying after 15 seconds (attempt {})",
+                    graph_url,
+                    retries + 1
+                );
+                tokio::time::sleep(std::time::Duration::from_secs(15)).await;
+
+                retries += 1;
+                continue; // Retry the request after waiting
             }
         };
 

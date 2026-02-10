@@ -142,7 +142,19 @@ cypher: |
           }
           MERGE (obj)-[:{{ REL.HAS_ENDPOINT }}]->(e)
       }
-      RETURN count(*) AS _
+
+      // Iterate over alternativeNames to create additional nodes and relationships for ArmResource when alternativeName is an ARM ID
+      WITH row, obj
+      CALL {
+          WITH row, obj
+          UNWIND coalesce(row.alternativeNames, []) AS alternativeName
+          WITH alternativeName, obj
+          WHERE toLower(alternativeName) STARTS WITH "/subscriptions/"
+          MERGE (arm:{{ LABELS.ArmResource }} {id: toLower(alternativeName)})
+          MERGE (arm)-[:{{ REL.HAS_IDENTITY }}]->(obj)
+      }
+    RETURN count(*) AS _
+
   } IN TRANSACTIONS OF 5000 ROWS
   
   RETURN count(*) AS _
