@@ -1,5 +1,5 @@
 use crate::collect::azure::cli::{AzureCloud, EnumerationMode};
-use crate::collect::azure::db::DBWriteMessage;
+use crate::collect::azure::db::{ArmResourceMessage, DBWriteMessage, DataMessage};
 use crate::errors::CirroError;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -20,7 +20,7 @@ pub struct CollectorContext<C> {
     pub client_id: Option<String>,
     pub client_secret: Option<String>,
     pub client_cert_path: Option<PathBuf>,
-    pub db_writer: Option<Arc<mpsc::UnboundedSender<DBWriteMessage>>>,
+    pub db_writer: Option<Arc<mpsc::Sender<DBWriteMessage>>>,
 }
 
 impl<C> CollectorContext<C> {
@@ -32,9 +32,10 @@ impl<C> CollectorContext<C> {
         data: serde_json::Value,
     ) -> Result<(), CirroError> {
         if let Some(sender) = &self.db_writer {
-            let message = DBWriteMessage::Data { table, id, data };
+            let message = DBWriteMessage::Data(DataMessage { table, id, data });
             sender
                 .send(message)
+                .await
                 .map_err(|e| CirroError::DatabaseError(e.to_string()))?;
             Ok(())
         } else {
@@ -42,21 +43,26 @@ impl<C> CollectorContext<C> {
         }
     }
 
-    /// Writes an enrichment to the database
-    pub async fn write_enrichment_to_db(
+    /// Writes a batch of values to one table in the database
+    pub async fn write_values_batch_to_db(
         &self,
-        module: String,
-        resource_id: String,
-        data: serde_json::Value,
+        table: String,
+        rows: Vec<(String, serde_json::Value)>,
     ) -> Result<(), CirroError> {
         if let Some(sender) = &self.db_writer {
-            let message = DBWriteMessage::Enrichment {
-                module,
-                resource_id,
-                data,
-            };
+            let batch_rows = rows
+                .into_iter()
+                .map(|(id, data)| DataMessage {
+                    table: table.clone(),
+                    id,
+                    data,
+                })
+                .collect();
+
+            let message = DBWriteMessage::DataBatch(batch_rows);
             sender
                 .send(message)
+                .await
                 .map_err(|e| CirroError::DatabaseError(e.to_string()))?;
             Ok(())
         } else {
@@ -75,15 +81,16 @@ impl<C> CollectorContext<C> {
         data: serde_json::Value,
     ) -> Result<(), CirroError> {
         if let Some(sender) = &self.db_writer {
-            let message = DBWriteMessage::ArmResource {
+            let message = DBWriteMessage::ArmResource(ArmResourceMessage {
                 id,
                 sub_id,
                 rg_id,
                 resource_type,
                 data,
-            };
+            });
             sender
                 .send(message)
+                .await
                 .map_err(|e| CirroError::DatabaseError(e.to_string()))?;
             Ok(())
         } else {

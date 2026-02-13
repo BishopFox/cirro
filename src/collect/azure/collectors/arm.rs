@@ -431,19 +431,19 @@ async fn enumerate_subscription(
     );
 
     // Write the roles to the database
+    let mut role_rows = Vec::with_capacity(roles.len());
     for role in &roles {
         let role_id = role.get("id").and_then(Value::as_str).ok_or_else(|| {
             CirroError::ArmApiError("Role ID not found in role object".to_string())
         })?;
         let role_data = serde_json::to_value(role.clone())
             .map_err(|e| CirroError::SerializationError(e.to_string()))?;
-        let collector_clone = collector.clone();
-        async move {
-            let _ = collector_clone
-                .write_value_to_db("roleAssignments".into(), role_id.to_lowercase(), role_data)
-                .await;
-        }
-        .await;
+        role_rows.push((role_id.to_lowercase(), role_data));
+    }
+    if !role_rows.is_empty() {
+        collector
+            .write_values_batch_to_db("roleAssignments".into(), role_rows)
+            .await?;
     }
 
     // Get all the resource providers for this subscription
@@ -639,19 +639,19 @@ async fn enumerate_resourcegroup(
         );
     }
     // Write the roles to the database
+    let mut role_rows = Vec::with_capacity(roles.len());
     for role in &roles {
         let role_id = role.get("id").and_then(Value::as_str).ok_or_else(|| {
             CirroError::ArmApiError("Role ID not found in role object".to_string())
         })?;
         let role_data = serde_json::to_value(role.clone())
             .map_err(|e| CirroError::SerializationError(e.to_string()))?;
-        let collector_clone = collector.clone();
-        async move {
-            let _ = collector_clone
-                .write_value_to_db("roleAssignments".into(), role_id.to_lowercase(), role_data)
-                .await;
-        }
-        .await;
+        role_rows.push((role_id.to_lowercase(), role_data));
+    }
+    if !role_rows.is_empty() {
+        collector
+            .write_values_batch_to_db("roleAssignments".into(), role_rows)
+            .await?;
     }
 
     // Enumerate the resources in this resource group
@@ -752,6 +752,7 @@ pub async fn enumerate_arm(collector: Arc<Collector>) -> Result<(), CirroError> 
     debug!("Tenants: {:?}", tenants);
 
     // Write the tenants to the database
+    let mut tenant_rows = Vec::with_capacity(tenants.len());
     for tenant in &tenants {
         let tenant_id = tenant.get("id").and_then(Value::as_str).ok_or_else(|| {
             CirroError::ArmApiError("Tenant ID not found in tenant object".to_string())
@@ -760,13 +761,12 @@ pub async fn enumerate_arm(collector: Arc<Collector>) -> Result<(), CirroError> 
         let tenant_data = serde_json::to_value(tenant.clone())
             .map_err(|e| CirroError::SerializationError(e.to_string()))?;
 
-        let collector_clone = collector.clone();
-        async move {
-            let _ = collector_clone
-                .write_value_to_db("tenants".into(), tenant_id.to_lowercase(), tenant_data)
-                .await;
-        }
-        .await;
+        tenant_rows.push((tenant_id.to_lowercase(), tenant_data));
+    }
+    if !tenant_rows.is_empty() {
+        collector
+            .write_values_batch_to_db("tenants".into(), tenant_rows)
+            .await?;
     }
 
     // Management groups
@@ -781,23 +781,19 @@ pub async fn enumerate_arm(collector: Arc<Collector>) -> Result<(), CirroError> 
     debug!("Management Groups entities: {:?}", mg_entities);
 
     // Write the management groups entities to the database
+    let mut management_rows = Vec::with_capacity(mg_entities.len());
     for entity in &mg_entities {
         let entity_id = entity.get("id").and_then(Value::as_str).ok_or_else(|| {
             CirroError::ArmApiError("Management group ID not found in object".to_string())
         })?;
         let entity_data = serde_json::to_value(entity.clone())
             .map_err(|e| CirroError::SerializationError(e.to_string()))?;
-        let collector_clone = collector.clone();
-        async move {
-            let _ = collector_clone
-                .write_value_to_db(
-                    "managementGroupEntities".into(),
-                    entity_id.to_lowercase(),
-                    entity_data,
-                )
-                .await;
-        }
-        .await;
+        management_rows.push((entity_id.to_lowercase(), entity_data));
+    }
+    if !management_rows.is_empty() {
+        collector
+            .write_values_batch_to_db("managementGroupEntities".into(), management_rows)
+            .await?;
     }
 
     // Get the subscriptions
@@ -812,6 +808,7 @@ pub async fn enumerate_arm(collector: Arc<Collector>) -> Result<(), CirroError> 
     debug!("Subscriptions: {:?}", subscriptions);
 
     // Write the subscriptions to the database
+    let mut subscription_rows = Vec::with_capacity(subscriptions.len());
     for subscription in &subscriptions {
         let subscription_id = subscription
             .get("subscriptionId")
@@ -823,17 +820,12 @@ pub async fn enumerate_arm(collector: Arc<Collector>) -> Result<(), CirroError> 
             })?;
         let subscription_data = serde_json::to_value(subscription.clone())
             .map_err(|e| CirroError::SerializationError(e.to_string()))?;
-        let collector_clone = collector.clone();
-        async move {
-            let _ = collector_clone
-                .write_value_to_db(
-                    "subscriptions".into(),
-                    subscription_id.to_lowercase(),
-                    subscription_data,
-                )
-                .await;
-        }
-        .await;
+        subscription_rows.push((subscription_id.to_lowercase(), subscription_data));
+    }
+    if !subscription_rows.is_empty() {
+        collector
+            .write_values_batch_to_db("subscriptions".into(), subscription_rows)
+            .await?;
     }
 
     // Now we can query resources for each subscription

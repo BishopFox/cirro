@@ -2,26 +2,30 @@ use log::{debug, error};
 use rusqlite::Connection;
 
 use std::path::PathBuf;
+use std::time::Duration;
 use tokio::sync::mpsc;
 
+#[derive(Debug, Clone)]
+pub struct DataMessage {
+    pub table: String,
+    pub id: String,
+    pub data: serde_json::Value,
+}
+
+#[derive(Debug, Clone)]
+pub struct ArmResourceMessage {
+    pub id: String,
+    pub sub_id: String,
+    pub rg_id: String,
+    pub resource_type: String,
+    pub data: serde_json::Value,
+}
+
 pub enum DBWriteMessage {
-    Data {
-        table: String,
-        id: String,
-        data: serde_json::Value,
-    },
-    ArmResource {
-        id: String,
-        sub_id: String,
-        rg_id: String,
-        resource_type: String,
-        data: serde_json::Value,
-    },
-    Enrichment {
-        module: String,
-        resource_id: String,
-        data: serde_json::Value,
-    },
+    Data(DataMessage),
+    DataBatch(Vec<DataMessage>),
+    ArmResource(ArmResourceMessage),
+    ArmResourceBatch(Vec<ArmResourceMessage>),
     /// Shutdown message to close the database connection
     Shutdown,
 }
@@ -44,7 +48,7 @@ impl SqliteDb {
     /// Runs the database writer loop
     /// This will initialize the database connection when the first message arrives
     /// and will handle all incoming messages until a shutdown message is received.
-    pub async fn run_writer(&self, mut receiver: mpsc::UnboundedReceiver<DBWriteMessage>) {
+    pub fn run_writer(&self, mut receiver: mpsc::Receiver<DBWriteMessage>) {
         // Define all possible table names
         let table_names = vec![
             "applications",
@@ -62,85 +66,91 @@ impl SqliteDb {
             "users",
         ];
 
+        const WRITE_BATCH_SIZE: usize = 1000;
+
+        let init_db = || -> Result<Connection, rusqlite::Error> {
+            let conn = Connection::open(&self.db_path)?;
+
+            let _ = conn.busy_timeout(Duration::from_secs(30));
+
+            if let Err(e) = conn.execute_batch(
+                "PRAGMA journal_mode=WAL;
+                 PRAGMA synchronous=NORMAL;
+                 PRAGMA automatic_index=true;
+                 PRAGMA temp_store=MEMORY;",
+            ) {
+                error!("Failed to set database PRAGMAs: {}", e);
+            }
+
+            for table_name in &table_names {
+                let create_table_sql = format!(
+                    "CREATE TABLE IF NOT EXISTS {} (id TEXT PRIMARY KEY, data BLOB)",
+                    table_name
+                );
+                if let Err(e) = conn.execute(&create_table_sql, []) {
+                    error!("Failed to create table {}: {}", table_name, e);
+                }
+            }
+
+            if let Err(e) = conn.execute(
+                "CREATE TABLE IF NOT EXISTS resources (id TEXT PRIMARY KEY, sub_id TEXT, rg_id TEXT, resource_type TEXT, data BLOB)",
+                [],
+            ) {
+                error!("Failed to create resources table: {}", e);
+            }
+
+            Ok(conn)
+        };
+
         // Connection will be initialized when the first message arrives
         let mut conn_option: Option<Connection> = None;
+        let mut in_transaction = false;
+        let mut pending_writes: usize = 0;
 
         // Process incoming messages
-        while let Some(message) = receiver.recv().await {
-            match message {
-                DBWriteMessage::Data { table, id, data } => {
-                    // Initialize database if this is the first message
-                    if conn_option.is_none() {
-                        debug!(
-                            "Received first message, initializing database: {:?}",
-                            self.db_path
-                        );
-
-                        // Open the database connection
-                        match Connection::open(&self.db_path) {
-                            Ok(new_conn) => {
-                                // Set database PRAGMAs for performance
-                                if let Err(e) = new_conn.execute_batch(
-                                    "PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL; PRAGMA automatic_index = true;",
-                                ) {
-                                    error!("Failed to set database PRAGMAs: {}", e);
-                                    // Continue anyway, as these are just performance optimizations
-                                }
-
-                                // Create standard tables if they do not exist
-                                for table_name in &table_names {
-                                    let create_table_sql = format!(
-                                        "CREATE TABLE IF NOT EXISTS {} (id TEXT PRIMARY KEY, data BLOB)",
-                                        table_name
-                                    );
-                                    if let Err(e) = new_conn.execute(&create_table_sql, []) {
-                                        error!("Failed to create table {}: {}", table_name, e);
-                                        // Continue with other tables
-                                    }
-                                }
-
-                                // Create the resource table with its special schema
-                                if let Err(e) = new_conn.execute(
-                                    "CREATE TABLE IF NOT EXISTS resources (id TEXT PRIMARY KEY, sub_id TEXT, rg_id TEXT, resource_type TEXT, data BLOB)",
-                                    [],
-                                ) {
-                                    error!("Failed to create resources table: {}", e);
-                                    // Continue anyway
-                                }
-
-                                // Create the enrichment table
-                                if let Err(e) = new_conn.execute(
-                                    "CREATE TABLE IF NOT EXISTS enrichments (module TEXT, resource_id TEXT, data BLOB, PRIMARY KEY (module, resource_id))",
-                                    [],
-                                ) {
-                                    error!("Failed to create enrichments table: {}", e);
-                                    // Continue anyway
-                                }
-
-                                conn_option = Some(new_conn);
-                                debug!("Database initialized successfully");
-                            }
-                            Err(e) => {
-                                error!("Failed to open database: {}", e);
-                                // Skip this message since we couldn't open the database
-                                continue;
-                            }
-                        };
+        while let Some(message) = receiver.blocking_recv() {
+            if conn_option.is_none() {
+                debug!(
+                    "Received first message, initializing database: {:?}",
+                    self.db_path
+                );
+                match init_db() {
+                    Ok(conn) => {
+                        conn_option = Some(conn);
+                        debug!("Database initialized successfully");
                     }
+                    Err(e) => {
+                        error!("Failed to open database: {}", e);
+                        continue;
+                    }
+                }
+            }
 
-                    // At this point we should have a valid connection
-                    let conn = match &conn_option {
-                        Some(c) => c,
-                        None => {
-                            error!("Database connection unavailable, skipping message");
+            let conn = match conn_option.as_mut() {
+                Some(c) => c,
+                None => {
+                    error!("Database connection unavailable, skipping message");
+                    continue;
+                }
+            };
+
+            let write_succeeded = match message {
+                DBWriteMessage::Data(message) => {
+                    let DataMessage { table, id, data } = message;
+
+                    if !in_transaction {
+                        if let Err(e) = conn.execute_batch("BEGIN IMMEDIATE") {
+                            error!("Failed to begin transaction: {}", e);
                             continue;
                         }
-                    };
+                        in_transaction = true;
+                    }
 
                     // Insert or replace the data
-                    let insert_sql =
-                        format!("INSERT OR REPLACE INTO {} (id, data) VALUES (?, ?)", table);
-                    match conn.execute(&insert_sql, &[&id.to_lowercase(), &data.to_string()]) {
+                    let insert_sql = format!("REPLACE INTO {} (id, data) VALUES (?, ?)", table);
+                    match conn.prepare_cached(&insert_sql).and_then(|mut stmt| {
+                        stmt.execute(rusqlite::params![id.to_lowercase(), data.to_string()])
+                    }) {
                         Ok(_) => {}
                         Err(e) => {
                             error!(
@@ -150,32 +160,91 @@ impl SqliteDb {
                             continue;
                         }
                     }
+
+                    true
                 }
-                DBWriteMessage::ArmResource {
-                    id,
-                    sub_id,
-                    rg_id,
-                    resource_type,
-                    data,
-                } => {
-                    let insert_sql = "REPLACE INTO resources (id, sub_id, rg_id, resource_type, data) VALUES (?, ?, ?, ?, ?)";
-                    let conn = match &conn_option {
-                        Some(c) => c,
-                        None => {
-                            error!("Database connection unavailable, skipping message");
+                DBWriteMessage::DataBatch(rows) => {
+                    if rows.is_empty() {
+                        continue;
+                    }
+
+                    let table = rows[0].table.clone();
+
+                    if !in_transaction {
+                        if let Err(e) = conn.execute_batch("BEGIN IMMEDIATE") {
+                            error!("Failed to begin transaction: {}", e);
+                            continue;
+                        }
+                        in_transaction = true;
+                    }
+
+                    let insert_sql = format!("REPLACE INTO {} (id, data) VALUES (?, ?)", table);
+                    let mut stmt = match conn.prepare_cached(&insert_sql) {
+                        Ok(stmt) => stmt,
+                        Err(e) => {
+                            error!("Failed to prepare statement for table {}: {}", table, e);
                             continue;
                         }
                     };
-                    match conn.execute(
-                        insert_sql,
-                        &[
-                            &id.to_lowercase(),
-                            &sub_id.to_lowercase(),
-                            &rg_id.to_lowercase(),
-                            &resource_type.to_lowercase(),
-                            &data.to_string(),
-                        ],
-                    ) {
+
+                    let mut succeeded = 0usize;
+                    for row in rows {
+                        if row.table != table {
+                            error!(
+                                "Mixed table names in DataBatch (expected {}, got {})",
+                                table, row.table
+                            );
+                            continue;
+                        }
+
+                        match stmt.execute(rusqlite::params![
+                            row.id.to_lowercase(),
+                            row.data.to_string()
+                        ]) {
+                            Ok(_) => succeeded += 1,
+                            Err(e) => {
+                                error!(
+                                    "Failed to write to table: {}, id: {}. Error: {}",
+                                    table, row.id, e
+                                );
+                            }
+                        }
+                    }
+
+                    if succeeded == 0 {
+                        continue;
+                    }
+
+                    pending_writes += succeeded.saturating_sub(1);
+                    true
+                }
+                DBWriteMessage::ArmResource(message) => {
+                    let ArmResourceMessage {
+                        id,
+                        sub_id,
+                        rg_id,
+                        resource_type,
+                        data,
+                    } = message;
+
+                    if !in_transaction {
+                        if let Err(e) = conn.execute_batch("BEGIN IMMEDIATE") {
+                            error!("Failed to begin transaction: {}", e);
+                            continue;
+                        }
+                        in_transaction = true;
+                    }
+
+                    let insert_sql = "REPLACE INTO resources (id, sub_id, rg_id, resource_type, data) VALUES (?, ?, ?, ?, ?)";
+                    match conn.prepare_cached(insert_sql).and_then(|mut stmt| {
+                        stmt.execute(rusqlite::params![
+                            id.to_lowercase(),
+                            sub_id.to_lowercase(),
+                            rg_id.to_lowercase(),
+                            resource_type.to_lowercase(),
+                            data.to_string(),
+                        ])
+                    }) {
                         Ok(_) => {}
                         Err(e) => {
                             error!(
@@ -185,43 +254,69 @@ impl SqliteDb {
                             continue;
                         }
                     }
+
+                    true
                 }
-                DBWriteMessage::Enrichment {
-                    module,
-                    resource_id,
-                    data,
-                } => {
-                    let insert_sql =
-                        "REPLACE INTO enrichments (module, resource_id, data) VALUES (?, ?, ?)";
-                    let conn = match &conn_option {
-                        Some(c) => c,
-                        None => {
-                            // Set up new connection
-                            conn_option = Some(Connection::open(&self.db_path).unwrap());
-                            match conn_option.as_ref() {
-                                Some(c) => c,
-                                None => {
-                                    error!("Failed to open database connection for enrichment");
-                                    continue;
-                                }
-                            }
-                        }
-                    };
-                    match conn.execute(insert_sql, &[&module, &resource_id, &data.to_string()]) {
-                        Ok(_) => {}
-                        Err(e) => {
-                            error!(
-                                "Failed to write enrichment: module: {}, resource_id: {}. Error: {}",
-                                module, resource_id, e
-                            );
+                DBWriteMessage::ArmResourceBatch(rows) => {
+                    if rows.is_empty() {
+                        continue;
+                    }
+
+                    if !in_transaction {
+                        if let Err(e) = conn.execute_batch("BEGIN IMMEDIATE") {
+                            error!("Failed to begin transaction: {}", e);
                             continue;
                         }
+                        in_transaction = true;
                     }
+
+                    let insert_sql = "REPLACE INTO resources (id, sub_id, rg_id, resource_type, data) VALUES (?, ?, ?, ?, ?)";
+                    let mut stmt = match conn.prepare_cached(insert_sql) {
+                        Ok(stmt) => stmt,
+                        Err(e) => {
+                            error!("Failed to prepare resource insert statement: {}", e);
+                            continue;
+                        }
+                    };
+
+                    let mut succeeded = 0usize;
+                    for row in rows {
+                        match stmt.execute(rusqlite::params![
+                            row.id.to_lowercase(),
+                            row.sub_id.to_lowercase(),
+                            row.rg_id.to_lowercase(),
+                            row.resource_type.to_lowercase(),
+                            row.data.to_string(),
+                        ]) {
+                            Ok(_) => succeeded += 1,
+                            Err(e) => {
+                                error!(
+                                    "Failed to write ARM resource: {}, sub_id: {}, rg_id: {}, resource_type: {}. Error: {}",
+                                    row.id, row.sub_id, row.rg_id, row.resource_type, e
+                                );
+                            }
+                        }
+                    }
+
+                    if succeeded == 0 {
+                        continue;
+                    }
+
+                    pending_writes += succeeded.saturating_sub(1);
+                    true
                 }
                 DBWriteMessage::Shutdown => {
                     debug!("Received shutdown message, closing database connection");
+
+                    if in_transaction {
+                        if let Err(e) = conn.execute_batch("COMMIT") {
+                            error!("Failed to commit transaction during shutdown: {}", e);
+                        }
+                        in_transaction = false;
+                    }
+
                     // Finalize any pending work and close the connection properly
-                    if let Some(conn) = &conn_option {
+                    if let Some(conn) = conn_option.as_ref() {
                         if let Err(e) = conn.execute("PRAGMA optimize", []) {
                             debug!("Failed to run PRAGMA optimize: {}", e);
                         }
@@ -231,6 +326,26 @@ impl SqliteDb {
                     }
                     // Break out of the loop to terminate the writer
                     break;
+                }
+            };
+
+            if write_succeeded {
+                pending_writes += 1;
+
+                if pending_writes >= WRITE_BATCH_SIZE && in_transaction {
+                    if let Err(e) = conn.execute_batch("COMMIT") {
+                        error!("Failed to commit write batch: {}", e);
+                    }
+                    in_transaction = false;
+                    pending_writes = 0;
+                }
+            }
+        }
+
+        if in_transaction {
+            if let Some(conn) = conn_option.as_ref() {
+                if let Err(e) = conn.execute_batch("COMMIT") {
+                    error!("Failed to commit final transaction: {}", e);
                 }
             }
         }

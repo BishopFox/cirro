@@ -195,9 +195,6 @@ pub async fn enumerate_graph(collector: Arc<Collector>) -> Result<(), CirroError
     let errors: Vec<_> = results.into_iter().filter_map(|r| r.err()).collect();
     if !errors.is_empty() {
         error!("Graph enumeration completed with {} errors", errors.len());
-
-        // Originally returned errors here. Feeling it out.
-        //return Err(CirroError::MultipleErrors(errors));
     }
 
     Ok(())
@@ -316,7 +313,6 @@ async fn query_objects(
                 }
 
                 let id: String;
-                let table: String;
 
                 if resource_type.starts_with("policies/") {
                     // Special handling for policies
@@ -337,7 +333,6 @@ async fn query_objects(
                         .unwrap_or_else(|| "unknown_tenant".to_string());
 
                     id = format!("{}_{}", tenant_id, policy_type);
-                    table = "policies".to_string();
                 } else {
                     // Get the ID from the object
                     id = value_clone
@@ -345,24 +340,45 @@ async fn query_objects(
                         .and_then(|v| v.as_str())
                         .unwrap_or("unknown_id")
                         .to_string();
-                    table = resource_type.clone();
                 };
 
-                // Prepare and send the DB write message - this happens regardless of whether
-                // properties were expanded, but we have better logging if they were
-                let _ = &collector_clone
-                    .write_value_to_db(table, id.clone(), value_clone)
-                    .await;
-
-                Ok(())
+                Ok::<(String, serde_json::Value), CirroError>((id, value_clone))
             }
         })
         .buffer_unordered(concurrency)
-        .collect::<Vec<Result<(), CirroError>>>()
+        .collect::<Vec<Result<(String, serde_json::Value), CirroError>>>()
         .await;
 
-    // Check for errors in the results
-    let error_count = results.iter().filter(|r| r.is_err()).count();
+    let mut rows: Vec<(String, serde_json::Value)> = Vec::new();
+    let mut error_count = 0usize;
+
+    for result in results {
+        match result {
+            Ok((id, value)) => rows.push((id, value)),
+            Err(_) => error_count += 1,
+        }
+    }
+
+    if !rows.is_empty() {
+        let table = if resource_type.starts_with("policies/") {
+            "policies".to_string()
+        } else {
+            resource_type.to_string()
+        };
+
+        collector
+            .write_values_batch_to_db(table, rows)
+            .await
+            .map_err(|e| {
+                error!(
+                    "Failed to write batch for resource type {}: {}",
+                    resource_type, e
+                );
+                e
+            })?;
+    }
+
+    // Check for errors in processing results
     if error_count > 0 {
         error!(
             "{} errors occurred while processing {} objects",
@@ -575,7 +591,6 @@ pub async fn paged_graph_request(
             Err(e) => {
                 // Handle request errors, which may include timeouts or connection issues
                 // Sometimes there will be an IO timeout around the throttling limits so need to retry in a little bit
-                // Guidance says 10 seconds, so we'll go with 12 seconds to be safe
                 if retries >= max_retries {
                     return Err(CirroError::IoError(std::io::Error::new(
                         std::io::ErrorKind::TimedOut,
@@ -587,11 +602,11 @@ pub async fn paged_graph_request(
                 }
 
                 debug!(
-                    "Request timeout for {}, retrying after 15 seconds (attempt {})",
+                    "Request timeout for {}, retrying after 5 seconds (attempt {})",
                     graph_url,
                     retries + 1
                 );
-                tokio::time::sleep(std::time::Duration::from_secs(15)).await;
+                tokio::time::sleep(std::time::Duration::from_secs(5)).await;
 
                 retries += 1;
                 continue; // Retry the request after waiting

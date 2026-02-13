@@ -42,15 +42,16 @@ async fn run_collector(mut collector: Collector) -> Result<(), CirroError> {
         collector.output_path.to_path_buf().as_path()
     );
 
-    // Create the database writer
-    let (tx, rx) = tokio::sync::mpsc::unbounded_channel::<DBWriteMessage>();
+    // Create the database writer with bounded channel for backpressure
+    const DB_CHANNEL_CAPACITY: usize = 16_384;
+    let (tx, rx) = tokio::sync::mpsc::channel::<DBWriteMessage>(DB_CHANNEL_CAPACITY);
     let db_tx = Arc::new(tx);
     collector.db_writer = Some(db_tx.clone());
 
     let output_path = collector.output_path.clone();
-    tokio::spawn(async move {
+    let db_writer_task = tokio::task::spawn_blocking(move || {
         let sqlite_db = SqliteDb::new(output_path);
-        sqlite_db.run_writer(rx).await;
+        sqlite_db.run_writer(rx);
     });
 
     let graph_collector = Arc::new(collector);
@@ -117,11 +118,14 @@ async fn run_collector(mut collector: Collector) -> Result<(), CirroError> {
 
     // Wait for the DB writer to finish
     info!("Sending shutdown message to DB writer");
-    db_tx.send(DBWriteMessage::Shutdown).unwrap();
+    db_tx
+        .send(DBWriteMessage::Shutdown)
+        .await
+        .map_err(|e| CirroError::DatabaseError(e.to_string()))?;
 
-    // Wait for the DB writer to process the shutdown message
-    info!("Sleeping for 5 seconds to ensure DB writer processes shutdown");
-    tokio::time::sleep(tokio::time::Duration::from_secs(5)).await;
+    db_writer_task
+        .await
+        .map_err(|e| CirroError::DatabaseError(e.to_string()))?;
 
     info!("Done");
     Ok(())
