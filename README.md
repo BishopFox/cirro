@@ -120,7 +120,7 @@ cirro graph ingest --type az --file cirro_output.db \
 
 ## Dashboard
 
-CirroDash can be located here: [https://github.com/bishopfox/cirrodash](CirroDash)
+CirroDash can be located here: [https://github.com/bishopfox/cirrodash](https://github.com/bishopfox/cirrodash)
 
 ## Debug Mode
 

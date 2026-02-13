@@ -1,22 +1,13 @@
-# APPROLE
+# APPROLE (Legacy)
 
-Represents the assignment of application roles to Graph objects.
+`APPROLE` is a legacy relationship name kept for historical documentation.
 
-## Usage
+Current ingestion uses:
 
-This relationship connects Graph objects to the application roles assigned to them:
+- `ASSIGNED_APPROLE` for app-role assignments from principals to service principals
+- `HAS_APPROLE` for role definitions on applications/service principals
 
-- **GraphObject** → `APPROLE` → **GraphApplication** - Objects with app role assignments
-- **GraphObject** → `APPROLE` → **GraphServicePrincipal** - Objects with service principal role assignments
+See:
 
-## Properties
-
-- `appRoleId` - The ID of the specific application role assigned
-
-## Examples
-
-```cypher
-// Find all users with application role assignments
-MATCH (user:GraphUser)-[r:APPROLE]->(app:GraphApplication)
-RETURN user.displayName, app.displayName, r.appRoleId
-```
+- [ASSIGNED_APPROLE](assigned-approle.md)
+- [HAS_APPROLE](has-approle.md)

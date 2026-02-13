@@ -2,53 +2,56 @@
 
 ```mermaid
 graph TB
-    A[Cirro] -->|Queries| B[Azure ARM APIs]
-    A -->|Queries| C[Microsoft Graph APIs]
-    B -->|Stores Results| D[SQLite Database]
-    C -->|Stores Results| D[SQLite Database]
-    D -->  H[cirro-graph]
-
-    H -->|Ingests Into| E[Neo4j]
-
-    
-
+    A[cirro collect] -->|Queries| B[Platform APIs]
+    B -->|Stores Results| C[Collected Data Files]
+    C --> D[cirro graph ingest]
+    D -->|Maps to Graph Schema| E[Neo4j]
+    E --> F[cirro graph export]
     E <--> G[Visualization Tools]
-    F <--> G
+    F --> H[Export Formats]
 
 ```
 
 Cirro uses a two-stage architecture:
 
-1. **Data Collection (`cirro`)**: Gathers data from Azure and stores it in a local SQLite database
-2. **Data Ingestion (`cirro-graph`)**: Loads the collected data into your chosen graph database
+1. **Data Collection (`cirro collect`)**: Gathers data from supported platforms and stores it in platform-specific output files
+2. **Graph Operations (`cirro graph`)**: Ingests collected data into a graph database and exports query results
 
 ## Components
 
-### Cirro
+### Collection (`cirro collect`)
 
-The main `cirro` tool is responsible for:
+The collection workflow is responsible for:
 
-- Authenticating with Azure using various methods
-- Querying Azure Resource Manager (ARM) APIs
-- Querying Microsoft Graph APIs
-- Storing collected data in a local SQLite database
-- Supporting multiple Azure cloud environments
+- Authenticating to the target platform using method-specific providers
+- Querying platform APIs and normalizing raw responses
+- Writing collected data to files for later graph ingestion
+- Supporting optional platform modules through feature flags
 
-### cirro-graph
+### Graph Operations (`cirro graph`)
 
-The `cirro-graph` tool handles:
+The graph workflow handles:
 
-- Reading data from the SQLite database
-- Transforming data for graph database compatibility
-- Loading data into Neo4j
-- Creating appropriate indexes and constraints
-- Maintaining data relationships and properties
+- Reading collected data from supported source formats
+- Mapping entities and relationships into graph schema nodes and edges
+- Loading graph data into Neo4j
+- Creating indexes and constraints where required
+- Exporting graph data into multiple output formats
+
+## Schema Extensibility
+
+Cirro is built to support different platform schemas without changing the core workflow:
+
+- **Platform support is implemented in code**: collectors and ingestors for each source are added as Rust modules
+- **YAML graph specs drive mappings**: node, edge, and property mappings are defined in YAML files consumed by ingestion
+- **Ingest pipeline applies mappings consistently** across supported platforms
+- **Feature flags control included modules** so builds can include only required platform functionality
 
 ## Data Flow
 
-1. **Authentication**: Cirro authenticates with Azure using your chosen method
-2. **Data Collection**: APIs are queried to gather comprehensive environment data
-3. **Local Storage**: Data is stored in an SQLite database for processing
-4. **Data Transformation**: The ingest tool transforms data for graph database format
-5. **Graph Loading**: Data is loaded into your chosen graph database
-6. **Visualization**: Use graph database tools to query and visualize the data
+1. **Authentication**: A platform-specific auth method is selected
+2. **Data Collection**: APIs are queried to gather environment and identity relationships
+3. **Local Output**: Data is written to collector output files
+4. **Schema Mapping**: The ingest workflow maps source data into graph schema definitions
+5. **Graph Loading**: Data is loaded into Neo4j with relationships preserved
+6. **Analysis & Export**: Use graph tools and export commands for downstream analysis

@@ -114,7 +114,7 @@ cirro collect ts <auth-method> [options]
 
 ## Output
 
-All collection commands output to a SQLite database file (default: `cirro_output.db`) that can be ingested into a graph database using `cirro graph ingest`.
+Collection commands output platform-specific files (for example SQLite or JSON) that can be ingested into a graph database using `cirro graph ingest`.
  CLI Reference
 
 The `cirro` command-line tool is the primary data collection component designed to gather information from multiple cloud platforms. Currently, it supports Azure environments by collecting data from Azure Resource Manager (ARM) APIs and Microsoft Graph APIs.
@@ -122,13 +122,13 @@ The `cirro` command-line tool is the primary data collection component designed 
 ## Synopsis
 
 ```bash
-cirro <COMMAND> <AUTH_MODE> [OPTIONS]
+cirro <function> <platform> <auth-method> [options]
 ```
 
 ## Collection Mode
 
 ```bash
-cirro collect <AUTH_MODE> [OPTIONS]
+cirro collect <platform> <auth-method> [options]
 ```
 
 ## Authentication Modes
@@ -138,7 +138,7 @@ cirro collect <AUTH_MODE> [OPTIONS]
 Authenticate using a pre-obtained access token.
 
 ```bash
-cirro collect access-token --token <TOKEN> [OPTIONS]
+cirro collect az access-token --token <TOKEN> [OPTIONS]
 ```
 
 **Arguments:**
@@ -156,7 +156,7 @@ cirro collect access-token --token <TOKEN> [OPTIONS]
 Authenticate using Azure CLI credentials.
 
 ```bash
-cirro collect azcli [OPTIONS]
+cirro collect az azcli [OPTIONS]
 ```
 
 **Options:**
@@ -173,7 +173,7 @@ cirro collect azcli [OPTIONS]
 Authenticate using a client secret.
 
 ```bash
-cirro collect client-secret --client-id <ID> --client-secret <SECRET> --tenant-id <TENANT> [OPTIONS]
+cirro collect az client-secret --client-id <ID> --client-secret <SECRET> --tenant-id <TENANT> [OPTIONS]
 ```
 
 **Arguments:**
@@ -194,7 +194,7 @@ cirro collect client-secret --client-id <ID> --client-secret <SECRET> --tenant-i
 Authenticate using a client certificate.
 
 ```bash
-cirro collect client-cert --client-id <ID> --certificate <CERT_PATH> --tenant-id <TENANT> [OPTIONS]
+cirro collect az client-cert --client-id <ID> --certificate <CERT_PATH> --tenant-id <TENANT> [OPTIONS]
 ```
 
 **Arguments:**
@@ -215,7 +215,7 @@ cirro collect client-cert --client-id <ID> --certificate <CERT_PATH> --tenant-id
 Authenticate using username and password.
 
 ```bash
-cirro collect user-pass --upn <UPN> --password <PASSWORD> [OPTIONS]
+cirro collect az user-pass --upn <UPN> --password <PASSWORD> [OPTIONS]
 ```
 
 **Arguments:**
@@ -285,45 +285,45 @@ cirro enrich --storage-keys azcli
 
 ```bash
 # Collect from Azure using CLI authentication
-cirro collect azcli
+cirro collect az azcli
 
 # Collect with specific Azure tenant and subscription
-cirro collect azcli --tenant-id "12345678-1234-1234-1234-123456789012" --subscription-id "87654321-4321-4321-4321-210987654321"
+cirro collect az azcli --tenant-id "12345678-1234-1234-1234-123456789012" --subscription-id "87654321-4321-4321-4321-210987654321"
 
 # Collect only Azure ARM resources
-cirro collect azcli --mode arm
+cirro collect az azcli --mode arm
 
 # Collect only Azure Graph data
-cirro collect azcli --mode graph
+cirro collect az azcli --mode graph
 ```
 
 ### Authentication Examples
 
 ```bash
 # Using client secret
-cirro collect client-secret \
+cirro collect az client-secret \
   --client-id "app-id-here" \
   --client-secret "secret-here" \
   --tenant-id "tenant-id-here"
 
 # Using client certificate
-cirro collect client-cert \
+cirro collect az client-cert \
   --client-id "app-id-here" \
   --certificate "/path/to/cert.pem" \
   --tenant-id "tenant-id-here"
 
 # Using access token
-cirro collect access-token --token "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIs..."
+cirro collect az access-token --token "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIs..."
 ```
 
 ### Cloud Environment Examples
 
 ```bash
 # Collect from Azure US Government
-cirro collect azcli --cloud usgov
+cirro collect az azcli --cloud usgov
 
 # Collect from Azure China
-cirro collect azcli --cloud china
+cirro collect az azcli --cloud china
 ```
 
 ### Data Enrichment
@@ -343,13 +343,13 @@ cirro enrich --storage-keys client-secret \
 
 ```bash
 # Custom output file
-cirro collect azcli --output-path "/path/to/my-data.db"
+cirro collect az azcli --output-path "/path/to/my-data.db"
 
 # Enable debug logging
-cirro collect azcli --debug
+cirro collect az azcli --debug
 
 # Combined options
-cirro collect azcli \
+cirro collect az azcli \
   --output-path "/path/to/my-data.db" \
   --mode both \
   --cloud public \

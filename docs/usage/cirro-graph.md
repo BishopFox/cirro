@@ -19,7 +19,7 @@ cirro graph ingest --type <platform> --file <data-file> [options]
 ### Options
 
 - `--type`, `-t`: Platform type (`az` for Azure, `ts` for Tailscale)
-- `--file`, `-f`: Path to the SQLite database file from collection
+- `--file`, `-f`: Path to the collected data file for the selected platform
 - `--server`, `-s`: Database server URL (default: `bolt://localhost:7687`)
 - `--user`, `-u`: Database username (default: `neo4j`)
 - `--password`, `-p`: Database password (default: `password`)
@@ -39,24 +39,24 @@ cirro graph ingest --type <platform> --file <data-file> [options]
 
 ```bash
 # Ingest Azure data with defaults
-cirro graph ingest --type az --file azure-data.db
+cirro graph ingest --type az --file cirro_output.db
 
 # Ingest to custom database
 cirro graph ingest \
   --type az \
-  --file azure-data.db \
+  --file cirro_output.db \
   --server bolt://graph-server:7687 \
   --user admin \
   --password secretpass \
   --db-name azure-prod
 
 # Ingest Tailscale data with debug logging
-cirro graph ingest --type ts --file tailscale.db --debug
+cirro graph ingest --type ts --file cirro_ts_socket.json --debug
 
 # Use encrypted connection
 cirro graph ingest \
   --type az \
-  --file azure-data.db \
+  --file cirro_output.db \
   --server bolt+s://secure-server:7687
 ```
 
@@ -112,9 +112,9 @@ This starts Neo4j with:
 ## Data Model
 
 See the [Analysis](../analysis/cirro-graph-analysis.md) section for details on the graph schema, nodes, and relationships created during ingestion.
- CLI Reference
+## CLI Reference
 
-The `cirro-graph` command-line tool is responsible for loading data collected by `cirro` from various cloud platforms into Neo4j graph database. Currently supports data collected from Azure environments.
+The `cirro graph ingest` command loads data collected by `cirro collect` into a Neo4j graph database. It currently supports platform data collected from Azure and Tailscale.
 
 !!! warning "Security Notice"
 
@@ -125,54 +125,50 @@ The `cirro-graph` command-line tool is responsible for loading data collected by
 
 ## Synopsis
 
-The `cirro-graph` tool performs the following operations:
+The `cirro graph ingest` command performs the following operations:
 
 1. **Database Connection** - Establishes connection to the target graph database
 2. **Schema Setup** - Creates necessary constraints and indexes
-3. **Data Transformation** - Converts SQLite platform data to graph format
+3. **Data Transformation** - Converts collected platform data to graph format
 4. **Node Creation** - Creates nodes for all collected entities
 5. **Relationship Creation** - Establishes relationships between entities
 6. **Index Optimization** - Optimizes database performance
 
 ```bash
-cirro-graph --file <DATABASE_FILE> [OPTIONS]
+cirro graph ingest --type <platform> --file <data-file> [OPTIONS]
 ```
 
 ## Required Arguments
 
+`--type` / `-t`
+
+Platform type for the input data.
+
+```bash
+cirro graph ingest --type az --file cirro_output.db
+```
+
+**Values:** `az`, `ts`
+
 `--file` / `-f`
 
-Path to the Cirro results database file (SQLite) created by the `cirro` tool containing cloud platform data.
+Path to the collected data file created by `cirro collect` for the selected platform.
 
 ```bash
-cirro-graph --file cirro_output.db
+cirro graph ingest --type az --file cirro_output.db
 ```
 
-**Format:** SQLite database file path  
-**Example:** `cirro_output.db`, `/path/to/results.db`
+**Format:** platform-specific data file path  
+**Example:** `cirro_output.db`, `cirro_ts_socket.json`
 
 ## Options
-
-`--graph-type` / `-g`
-
-Specifies the target graph database type.
-
-```bash
-cirro-graph --file cirro_output.db --graph-type neo4j
-```
-
-**Values:**
-
-- `neo4j` (default) - Neo4j graph database
-
-**Default:** `neo4j`
 
 `--server` / `-s`
 
 Database server connection string with supported URI schemes.
 
 ```bash
-cirro-graph --file cirro_output.db --server bolt://localhost:7687
+cirro graph ingest --type az --file cirro_output.db --server bolt://localhost:7687
 ```
 
 **Supported Schemes:**
@@ -191,7 +187,7 @@ cirro-graph --file cirro_output.db --server bolt://localhost:7687
 Database username for authentication.
 
 ```bash
-cirro-graph --file cirro_output.db --user myuser
+cirro graph ingest --type az --file cirro_output.db --user myuser
 ```
 
 **Default:** `neo4j`
@@ -201,7 +197,7 @@ cirro-graph --file cirro_output.db --user myuser
 Database password for authentication.
 
 ```bash
-cirro-graph --file cirro_output.db --password mypassword
+cirro graph ingest --type az --file cirro_output.db --password mypassword
 ```
 
 **Default:** `password`
@@ -211,7 +207,7 @@ cirro-graph --file cirro_output.db --password mypassword
 Database name to connect to (optional).
 
 ```bash
-cirro-graph --file cirro_output.db --db-name mydatabase
+cirro graph ingest --type az --file cirro_output.db --db-name mydatabase
 ```
 
 **Default Behavior:**
@@ -223,7 +219,7 @@ cirro-graph --file cirro_output.db --db-name mydatabase
 Enable debug logging for troubleshooting.
 
 ```bash
-cirro-graph --file cirro_output.db --debug
+cirro graph ingest --type az --file cirro_output.db --debug
 ```
 
 **Default:** `false`
@@ -234,36 +230,39 @@ cirro-graph --file cirro_output.db --debug
 
 ```bash
 # Basic ingestion to Neo4j with defaults
-cirro-graph --file cirro_output.db
+cirro graph ingest --type az --file cirro_output.db
 ```
 
 ### Neo4j Examples
 
 ```bash
 # Neo4j with custom server
-cirro-graph \
+cirro graph ingest \
+  --type az \
   --file cirro_output.db \
-  --graph-type neo4j \
   --server bolt://neo4j.example.com:7687 \
   --user neo4j \
   --password mypassword
 
 # Neo4j with TLS encryption
-cirro-graph \
+cirro graph ingest \
+  --type az \
   --file cirro_output.db \
   --server bolt+s://neo4j.example.com:7687 \
   --user neo4j \
   --password mypassword
 
 # Neo4j cluster with routing
-cirro-graph \
+cirro graph ingest \
+  --type az \
   --file cirro_output.db \
   --server neo4j://neo4j-cluster.example.com:7687 \
   --user neo4j \
   --password mypassword
 
 # Neo4j with custom database name
-cirro-graph \
+cirro graph ingest \
+  --type az \
   --file cirro_output.db \
   --db-name analytics \
   --user neo4j \
@@ -276,12 +275,12 @@ cirro-graph \
 
 ```bash
 # Enable debug logging
-cirro-graph --file cirro_output.db --debug
+cirro graph ingest --type az --file cirro_output.db --debug
 
 # Full example with all options
-cirro-graph \
+cirro graph ingest \
+  --type az \
   --file /path/to/cirro_output.db \
-  --graph-type neo4j \
   --server bolt+s://neo4j.example.com:7687 \
   --user myuser \
   --password mypassword \
@@ -295,14 +294,15 @@ cirro-graph \
 
 ```bash
 # Local Neo4j (default)
-cirro-graph --file cirro_output.db
+cirro graph ingest --type az --file cirro_output.db
 ```
 
 ### Docker Containers
 
 ```bash
 # Neo4j in Docker
-cirro-graph \
+cirro graph ingest \
+  --type az \
   --file cirro_output.db \
   --server bolt://localhost:7687 \
   --user neo4j \
@@ -313,14 +313,16 @@ cirro-graph \
 
 ```bash
 # Neo4j AuraDB (cloud)
-cirro-graph \
+cirro graph ingest \
+  --type az \
   --file cirro_output.db \
   --server neo4j+s://xxxxxxxx.databases.neo4j.io:7687 \
   --user neo4j \
   --password your-aura-password
 
 # Self-hosted with TLS
-cirro-graph \
+cirro graph ingest \
+  --type az \
   --file cirro_output.db \
   --server bolt+s://your-server.com:7687 \
   --user your-username \

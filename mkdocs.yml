@@ -172,6 +172,7 @@ nav:
         - analysis/additional-nodes/client-secret.md
         - analysis/additional-nodes/container.md
         - analysis/additional-nodes/custom-dns-config.md
+        - analysis/additional-nodes/expressroute-circuit-peering.md
         - analysis/additional-nodes/federated-identity-credential.md
         - analysis/additional-nodes/graph-app-role.md
         - analysis/additional-nodes/hybrid-extension.md
@@ -183,13 +184,17 @@ nav:
         - analysis/additional-nodes/network-peering.md
         - analysis/additional-nodes/network-route.md
         - analysis/additional-nodes/nsg-rule.md
+        - analysis/additional-nodes/private-endpoint-connection.md
         - analysis/additional-nodes/private-link-service-connection.md
+        - analysis/additional-nodes/registry-credential.md
         - analysis/additional-nodes/runbook-parameter.md
         - analysis/additional-nodes/service-principal-endpoint.md
         - analysis/additional-nodes/storage-account-key.md
         - analysis/additional-nodes/storage-account-dfs.md
         - analysis/additional-nodes/subnet.md
         - analysis/additional-nodes/verified-domain.md
+        - analysis/additional-nodes/vm-extension.md
+        - analysis/additional-nodes/vm-run-command.md
         - analysis/additional-nodes/vm-run-command-parameter.md
       - Tailscale Nodes:
         - analysis/tailscale-nodes.md
@@ -199,6 +204,7 @@ nav:
       - Edges:
         - RBAC:
           - analysis/edges/rbac-roles.md
+        - analysis/edges/assigned-approle.md
         - analysis/edges/approle.md
         - analysis/edges/assigned-to.md
         - analysis/edges/associated-with.md
@@ -221,6 +227,7 @@ nav:
         - analysis/edges/has-identity.md
         - analysis/edges/has-ip.md
         - analysis/edges/has-key.md
+        - analysis/edges/has-linked-domain.md
         - analysis/edges/has-nic.md
         - analysis/edges/has-nsg.md
         - analysis/edges/has-parameter.md
@@ -230,11 +237,13 @@ nav:
         - analysis/edges/has-resource.md
         - analysis/edges/has-restorepoint.md
         - analysis/edges/has-role.md
+        - analysis/edges/has-rulestack.md
         - analysis/edges/has-route.md
         - analysis/edges/has-route-table.md
         - analysis/edges/has-rule.md
         - analysis/edges/has-run-command.md
         - analysis/edges/has-runbook.md
+        - analysis/edges/has-secret.md
         - analysis/edges/has-snapshot.md
         - analysis/edges/has-source.md
         - analysis/edges/has-sql-vm.md
@@ -255,9 +264,13 @@ nav:
         - analysis/edges/registered-user.md
         - analysis/edges/represented-by.md
         - analysis/edges/same-user.md
+        - analysis/edges/used-by.md
+        - analysis/edges/uses-certificate.md
         - analysis/edges/uses.md
+        - analysis/edges/uses-storage.md
         - analysis/edges/uses-storage-dfs.md
         - analysis/edges/verified-domain.md
   - Dashboard: analysis/dashboard.md
   - FAQ: faq.md
+  - Developer Notes: developer-notes.md
   - Getting Help: getting-help.md

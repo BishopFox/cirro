@@ -32,7 +32,47 @@ Since Cirro loads data into standard graph databases, you can use any compatible
 - Neo4j Bloom
 - CirroDash (included configuration)
 
-## How is Cirro different from AzureHound?
+## How does Cirro compare to Cartography?
+
+Cirro and Cartography both model cloud relationships in a graph, but they differ in architecture and workflow.
+
+**Cartography** is a Python-based framework that ingests many SaaS/cloud APIs into Neo4j through scheduled sync jobs and modular intel modules. It is often used for continuous asset inventory and security visibility across broad provider coverage.
+
+**Cirro** is a Rust-based CLI focused on security assessment workflows with explicit collection and ingestion phases:
+
+- Collects source data first, then ingests via schema-driven graph specs
+- Uses YAML-based graph mappings with code-backed collectors/ingestors
+- Emphasizes offensive and defensive assessment use cases with relationship-focused analysis
+- Supports selective builds via feature flags and modular platform support
+
+### When should I use Cirro vs Cartography?
+
+<div class="grid cards" markdown>
+
+-   :material-chart-timeline-variant:{ .lg .middle } __Use Cirro when:__
+
+    ---
+
+    - You want a security-assessment-first workflow
+    - You need controlled, engagement-scoped collection and ingestion
+    - You want to iterate quickly on graph schema mappings with YAML specs
+    - You need deep relationship analysis for attack path and misconfiguration review
+
+-   :material-sync:{ .lg .middle } __Use Cartography when:__
+
+    ---
+
+    - You want continuous sync for broad asset inventory
+    - You need a mature multi-provider ingestion ecosystem out of the box
+    - You prefer scheduled pipeline-style graph updates for ongoing visibility
+
+</div>
+
+<h4>Use both when:</h4>
+- You want continuous inventory plus engagement-specific deep analysis
+- You want to correlate broad discovery with targeted security testing workflows
+
+## How does Cirro compare to AzureHound?
 
 While both tools help with Azure security assessment, they take fundamentally different approaches:
 
@@ -93,7 +133,7 @@ The **data plane** deals with the actual data and operations within those resour
 - You need to correlate identity privileges with resource access
 - You're performing comprehensive cloud security assessments
 
-## How is Cirro different than RoadRecon?
+## How does Cirro compare to RoadRecon?
 
 RoadRecon and Cirro both target Azure environments but serve different phases of security assessment and have distinct architectural approaches. **RoadRecon** is primarily designed for reconnaissance, focusing on gathering Entra ID information through Graph enumeration. It excels at collecting identity data when you have limited credentials or need to perform reconnaissance without extensive permissions. RoadRecon stores its data in a custom SQLite database with a web-based frontend for analysis, making it ideal for quick reconnaissance and initial environment mapping. Roadrecon is also excellent at handling multiple authentication scenarios and manipulating tokens to pivot to Microsoft Graph, devices, Conditional Access Policies, and Intune-related attacks. 
 

@@ -1,6 +1,6 @@
 # Cirro Graph Analysis
 
-This document provides an overview of the analysis capabilities built into Cirro Graph for identifying security risks and misconfigurations in cloud environments. Currently focused on Azure environments, with the ability to expand to other platforms in the future. You can explore the help for these features by running `cirro-graph -h`.
+This document provides an overview of the analysis capabilities built into Cirro Graph for identifying security risks and misconfigurations in cloud environments. Currently focused on Azure environments, with the ability to expand to other platforms in the future. You can explore the help for these features by running `cirro graph -h`.
 
 ## DNS Security Analysis
 

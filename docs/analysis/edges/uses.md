@@ -1,29 +1,11 @@
-# USES
+# USES (Legacy)
 
-Represents resource usage relationships.
+`USES` is a legacy generic relationship and is not currently emitted by active mappings.
 
-**Direction:** `(resource)-[:USES]->(usedResource)`
+Current usage relationships are represented by specific edge types such as:
 
-**Description:** Indicates that one resource uses or depends on another resource.
+- `USES_STORAGE`
+- `USES_STORAGE_DFS`
+- `USES_CERTIFICATE`
 
-**Common Patterns:**
-- Virtual machines use disks
-- Virtual machines use availability sets
-
-**Properties:** None
-
-## Query Examples
-
-```cypher
-// Find all disks used by virtual machines
-MATCH path=(vm:VirtualMachine)-[:USES]->(disk:Disk)
-RETURN path
-
-// Find resources using managed identities
-MATCH path=(resource)-[:USES]->(identity:UserAssignedManagedIdentity)
-RETURN path
-
-// Find resource dependencies
-MATCH path=(resource)-[:USES]->(dependency)
-RETURN path
-```
+See the corresponding edge docs for current behavior.

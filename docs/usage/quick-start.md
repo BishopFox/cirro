@@ -32,10 +32,10 @@
 
 ```bash
 # Using Azure CLI authentication
-cirro collect azcli
+cirro collect az azcli
 
 # Using client secret
-cirro collect client-secret \
+cirro collect az client-secret \
   --client-id <CLIENT_ID> \
   --client-secret <CLIENT_SECRET> \
   --tenant-id <TENANT_ID>
@@ -52,8 +52,8 @@ docker-compose up
 
 ```bash
 # For Neo4j
-cirro-graph --file cirro_output.db \
-  --graph-type neo4j \
+cirro graph ingest --type az --file cirro_output.db \
+    --server bolt://localhost:7687 \
   --user neo4j \
   --password password
 ```

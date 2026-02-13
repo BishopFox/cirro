@@ -38,8 +38,8 @@ Enable detailed logging for troubleshooting:
 
 ```bash
 # Collection with debug output
-cirro collect azcli --debug
+cirro collect az azcli --debug
 
 # Ingestion with debug output
-cirro-graph --file cirro_output.db --debug
+cirro graph ingest --type az --file cirro_output.db --debug
 ```
