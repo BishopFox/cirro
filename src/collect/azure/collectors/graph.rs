@@ -27,15 +27,19 @@ static HTTP_CLIENT: Lazy<Client> = Lazy::new(|| {
 static TOKEN_CACHE: Lazy<tokio::sync::Mutex<Option<Token>>> =
     Lazy::new(|| tokio::sync::Mutex::new(None));
 
-// Add this static variable near the top with your other statics
+// Rate limit logging flag to prevent log spam when multiple tasks hit rate limits at the same time
 static RATE_LIMIT_LOGGED: AtomicBool = AtomicBool::new(false);
 
 /// Represents a Graph object with its resource type, query parameters, and optional expand properties
 #[derive(Clone)]
 struct GraphObject {
+    /// The name of the resource type to query in the Graph API (e.g., "users", "groups", "applications")
+    /// This is used for logging and to determine the database table name when writing results.
+    name: String,
+
     /// The type of resource in the Graph API (e.g., "users", "groups")
-    /// This is used to specify which endpoint to query in the Microsoft Graph API.
-    resource_type: String,
+    /// This is used to construct the URI for the Graph API request.
+    uri: String,
 
     /// The query parameters to be used in the Graph API request
     /// This typically includes parameters like `$top`, `$filter`, etc., to control the data returned.
@@ -50,7 +54,8 @@ struct GraphObject {
 
 impl GraphObject {
     pub fn new<R, Q>(
-        resource_type: R,
+        name: R,
+        uri: R,
         query_params: Q,
         expand_properties: Option<HashMap<String, Vec<String>>>,
     ) -> Self
@@ -59,7 +64,8 @@ impl GraphObject {
         Q: Into<String>,
     {
         GraphObject {
-            resource_type: resource_type.into(),
+            name: name.into(),
+            uri: uri.into(),
             query_params: query_params.into(),
             expand_properties: expand_properties.unwrap_or_default(),
         }
@@ -82,15 +88,22 @@ pub async fn enumerate_graph(collector: Arc<Collector>) -> Result<(), CirroError
     }
 
     // Create all enumerators with their configurations
-    let enumerators = vec![
-        GraphObject::new("organization", "", None),
-        GraphObject::new("policies/authorizationPolicy", "", None),
+    let mut enumerators = vec![
+        GraphObject::new("organization", "organization", "", None),
         GraphObject::new(
+            "authorizationPolicy",
+            "policies/authorizationPolicy",
+            "",
+            None,
+        ),
+        GraphObject::new(
+            "users",
             "users",
             "$top=999",
             Some(HashMap::from([("memberOf".into(), vec!["/id".into()])])),
         ),
         GraphObject::new(
+            "groups",
             "groups",
             "$top=999",
             Some(HashMap::from([
@@ -100,6 +113,7 @@ pub async fn enumerate_graph(collector: Arc<Collector>) -> Result<(), CirroError
             ])),
         ),
         GraphObject::new(
+            "applications",
             "applications",
             "$top=999",
             Some(HashMap::from([
@@ -117,6 +131,7 @@ pub async fn enumerate_graph(collector: Arc<Collector>) -> Result<(), CirroError
             ])),
         ),
         GraphObject::new(
+            "servicePrincipals",
             "servicePrincipals",
             "$top=999",
             Some(HashMap::from([
@@ -140,6 +155,7 @@ pub async fn enumerate_graph(collector: Arc<Collector>) -> Result<(), CirroError
         ),
         GraphObject::new(
             "devices",
+            "devices",
             "$top=999",
             Some(HashMap::from([
                 ("registeredOwners".into(), vec!["/id".into()]),
@@ -149,10 +165,12 @@ pub async fn enumerate_graph(collector: Arc<Collector>) -> Result<(), CirroError
         ),
         GraphObject::new(
             "directoryRoles",
+            "directoryRoles",
             "",
             Some(HashMap::from([("members".into(), vec!["/id".into()])])),
         ),
         GraphObject::new(
+            "administrativeUnits",
             "administrativeUnits",
             "",
             Some(HashMap::from([
@@ -164,6 +182,16 @@ pub async fn enumerate_graph(collector: Arc<Collector>) -> Result<(), CirroError
             ])),
         ),
     ];
+
+    // Optional flag enumerators based on user input
+    if collector.option_enum_flags.pim {
+        enumerators.push(GraphObject::new(
+            "eligibleRoleAssignments",
+            "/roleManagement/directory/roleEligibilitySchedules",
+            "",
+            None,
+        ));
+    }
 
     // Start a timer
     let start_time = Instant::now();
@@ -208,11 +236,15 @@ async fn query_objects(
 ) -> Result<(), CirroError> {
     // Start timing the query
     let start_time = std::time::Instant::now();
-    let resource_type = &graph_object.resource_type;
+    let uri_path = &graph_object.uri;
+    let graph_object_name = &graph_object.name;
 
-    info!("Querying Graph API for resource type: {}", resource_type);
+    info!(
+        "Querying Graph API for resource type: {}",
+        graph_object_name
+    );
 
-    let mut next_uri = format!("{}?{}", resource_type, graph_object.query_params);
+    let mut next_uri = format!("{}?{}", uri_path, graph_object.query_params);
 
     // Use the global HTTP client instead of creating a new one for each request
     let mut all_values = Vec::new();
@@ -247,7 +279,7 @@ async fn query_objects(
             total_fetched += page_count;
             debug!(
                 "Fetched {} objects for {}, total: {}",
-                page_count, resource_type, total_fetched
+                page_count, graph_object_name, total_fetched
             );
 
             // Collect values for batch processing
@@ -267,7 +299,7 @@ async fn query_objects(
 
     info!(
         "Fetched {} objects for {}. Processing...",
-        total_fetched, resource_type
+        total_fetched, graph_object_name
     );
 
     // Process the values in parallel with controlled concurrency
@@ -283,7 +315,7 @@ async fn query_objects(
     let results = stream::iter(all_values)
         .map(|value| {
             let collector_clone = Arc::clone(&collector);
-            let resource_type = resource_type.clone();
+            let resource_type = uri_path.clone();
             let expand_properties = expand_properties.clone();
             let sem = Arc::clone(&semaphore);
 
@@ -314,7 +346,7 @@ async fn query_objects(
 
                 let id: String;
 
-                if resource_type.starts_with("policies/") {
+                if uri_path.starts_with("policies/") {
                     // Special handling for policies
                     // Get the ID from the object
                     let policy_type = value_clone
@@ -360,10 +392,10 @@ async fn query_objects(
     }
 
     if !rows.is_empty() {
-        let table = if resource_type.starts_with("policies/") {
+        let table = if uri_path.starts_with("policies/") {
             "policies".to_string()
         } else {
-            resource_type.to_string()
+            graph_object_name.to_string()
         };
 
         collector
@@ -372,7 +404,7 @@ async fn query_objects(
             .map_err(|e| {
                 error!(
                     "Failed to write batch for resource type {}: {}",
-                    resource_type, e
+                    graph_object_name, e
                 );
                 e
             })?;
@@ -382,14 +414,14 @@ async fn query_objects(
     if error_count > 0 {
         error!(
             "{} errors occurred while processing {} objects",
-            error_count, resource_type
+            error_count, graph_object_name
         );
     }
 
     let elapsed_time = start_time.elapsed();
     info!(
         "Completed Graph API query for resource type: {} ({}) - {} objects processed",
-        resource_type,
+        graph_object_name,
         fmt_duration(elapsed_time),
         total_fetched
     );

@@ -61,6 +61,13 @@ pub struct AccessTokenAuthArgs {
     pub debug: bool,
 }
 
+#[derive(Debug, Clone, Args)]
+pub struct OptionEnumFlags {
+    /// Gather eligible role assignments for users (requires permissions)
+    #[arg(long = "pim", action = clap::ArgAction::SetTrue)]
+    pub pim: bool,
+}
+
 #[derive(Debug, Subcommand)]
 pub enum AzureCommands {
     /// Authenticate using an access token
@@ -68,8 +75,12 @@ pub enum AzureCommands {
         /// Access token
         #[arg(short, long)]
         token: String,
+
         #[clap(flatten)]
         common: AccessTokenAuthArgs,
+
+        #[clap(flatten)]
+        option_enum_flags: OptionEnumFlags,
     },
     /// Authenticate using Azure CLI
     Azcli {
@@ -80,8 +91,12 @@ pub enum AzureCommands {
         /// Subscription ID
         #[arg(short, long)]
         subscription_id: Option<String>,
+
         #[clap(flatten)]
         common: CommonAuthArgs,
+
+        #[clap(flatten)]
+        option_enum_flags: OptionEnumFlags,
     },
     /// Authenticate using a client secret
     ClientSecret {
@@ -99,6 +114,9 @@ pub enum AzureCommands {
 
         #[clap(flatten)]
         common: CommonAuthArgs,
+
+        #[clap(flatten)]
+        option_enum_flags: OptionEnumFlags,
     },
     /// Authenticate using a client certificate
     ClientCert {
@@ -116,6 +134,9 @@ pub enum AzureCommands {
 
         #[clap(flatten)]
         common: CommonAuthArgs,
+
+        #[clap(flatten)]
+        option_enum_flags: OptionEnumFlags,
     },
     /// Authenticate using a username and password
     UserPass {
@@ -129,21 +150,35 @@ pub enum AzureCommands {
 
         #[clap(flatten)]
         common: CommonAuthArgs,
+
+        #[clap(flatten)]
+        option_enum_flags: OptionEnumFlags,
     },
 }
 
 pub async fn handle_azure_command(command: AzureCommands) -> Result<(), CirroError> {
     match command {
-        AzureCommands::AccessToken { token, common } => {
+        AzureCommands::AccessToken {
+            token,
+            common,
+            option_enum_flags,
+        } => {
             if let Err(e) = setup_logger(common.debug) {
                 return Err(CirroError::Unknown(e.to_string()));
             }
-            azure::collect::collect_with_access_token(token, common.cloud, common.output_path).await
+            azure::collect::collect_with_access_token(
+                token,
+                common.cloud,
+                common.output_path,
+                option_enum_flags,
+            )
+            .await
         }
         AzureCommands::Azcli {
             tenant_id,
             subscription_id,
             common,
+            option_enum_flags,
         } => {
             if let Err(e) = setup_logger(common.debug) {
                 return Err(CirroError::Unknown(e.to_string()));
@@ -154,6 +189,7 @@ pub async fn handle_azure_command(command: AzureCommands) -> Result<(), CirroErr
                 common.mode,
                 common.cloud,
                 common.output_path,
+                option_enum_flags,
             )
             .await
         }
@@ -162,6 +198,7 @@ pub async fn handle_azure_command(command: AzureCommands) -> Result<(), CirroErr
             client_secret,
             tenant_id,
             common,
+            option_enum_flags,
         } => {
             if let Err(e) = setup_logger(common.debug) {
                 return Err(CirroError::Unknown(e.to_string()));
@@ -173,6 +210,7 @@ pub async fn handle_azure_command(command: AzureCommands) -> Result<(), CirroErr
                 common.mode,
                 common.cloud,
                 common.output_path,
+                option_enum_flags,
             )
             .await
         }
@@ -181,6 +219,7 @@ pub async fn handle_azure_command(command: AzureCommands) -> Result<(), CirroErr
             client_certificate,
             tenant_id,
             common,
+            option_enum_flags,
         } => {
             if let Err(e) = setup_logger(common.debug) {
                 return Err(CirroError::Unknown(e.to_string()));
@@ -192,6 +231,7 @@ pub async fn handle_azure_command(command: AzureCommands) -> Result<(), CirroErr
                 common.mode,
                 common.cloud,
                 common.output_path,
+                option_enum_flags,
             )
             .await
         }
@@ -199,6 +239,7 @@ pub async fn handle_azure_command(command: AzureCommands) -> Result<(), CirroErr
             upn: _,
             password: _,
             common,
+            option_enum_flags: _,
         } => {
             if let Err(e) = setup_logger(common.debug) {
                 return Err(CirroError::Unknown(e.to_string()));

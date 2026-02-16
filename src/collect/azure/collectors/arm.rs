@@ -12,6 +12,7 @@ use reqwest::StatusCode;
 use serde_json::Map;
 use serde_json::Value;
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 // Create a global reqwest client to reuse connections
 static HTTP_CLIENT: Lazy<Client> = Lazy::new(|| {
@@ -30,6 +31,9 @@ static TOKEN_CACHE: Lazy<tokio::sync::Mutex<Option<Token>>> =
 // Global thread-safe map for role definitions
 // Key: Role definition ID, Value: Role definition object
 static ROLE_DEFINITIONS: Lazy<DashMap<String, Value>> = Lazy::new(|| DashMap::new());
+
+// Rate limit logging flag to prevent log spam when multiple tasks hit rate limits at the same time
+static RATE_LIMIT_LOGGED: AtomicBool = AtomicBool::new(false);
 
 /// Queries resources from the ARM API
 async fn query_resources(
@@ -51,15 +55,22 @@ async fn query_resources(
     };
 
     loop {
-        let response = paged_arm_request(&collector, &next_url, reqwest::Method::GET, None).await?;
+        let response_data = loop {
+            match paged_arm_request(&collector, &next_url, reqwest::Method::GET, None).await {
+                Ok(response) => break response,
+                Err(error) => {
+                    return Err(error);
+                }
+            }
+        };
 
-        if response.get("error").is_some() {
+        if response_data.get("error").is_some() {
             return Err(CirroError::HttpError(
                 "Error response from ARM API".to_string(),
             ));
         }
 
-        if let Some(value) = response.get("value") {
+        if let Some(value) = response_data.get("value") {
             // Sometimes the value is an array, sometimes it's a single object
             if let Some(obj) = value.as_object() {
                 resources.push(obj.clone());
@@ -70,7 +81,7 @@ async fn query_resources(
                     }
                 }
             }
-        } else if let Some(obj) = response.as_object() {
+        } else if let Some(obj) = response_data.as_object() {
             // Also handle the case where the response is a single object
             resources.push(obj.clone());
         } else {
@@ -81,9 +92,9 @@ async fn query_resources(
         }
 
         // Check for next link
-        if let Some(next_link) = response
+        if let Some(next_link) = response_data
             .get("@odata.nextLink")
-            .or_else(|| response.get("nextLink"))
+            .or_else(|| response_data.get("nextLink"))
             .and_then(|v| v.as_str())
         {
             next_url = next_link.to_string();
@@ -175,14 +186,36 @@ pub async fn paged_arm_request(
             _ => return Err(CirroError::UnsupportedHttpMethod(http_verb.to_string())),
         };
 
-        let response = result.map_err(|e| {
-            CirroError::HttpError(format!(
-                "Failed to send request to {}: {:?} - {}",
-                arm_url,
-                e.status(),
-                e
-            ))
-        })?;
+        let response = match result {
+            Ok(resp) => resp,
+            Err(e) => {
+                if retries >= max_retries {
+                    return Err(CirroError::HttpError(format!(
+                        "Failed to send request to {} after {} retries: {}",
+                        arm_url, retries, e
+                    )));
+                }
+
+                debug!(
+                    "Request timeout for {}, retrying after 5 seconds (attempt {}/{})",
+                    arm_url,
+                    retries + 1,
+                    max_retries
+                );
+                tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+                retries += 1;
+                continue; // Retry the request after waiting
+            }
+        };
+
+        // let response = result.map_err(|e| {
+        //     CirroError::HttpError(format!(
+        //         "Failed to send request to {}: {:?} - {}",
+        //         arm_url,
+        //         e.status(),
+        //         e
+        //     ))
+        // })?;
 
         let status = response.status();
 
@@ -196,17 +229,19 @@ pub async fn paged_arm_request(
                 ));
             }
 
-            let retry_after = response
-                .headers()
-                .get(reqwest::header::RETRY_AFTER)
-                .and_then(|h| h.to_str().ok())
-                .and_then(|s| s.parse::<u64>().ok())
-                .unwrap_or(30); // Default to 30 seconds if not specified
+            // Only log the first time any task hits the rate limit
+            if !RATE_LIMIT_LOGGED.swap(true, Ordering::Relaxed) {
+                info!("ARM API rate limit hit, all tasks will back off for 25 seconds");
 
-            info!("Rate limit hit, retrying after {} seconds", retry_after);
-            tokio::time::sleep(std::time::Duration::from_secs(retry_after + 1)).await;
+                // The task that logs the message also starts a timer to reset the flag
+                // Should be slightly longer than the backoff and other tasks will not log
+                tokio::spawn(async {
+                    tokio::time::sleep(std::time::Duration::from_secs(30)).await;
+                    RATE_LIMIT_LOGGED.store(false, Ordering::Relaxed);
+                });
+            }
 
-            retries += 1;
+            tokio::time::sleep(std::time::Duration::from_secs(25)).await;
             continue; // Retry the request after waiting
         } else {
             let error_text = response.text().await?;

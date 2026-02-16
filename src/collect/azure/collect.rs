@@ -1,4 +1,4 @@
-use crate::collect::azure::cli::{AzureCloud, EnumerationMode};
+use crate::collect::azure::cli::{AzureCloud, EnumerationMode, OptionEnumFlags};
 use crate::collect::azure::collectors::arm;
 use crate::collect::azure::collectors::graph;
 use crate::collect::azure::context::CloudEndpoints;
@@ -136,6 +136,7 @@ pub async fn collect_with_access_token(
     token: String,
     cloud: AzureCloud,
     output_path: PathBuf,
+    option_enum_flags: OptionEnumFlags,
 ) -> Result<(), CirroError> {
     // We don't really need to create all of these credentials for Access Token mode,
     // but we do it to keep the interface consistent with other authentication modes.
@@ -219,6 +220,7 @@ pub async fn collect_with_access_token(
     let collector = Collector {
         context: CollectorContext::<Box<dyn AuthCredential + Send + Sync + 'static>> {
             mode,
+            option_enum_flags,
             cloud,
             cloud_endpoints: CloudEndpoints::new(cloud),
             msgraph_credential,
@@ -250,6 +252,7 @@ pub async fn collect_with_azure_cli(
     mode: EnumerationMode,
     cloud: AzureCloud,
     output_path: PathBuf,
+    option_enum_flags: OptionEnumFlags,
 ) -> Result<(), CirroError> {
     info!("Starting with Azure CLI credentials");
 
@@ -289,6 +292,7 @@ pub async fn collect_with_azure_cli(
     let collector = Collector {
         context: CollectorContext::<Box<dyn AuthCredential + Send + Sync + 'static>> {
             mode,
+            option_enum_flags,
             cloud,
             cloud_endpoints: CloudEndpoints::new(cloud),
             msgraph_credential,
@@ -321,6 +325,7 @@ pub async fn collect_with_client_secret(
     mode: EnumerationMode,
     cloud: AzureCloud,
     output_path: PathBuf,
+    option_enum_flags: OptionEnumFlags,
 ) -> Result<(), CirroError> {
     info!("Starting with Client Secret credentials");
 
@@ -380,6 +385,7 @@ pub async fn collect_with_client_secret(
     let collector = Collector {
         context: CollectorContext::<Box<dyn AuthCredential + Send + Sync + 'static>> {
             mode,
+            option_enum_flags,
             cloud,
             cloud_endpoints: CloudEndpoints::new(cloud),
             msgraph_credential,
@@ -411,6 +417,7 @@ pub async fn collect_with_client_cert(
     mode: EnumerationMode,
     cloud: AzureCloud,
     output_path: PathBuf,
+    option_enum_flags: OptionEnumFlags,
 ) -> Result<(), CirroError> {
     info!("Starting with Client Certificate credentials");
 
@@ -470,6 +477,7 @@ pub async fn collect_with_client_cert(
     let collector = Collector {
         context: CollectorContext::<Box<dyn AuthCredential + Send + Sync + 'static>> {
             mode,
+            option_enum_flags,
             cloud,
             cloud_endpoints: CloudEndpoints::new(cloud),
             msgraph_credential,

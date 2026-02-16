@@ -254,6 +254,7 @@ nav:
         - analysis/edges/hosts.md
         - analysis/edges/hosts-site.md
         - analysis/edges/is-deployed.md
+        - analysis/edges/is-role-eligible.md
         - analysis/edges/manages.md
         - analysis/edges/member-of.md
         - analysis/edges/mounts.md

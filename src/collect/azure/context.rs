@@ -1,4 +1,4 @@
-use crate::collect::azure::cli::{AzureCloud, EnumerationMode};
+use crate::collect::azure::cli::{AzureCloud, EnumerationMode, OptionEnumFlags};
 use crate::collect::azure::db::{ArmResourceMessage, DBWriteMessage, DataMessage};
 use crate::errors::CirroError;
 use std::path::PathBuf;
@@ -8,6 +8,7 @@ use tokio::sync::mpsc;
 #[derive(Debug, Clone)]
 pub struct CollectorContext<C> {
     pub mode: EnumerationMode,
+    pub option_enum_flags: OptionEnumFlags,
     pub cloud: AzureCloud,
     pub cloud_endpoints: CloudEndpoints,
     pub msgraph_credential: C,
