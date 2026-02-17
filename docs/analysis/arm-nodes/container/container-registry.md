@@ -17,9 +17,4 @@ Represents Azure Container Registry instances.
 - `metadataSearch` - Metadata search setting
 - `networkRuleBypassOptions` - Network rule bypass options
 - `publicNetworkAccess` - Public network access setting
-- `createdAt` - System creation timestamp
-- `createdBy` - Created by user
-- `createdByType` - Created by type
-- `lastModifiedAt` - Last modification timestamp
-- `lastModifiedBy` - Last modified by user
-- `lastModifiedByType` - Last modified by type
+- `roleAssignmentMode` - Role assignment mode

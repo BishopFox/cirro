@@ -1,0 +1,22 @@
+name: "Virtual Machine Scale Sets"
+label: "{{ LABELS.VMScaleSet }}"
+table_name: "resources"
+resource_type: "microsoft.compute/virtualmachinescalesets"
+properties:
+  - "/id"
+  - "/resources"
+  - "/properties"
+cypher: |
+    // TODO: Need to review and add more later
+    UNWIND $batch AS row
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+    SET obj:{{ LABELS.VMScaleSet }}
+    SET obj += {
+        constrainedMaximumCapacity: row.properties.constrainedMaximumCapacity,
+        orchestrationMode: row.properties.orchestrationMode,
+        uniqueId: row.properties.uniqueId,
+        timeCreated: row.properties.timeCreated,
+        adminUsername: row.properties.virtualMachineProfile.osProfile.adminUsername,
+        computerNamePrefix: row.properties.virtualMachineProfile.osProfile.computerNamePrefix
+    }
+    RETURN count(*) AS _

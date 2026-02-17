@@ -5,7 +5,6 @@ resource_type: "microsoft.containerregistry/registries"
 properties:
   - "/id"
   - "/sku"
-  - "/systemData"
   - "/properties"
 cypher: |
     UNWIND $batch AS row
@@ -22,10 +21,5 @@ cypher: |
         metadataSearch: row.properties.metadataSearch,
         networkRuleBypassOptions: row.properties.networkRuleBypassOptions,
         publicNetworkAccess: row.properties.publicNetworkAccess,
-        createdAt: row.systemData.createdAt,
-        createdBy: row.systemData.createdBy,
-        createdByType: row.systemData.createdByType,
-        lastModifiedAt: row.systemData.lastModifiedAt,
-        lastModifiedBy: row.systemData.lastModifiedBy,
-        lastModifiedByType: row.systemData.lastModifiedByType
+        roleAssignmentMode: row.properties.roleAssignmentMode
     }

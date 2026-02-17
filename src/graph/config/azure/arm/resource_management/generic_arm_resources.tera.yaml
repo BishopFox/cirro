@@ -9,6 +9,7 @@ properties:
   - "/location"
   - "/managedBy"
   - "/name"
+  - "/systemData"
   - "/type"
   - "/tags"
 column_mappings:
@@ -21,8 +22,14 @@ cypher: |
         kind : row.kind,
         location : row.location,
         name : row.name,
-        type : row.type,
-        tags : [key in keys(row.tags) | key + ":" + row.tags[key]]
+        type : toLower(row.type),
+        tags : [key in keys(row.tags) | key + ":" + row.tags[key]],
+        systemCreatedAt: row.systemData.createdAt,
+        systemCreatedBy: row.systemData.createdBy,
+        systemCreatedByType: row.systemData.createdByType,
+        systemLastModifiedAt: row.systemData.lastModifiedAt,
+        systemLastModifiedBy: row.systemData.lastModifiedBy,
+        systemLastModifiedByType: row.systemData.lastModifiedByType
     }
     MERGE (rg:{{ LABELS.ArmResource }} {id: toLower(row._rg_id)})
     SET rg:{{ LABELS.ResourceGroup }}

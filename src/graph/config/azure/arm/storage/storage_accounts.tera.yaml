@@ -4,6 +4,7 @@ table_name: "resources"
 resource_type: "microsoft.storage/storageaccounts"
 properties:
   - "/id"
+  - "/kind"
   - "/properties"
 cypher: |
     UNWIND $batch AS row
@@ -26,3 +27,22 @@ cypher: |
         networkAclBypass: row.properties.networkAcls.bypass,
         networkAclDefaultAction: row.properties.networkAcls.defaultAction
     }
+
+    // Handling FileStorage kind
+    WITH obj, row
+    CALL (obj, row){
+        WITH obj, row
+        WHERE toLower(row.kind) = 'filestorage'
+        SET obj += {
+          defaultSharePermission: row.properties.azureFilesIdentityBasedAuthentication.defaultSharePermission,
+          directoryServiceOptions: row.properties.azureFilesIdentityBasedAuthentication.directoryServiceOptions,
+          adDomainName: row.properties.azureFilesIdentityBasedAuthentication.activeDirectoryProperties.domainName,
+          adDomainSid: row.properties.azureFilesIdentityBasedAuthentication.activeDirectoryProperties.domainSid,
+          accountType: row.properties.azureFilesIdentityBasedAuthentication.activeDirectoryProperties.accountType,
+          forestName: row.properties.azureFilesIdentityBasedAuthentication.activeDirectoryProperties.forestName,
+          netBiosDomainName: row.properties.azureFilesIdentityBasedAuthentication.activeDirectoryProperties.netBiosDomainName,
+          samAccountName: row.properties.azureFilesIdentityBasedAuthentication.activeDirectoryProperties.samAccountName
+        }
+        RETURN count(*) AS _
+    }
+    RETURN count(*) AS _

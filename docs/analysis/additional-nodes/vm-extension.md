@@ -8,7 +8,7 @@ Represents an extension attached to an Azure virtual machine.
 
 - `id` - Extension resource ID (primary key)
 - `name` - Extension name
-- `type` - Extension type
+- `extType` - Extension type
 - `location` - Resource location
 - `provisioningState` - Provisioning state
 - `publisher` - Extension publisher

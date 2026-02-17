@@ -1,0 +1,15 @@
+name: "Fabric Capacities"
+label: "{{ LABELS.FabricCapacity }}"
+table_name: "resources"
+resource_type: "microsoft.fabric/capacities"
+properties:
+  - "/id"
+  - "/properties"
+cypher: |
+    // TODO: Figure out group values and other keys for administration
+    UNWIND $batch AS row
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+    SET obj:{{ LABELS.FabricCapacity }}
+    SET obj += {
+        members: row.properties.administration.members
+    }

@@ -7,6 +7,7 @@ Represents Azure storage accounts.
 **Properties:**
 
 - `id` - Storage account resource ID (primary key)
+- `kind` - Storage account kind
 - `accessTier` - Access tier (Hot, Cool, Archive)
 - `primaryLocation` - Primary location
 - `publicNetworkAccess` - Public network access setting
@@ -22,6 +23,17 @@ Represents Azure storage accounts.
 - `minimumTlsVersion` - Minimum TLS version
 - `networkAclBypass` - Network ACL bypass setting
 - `networkAclDefaultAction` - Network ACL default action
+
+**FileStorage-specific properties (when kind = FileStorage):**
+
+- `defaultSharePermission` - Default share permission
+- `directoryServiceOptions` - Directory service options
+- `adDomainName` - Active Directory domain name
+- `adDomainSid` - Active Directory domain SID
+- `accountType` - AD account type
+- `forestName` - AD forest name
+- `netBiosDomainName` - NetBIOS domain name
+- `samAccountName` - SAM account name
 
 ## Examples
 

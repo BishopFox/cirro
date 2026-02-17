@@ -73,6 +73,10 @@ nav:
         - analysis/graph-nodes/graph-administrative-unit.md
       - ARM Nodes:
         - analysis/arm-nodes.md
+        - App:
+          - analysis/arm-nodes/app/app-builder.md
+          - analysis/arm-nodes/app/app-managed-environment.md
+          - analysis/arm-nodes/app/container-app.md
         - Automation:
           - analysis/arm-nodes/automation/automation-account.md
           - analysis/arm-nodes/automation/automation-runbook.md
@@ -97,11 +101,13 @@ nav:
           - analysis/arm-nodes/communication/email-service-domain.md
         - Compute:
           - analysis/arm-nodes/compute/virtual-machine.md
+          - analysis/arm-nodes/compute/virtual-machine-scale-set.md
           - analysis/arm-nodes/compute/gallery.md
           - analysis/arm-nodes/compute/gallery-app.md
           - analysis/arm-nodes/compute/gallery-app-version.md
           - analysis/arm-nodes/compute/vm-application.md
           - analysis/arm-nodes/compute/disk.md
+          - analysis/arm-nodes/compute/disk-encryption-set.md
           - analysis/arm-nodes/compute/snapshot.md
           - analysis/arm-nodes/compute/availability-set.md
           - analysis/arm-nodes/compute/restore-point-collection.md
@@ -112,6 +118,8 @@ nav:
         - Container:
           - analysis/arm-nodes/container/container-registry.md
           - analysis/arm-nodes/container/container-group.md
+        - Fabric:
+          - analysis/arm-nodes/fabric/fabric-capacity.md
         - Dashboard:
           - analysis/arm-nodes/dashboard/grafana-dashboard.md
         - Data Factory:
@@ -171,6 +179,8 @@ nav:
         - analysis/additional-nodes/certificate.md
         - analysis/additional-nodes/client-secret.md
         - analysis/additional-nodes/container.md
+        - analysis/additional-nodes/container-image.md
+        - analysis/additional-nodes/env-var.md
         - analysis/additional-nodes/custom-dns-config.md
         - analysis/additional-nodes/expressroute-circuit-peering.md
         - analysis/additional-nodes/federated-identity-credential.md
@@ -209,16 +219,20 @@ nav:
         - analysis/edges/assigned-to.md
         - analysis/edges/associated-with.md
         - analysis/edges/authenticates.md
+        - analysis/edges/can-access-registry.md
         - analysis/edges/contains.md
+        - analysis/edges/contains-image.md
         - analysis/edges/federated-credential.md
         - analysis/edges/has-application.md
         - analysis/edges/has-approle.md
+        - analysis/edges/has-builder.md
         - analysis/edges/has-config.md
         - analysis/edges/has-container.md
         - analysis/edges/has-db.md
         - analysis/edges/has-dfs-filesystem.md
         - analysis/edges/has-disk.md
         - analysis/edges/has-dns-config.md
+        - analysis/edges/has-envvar.md
         - analysis/edges/has-endpoint.md
         - analysis/edges/has-entity.md
         - analysis/edges/has-extension.md
@@ -259,6 +273,7 @@ nav:
         - analysis/edges/member-of.md
         - analysis/edges/mounts.md
         - analysis/edges/owns.md
+        - analysis/edges/deploys.md
         - analysis/edges/peer-to.md
         - analysis/edges/references-package.md
         - analysis/edges/registered-owner.md
@@ -267,6 +282,7 @@ nav:
         - analysis/edges/same-user.md
         - analysis/edges/used-by.md
         - analysis/edges/uses-certificate.md
+        - analysis/edges/uses-key-vault.md
         - analysis/edges/uses.md
         - analysis/edges/uses-storage.md
         - analysis/edges/uses-storage-dfs.md

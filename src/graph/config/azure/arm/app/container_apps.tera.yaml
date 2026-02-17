@@ -1,0 +1,69 @@
+name: "Container Apps"
+label: "{{ LABELS.ContainerApp }}"
+table_name: "resources"
+resource_type: "microsoft.app/containerapps"
+properties:
+  - "/id"
+  - "/resources"
+  - "/properties"
+cypher: |
+    UNWIND $batch AS row
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+    SET obj:{{ LABELS.ContainerApp }}
+    SET obj += {
+        runningStatus: row.properties.runningStatus,
+        allowInsecure: row.properties.configuration.ingress.allowInsecure,
+        fqdn: row.properties.configuration.ingress.fqdn,
+        clientCertificateMode: row.properties.configuration.ingress.clientCertificateMode,
+        external: row.properties.configuration.ingress.external,
+        exposedPort: row.properties.configuration.ingress.exposedPort,
+        targetPort: row.properties.configuration.ingress.targetPort,
+        secretNames: [secret IN row.properties.configuration.secrets | secret.name]
+    }
+
+    MERGE (env: {{ LABELS.ArmResource }} {id: toLower(row.properties.managedEnvironmentId)})
+    SET env:{{ LABELS.AppManagedEnvironment }}
+    MERGE (env)-[:{{ REL.DEPLOYS }}]->(obj)
+
+    // Link to ContainerRegistry
+    // Link by name since name since it's a unique domain and ContainerApps only reference the registry server, not the full resource ID
+    WITH obj, row
+    CALL (obj, row) {
+        UNWIND coalesce(row.properties.configuration.registries, []) AS registry
+        MERGE (r:{{ LABELS.ContainerRegistry }} {loginServer: toLower(registry.server)})
+        MERGE (obj)-[a:{{ REL.CAN_ACCESS_REGISTRY }}]->(r)
+        SET a += {
+            identity: registry.identity,
+            username: registry.username,
+            passwordSecretRef: registry.passwordSecretRef
+        }
+        RETURN count(*) AS _
+    }
+
+    // Iterate over container templates to link to ContainerRegistry by registry server in image reference
+     WITH obj, row
+    CALL (obj, row) {
+        UNWIND coalesce(row.properties.template.containers, []) AS container
+        WITH obj, container WHERE container.image IS NOT NULL
+
+        // Extract registry server from image reference
+        // Use ContainerRegistry directly since it should be ingested above
+        // ContainerImage should have unique name, including tag
+        WITH obj, container, split(container.image, '/')[0] AS registryServer
+        MERGE (i:{{ LABELS.ContainerImage }} {name: container.image})
+        MERGE (r:{{ LABELS.ContainerRegistry }} {loginServer: toLower(registryServer)})
+        MERGE (r)-[:{{ REL.CONTAINS_IMAGE }}]->(i)
+        
+        // Environment variables should be added to the image node as properties
+        WITH obj, i, container
+        UNWIND coalesce(container.env, []) AS envVar
+        WITH obj, i, envVar WHERE envVar.name IS NOT NULL
+        MERGE (i)-[:{{ REL.HAS_ENVVAR }}]->(e:{{ LABELS.EnvVar }} {name: envVar.name})
+        SET e += {
+            value: envVar.value,
+            secretRef: envVar.secretRef
+        }
+      
+        RETURN count(*) AS _
+    }
+    RETURN count(*) AS _

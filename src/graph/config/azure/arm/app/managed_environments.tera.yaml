@@ -1,0 +1,23 @@
+name: "App Managed Environments"
+label: "{{ LABELS.AppManagedEnvironment }}"
+table_name: "resources"
+resource_type: "microsoft.app/managedenvironments"
+properties:
+  - "/id"
+  - "/resources"
+  - "/properties"
+cypher: |
+    UNWIND $batch AS row
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+    SET obj:{{ LABELS.AppManagedEnvironment }}
+    SET obj += {
+        daprAIConnectionString: row.properties.daprAIConnectionString,
+        defaultDomain: row.properties.defaultDomain,
+        eventStreamEndpoint: row.properties.eventStreamEndpoint,
+        infrastructureResourceGroup: row.properties.infrastructureResourceGroup,
+        mtls: row.properties.peerAuthentication.mtls.enabled,
+        encryption: row.properties.peerTrafficConfiguration.encryption.enabled,
+        staticIp: row.properties.staticIp
+    }
+
+    RETURN count(*) AS _

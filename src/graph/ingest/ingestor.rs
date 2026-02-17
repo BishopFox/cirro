@@ -23,6 +23,7 @@ pub struct CirroIngestor {
     pub user: String,
     pub password: String,
     pub db_name: String,
+    pub labels: Option<Vec<String>>,
     pub graph: neo4rs::Graph,
     pub sql_conn: Option<Connection>,
     pub specs: SpecRegistry,
@@ -52,10 +53,12 @@ impl CirroIngestor {
         user: String,
         password: String,
         db_name: Option<String>,
+        labels: Option<Vec<String>>,
     ) -> Self {
         // Load all specs first before database connection
         info!("Loading ingestion specifications...");
-        let specs = SpecLoader::load_all_specs()
+
+        let specs = SpecLoader::load_all_specs_filtered(labels.clone())
             .map_err(|e| {
                 panic!("Failed to load specs: {}", e);
             })
@@ -100,6 +103,7 @@ impl CirroIngestor {
             graph,
             sql_conn,
             specs,
+            labels,
         };
         return ingestor;
     }

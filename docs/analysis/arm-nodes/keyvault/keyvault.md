@@ -13,6 +13,9 @@ Represents Azure Key Vault instances.
 - `publicNetworkAccess` - Public network access setting
 - `softDeleteRetentionInDays` - Soft delete retention period
 - `vaultUri` - Key Vault URI
+- `networkAclBypass` - Network ACL bypass setting
+- `networkAclDefaultAction` - Network ACL default action
+- `allowedIps` - Allowed IP rules
 
 **Relationships:**
 - `HAS_POLICY` → GraphObject (access policies for users/service principals)

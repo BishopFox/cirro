@@ -40,6 +40,10 @@ pub enum GraphCommands {
         #[arg(short, long, value_name = "NAME")]
         db_name: Option<String>,
 
+        /// Ingest only these nodes (comma-separated list of labels). Useful for testing or partial ingestions.
+        #[arg(long, value_name = "LABELS", value_delimiter = ',', num_args = 1..)]
+        labels: Option<Vec<String>>,
+
         /// Enable debug logging
         #[arg(long, action = clap::ArgAction::SetTrue)]
         debug: bool,
@@ -90,6 +94,7 @@ pub async fn handle_graph_command(command: GraphCommands) -> Result<(), CirroErr
             user,
             password,
             db_name,
+            labels,
             debug,
         } => {
             if let Err(e) = setup_logger(debug) {
@@ -129,7 +134,7 @@ pub async fn handle_graph_command(command: GraphCommands) -> Result<(), CirroErr
 
             // Create the ingestor
             let mut ingestor =
-                CirroIngestor::new(r#type, file, server, user, password, db_name).await;
+                CirroIngestor::new(r#type, file, server, user, password, db_name, labels).await;
 
             // Run the ingestor
             if let Err(e) = ingestor.run().await {

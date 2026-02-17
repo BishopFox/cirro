@@ -14,7 +14,7 @@ cypher: |
         provisioningState: row.properties.provisioningState,
         publisher: row.properties.publisher,
         triggerForceUpgrade: row.properties.triggerForceUpgrade,
-        type: row.properties.type,
+        extType: row.properties.type,
         vmType: row.properties.settings.vmType,
         settings: apoc.convert.toJson(row.properties.settings)
     }
