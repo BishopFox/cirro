@@ -45,14 +45,16 @@ cypher: |
                 WHEN 'Copy' THEN row.properties.creationData.sourceResourceId
             END AS sourceId
         WHERE sourceId IS NOT NULL
-        MERGE (s:{{ LABELS.StorageAccount }} {id: toLower(sourceId)})
+        MERGE (s:{{ LABELS.ArmResource }} {id: toLower(sourceId)})
+        SET s:{{ LABELS.StorageAccount }}
         MERGE (obj)-[:{{ REL.HAS_SOURCE }}]->(s)
     }
 
     WITH obj, row
     CALL (obj, row) {
         WITH obj, row WHERE row.properties.encryption.diskEncryptionSetId IS NOT NULL
-        MERGE (des:{{ LABELS.DiskEncryptionSet }} {id: toLower(row.properties.encryption.diskEncryptionSetId)})
+        MERGE (des:{{ LABELS.ArmResource }} {id: toLower(row.properties.encryption.diskEncryptionSetId)})
+        SET des:{{ LABELS.DiskEncryptionSet }}
         MERGE (obj)-[:{{ REL.ENCRYPTED_BY }}]->(des)
     }
 

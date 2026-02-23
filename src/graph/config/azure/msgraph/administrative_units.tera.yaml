@@ -29,16 +29,25 @@ cypher: |
 
       // Unwind members
       WITH row, obj
-      CALL {
-          WITH row, obj
-          UNWIND coalesce(row.members, []) AS member
-          MERGE (m:{{ LABELS.GraphObject }} {id: toLower(member)})
-          MERGE (m)-[:{{ REL.MEMBER_OF }}]->(obj)
+      CALL (row, obj) {
+        UNWIND coalesce(row.members, []) AS member
+        MERGE (m:{{ LABELS.GraphObject }} {id: toLower(member)})
+        MERGE (m)-[:{{ REL.MEMBER_OF }}]->(obj)
+        RETURN count(*) AS _
       }
 
-      // TODO: Unwind scoped role members
-
-      RETURN count(*) AS _
+      // Scoped role members
+     WITH row, obj
+     CALL (row, obj) {
+        UNWIND coalesce(row.scopedRoleMembers, []) AS srm
+        MERGE (m:{{ LABELS.GraphObject }} {id: toLower(srm["roleMemberInfo/id"])})
+        MERGE (m)-[r: {{ REL.HAS_SCOPED_ROLE }}]->(obj)
+        SET r += {
+            roleId: srm["roleId"]
+        }
+        RETURN count(*) AS _
+    }
+    RETURN count(*) AS _
   } IN TRANSACTIONS OF 5000 ROWS
 
   RETURN count(*) AS _

@@ -8,6 +8,7 @@ properties:
   - "/roleType"
   - "/permissions"
   - "/properties"
+  - "/type"
 cypher: |
     UNWIND $batch AS row
     MERGE (o:GraphObject {id: toLower(row.properties.principalId)})
@@ -23,5 +24,7 @@ cypher: |
             notActions : row.permissions[0].notActions,
             dataActions : row.permissions[0].dataActions,
             notDataActions : row.permissions[0].notDataActions,
-            scope : row.properties.scope
+            scope : row.properties.scope,
+            roleDefinitionId : toLower(row.properties.roleDefinitionId),
+            type : toLower(row.type)
         }

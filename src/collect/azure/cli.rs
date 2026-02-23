@@ -3,7 +3,7 @@ use crate::collect::logger::setup_logger;
 use crate::errors::CirroError;
 
 use clap::{Args, Subcommand};
-use std::path::PathBuf;
+use std::{collections::HashSet, path::PathBuf};
 
 #[derive(clap::ValueEnum, Copy, Clone, Debug)]
 pub enum AzureCloud {
@@ -63,9 +63,98 @@ pub struct AccessTokenAuthArgs {
 
 #[derive(Debug, Clone, Args)]
 pub struct OptionEnumFlags {
-    /// Gather eligible role assignments for users (requires permissions)
-    #[arg(long = "pim", action = clap::ArgAction::SetTrue)]
-    pub pim: bool,
+    /// Skip all default graph enumerations; only run explicitly enabled options (e.g. --pim, --caps)
+    #[arg(long = "no-default", action = clap::ArgAction::SetTrue)]
+    pub no_default: bool,
+
+    /// Enumerate only graph organization details
+    #[arg(long = "organization", action = clap::ArgAction::SetTrue)]
+    pub organization: bool,
+
+    /// Enumerate only graph authorization policy details
+    #[arg(long = "authorization-policy", action = clap::ArgAction::SetTrue)]
+    pub authorization_policy: bool,
+
+    /// Enumerate only graph directory users
+    #[arg(long = "users", action = clap::ArgAction::SetTrue)]
+    pub users: bool,
+
+    /// Enumerate only graph directory groups
+    #[arg(long = "groups", action = clap::ArgAction::SetTrue)]
+    pub groups: bool,
+
+    /// Enumerate only graph application registrations
+    #[arg(long = "applications", action = clap::ArgAction::SetTrue)]
+    pub applications: bool,
+
+    /// Enumerate only graph service principals
+    #[arg(long = "service-principals", action = clap::ArgAction::SetTrue)]
+    pub service_principals: bool,
+
+    /// Enumerate only graph registered devices
+    #[arg(long = "devices", action = clap::ArgAction::SetTrue)]
+    pub devices: bool,
+
+    /// Enumerate only graph directory role definitions
+    #[arg(long = "directory-roles", action = clap::ArgAction::SetTrue)]
+    pub directory_roles: bool,
+
+    /// Enumerate only graph administrative units
+    #[arg(long = "administrative-units", action = clap::ArgAction::SetTrue)]
+    pub administrative_units: bool,
+
+    /// Gather eligible Graph role assignments for users (requires permissions)
+    #[arg(long = "graph-pim", action = clap::ArgAction::SetTrue)]
+    pub graph_pim: bool,
+
+    /// Gather eligible ARM role assignments for current user (user only)
+    #[arg(long = "arm-pim", action = clap::ArgAction::SetTrue)]
+    pub arm_pim: bool,
+
+    /// Gather conditional access policies (requires permissions)
+    #[arg(long = "caps", action = clap::ArgAction::SetTrue)]
+    pub caps: bool,
+}
+
+impl OptionEnumFlags {
+    /// Returns a filter set of graph object names when users explicitly request them
+    pub fn graph_object_filters(&self) -> Option<HashSet<String>> {
+        let mut selected: HashSet<String> = HashSet::new();
+
+        if self.organization {
+            selected.insert("organization".to_string());
+        }
+        if self.authorization_policy {
+            selected.insert("authorizationPolicy".to_string());
+        }
+        if self.users {
+            selected.insert("users".to_string());
+        }
+        if self.groups {
+            selected.insert("groups".to_string());
+        }
+        if self.applications {
+            selected.insert("applications".to_string());
+        }
+        if self.service_principals {
+            selected.insert("servicePrincipals".to_string());
+        }
+        if self.devices {
+            selected.insert("devices".to_string());
+        }
+        if self.directory_roles {
+            selected.insert("directoryRoles".to_string());
+        }
+        if self.administrative_units {
+            selected.insert("administrativeUnits".to_string());
+        }
+
+        if selected.is_empty() && !self.no_default {
+            None
+        } else {
+            Some(selected)
+        }
+    }
 }
 
 #[derive(Debug, Subcommand)]

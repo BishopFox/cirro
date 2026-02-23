@@ -1,0 +1,23 @@
+name: "Set ARM Eligible Relation Properties"
+label: "PostProcessingSetArmEligibleRelationProperties"
+priority: 0
+cypher: |
+   MATCH (:{{ LABELS.GraphObject }})-[rel]->(o:{{ LABELS.ArmResource }})
+   WHERE rel.type = 'microsoft.authorization/roleassignments'
+   WITH rel.roleDefinitionId AS roleDefinitionId, head(collect(rel)) AS reldef
+   WITH roleDefinitionId, {
+      actions:       reldef.actions,
+      notActions:    reldef.notActions,
+      dataActions:   reldef.dataActions,
+      notDataActions:reldef.notDataActions
+   } AS permissions
+
+    MATCH (:{{ LABELS.GraphObject }})-[r:{{ REL.IS_RBAC_ELIGIBLE }}]->(o:{{ LABELS.ArmResource }})
+    WHERE r.roleDefinitionId = roleDefinitionId
+    SET r += {
+        actions: permissions.actions,
+        notActions: permissions.notActions,
+        dataActions: permissions.dataActions,
+        notDataActions: permissions.notDataActions
+    }
+    RETURN count(r) AS updatedRelations

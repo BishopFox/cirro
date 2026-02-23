@@ -1,0 +1,32 @@
+name: "Conditional Access Policies"
+label: "{{ LABELS.ConditionalAccessPolicy }}"
+table_name: "conditionalAccessPolicies"
+properties:
+  - "/id"
+  - "/createdDateTime"
+  - "/modifiedDateTime"
+  - "/displayName"
+  - "/state"
+  - "/templateId"
+  - "/conditions"
+  - "/grantControls"
+cypher: |
+  UNWIND $batch as row
+  CALL (row) {
+      MERGE (obj:{{ LABELS.GraphObject }} {id: toLower(row.id)})
+      SET obj:{{ LABELS.ConditionalAccessPolicy }}
+      SET obj += {
+          createdDateTime: row.createdDateTime,
+          modifiedDateTime: row.modifiedDateTime,
+          displayName: row.displayName,
+          state: row.state,
+          templateId: row.templateId,
+          conditions: apoc.convert.toJson(row.conditions),
+          grantControls: apoc.convert.toJson(row.grantControls)
+      }
+
+
+      RETURN count(*) AS _
+  } IN TRANSACTIONS OF 5000 ROWS
+
+  RETURN count(*) AS _

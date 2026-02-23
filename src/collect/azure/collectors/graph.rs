@@ -11,7 +11,7 @@ use serde_json::Value;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Instant;
-use std::{collections::HashMap, vec};
+use std::{cmp, collections::HashMap, vec};
 
 // Create a global reqwest client to reuse connections
 static HTTP_CLIENT: Lazy<Client> = Lazy::new(|| {
@@ -177,21 +177,44 @@ pub async fn enumerate_graph(collector: Arc<Collector>) -> Result<(), CirroError
                 ("members".into(), vec!["/id".into()]),
                 (
                     "scopedRoleMembers".into(),
-                    vec!["roleId".into(), "/roleMemberInfo/id".into()],
+                    vec!["/roleId".into(), "/roleMemberInfo/id".into()],
                 ),
             ])),
         ),
     ];
 
+    if let Some(filters) = collector.option_enum_flags.graph_object_filters() {
+        enumerators.retain(|obj| filters.contains(&obj.name));
+    }
+
     // Optional flag enumerators based on user input
-    if collector.option_enum_flags.pim {
+    if collector.option_enum_flags.graph_pim {
         enumerators.push(GraphObject::new(
             "eligibleRoleAssignments",
             "/roleManagement/directory/roleEligibilitySchedules",
+            "$top=999",
+            None,
+        ));
+    }
+
+    if collector.option_enum_flags.caps {
+        enumerators.push(GraphObject::new(
+            "conditionalAccessPolicies",
+            "/identity/conditionalAccess/policies",
+            "",
+            None,
+        ));
+
+        enumerators.push(GraphObject::new(
+            "namedLocations",
+            "/identity/conditionalAccess/namedLocations",
             "",
             None,
         ));
     }
+
+    // Match concurrency to the requested enumerators (minimum 1 to satisfy the stream API)
+    let concurrency = cmp::max(1, enumerators.len());
 
     // Start a timer
     let start_time = Instant::now();
@@ -210,7 +233,7 @@ pub async fn enumerate_graph(collector: Arc<Collector>) -> Result<(), CirroError
                 }
             }
         })
-        .buffer_unordered(7) // Use the number of enumerators for concurrency
+        .buffer_unordered(concurrency)
         .collect::<Vec<_>>()
         .await;
 

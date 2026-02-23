@@ -887,6 +887,42 @@ pub async fn enumerate_arm(collector: Arc<Collector>) -> Result<(), CirroError> 
         futures::future::join_all(tasks).await;
     }
 
+    // If arm_pim flag is set, also gather eligible role assignments for the current user
+    if collector.option_enum_flags.arm_pim {
+        info!("Gathering eligible ARM role assignments for current user");
+        let eligible_roles = query_resources(
+            collector.clone(),
+            "providers/Microsoft.Authorization/roleEligibilityScheduleInstances?api-version=2020-10-01&$filter=asTarget()",
+        )
+        .await?;
+        if eligible_roles.is_empty() {
+            info!("No eligible ARM role assignments found for current user");
+        } else {
+            info!(
+                "Found {} eligible ARM role assignments for current user",
+                eligible_roles.len()
+            );
+            debug!("Eligible ARM role assignments: {:?}", eligible_roles);
+
+            // Write the eligible roles directly to the database
+            // It will already be in JSON format so we can just convert it to a Value
+            let mut eligible_role_rows = Vec::with_capacity(eligible_roles.len());
+            for role in &eligible_roles {
+                let role_id = role.get("id").and_then(Value::as_str).ok_or_else(|| {
+                    CirroError::ArmApiError("Role ID not found in eligible role object".to_string())
+                })?;
+                let role_data = serde_json::to_value(role.clone())
+                    .map_err(|e| CirroError::SerializationError(e.to_string()))?;
+                eligible_role_rows.push((role_id.to_lowercase(), role_data));
+            }
+            if !eligible_role_rows.is_empty() {
+                collector
+                    .write_values_batch_to_db("eligibleArmRBAC".into(), eligible_role_rows)
+                    .await?;
+            }
+        }
+    }
+
     info!(
         "ARM enumeration completed in {} seconds",
         fmt_duration(start_time.elapsed())

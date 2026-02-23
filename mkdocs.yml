@@ -71,6 +71,9 @@ nav:
         - analysis/graph-nodes/graph-device.md
         - analysis/graph-nodes/graph-role.md
         - analysis/graph-nodes/graph-administrative-unit.md
+        - analysis/graph-nodes/graph-named-location.md
+        - analysis/graph-nodes/graph-conditional-access-policy.md
+        - analysis/graph-nodes/graph-eligible-role-assignment.md
       - ARM Nodes:
         - analysis/arm-nodes.md
         - App:
@@ -105,6 +108,7 @@ nav:
           - analysis/arm-nodes/compute/gallery.md
           - analysis/arm-nodes/compute/gallery-app.md
           - analysis/arm-nodes/compute/gallery-app-version.md
+          - analysis/arm-nodes/compute/gallery-image-version.md
           - analysis/arm-nodes/compute/vm-application.md
           - analysis/arm-nodes/compute/disk.md
           - analysis/arm-nodes/compute/disk-encryption-set.md
@@ -144,6 +148,7 @@ nav:
           - analysis/arm-nodes/network/network-interface.md
           - analysis/arm-nodes/network/nsg.md
           - analysis/arm-nodes/network/nsg-rule.md
+          - analysis/arm-nodes/network/expressroute-circuit.md
           - analysis/arm-nodes/network/private-dns-zone.md
           - analysis/arm-nodes/network/private-endpoint.md
           - analysis/arm-nodes/network/public-ip-address.md
@@ -170,9 +175,30 @@ nav:
           - analysis/arm-nodes/synapse/synapse-workspace.md
         - Visual Studio:
           - analysis/arm-nodes/visualstudio/visualstudio-account.md
+        - API Management:
+          - analysis/arm-nodes/apimanagement/apim-service.md
+        - App Configuration:
+          - analysis/arm-nodes/appconfiguration/appconfig-store.md
+        - Cache:
+          - analysis/arm-nodes/cache/redis-cache.md
+        - CosmosDB:
+          - analysis/arm-nodes/documentdb/cosmosdb-account.md
+        - Machine Learning:
+          - analysis/arm-nodes/machinelearning/ml-workspace.md
+        - Palo Alto:
+          - analysis/arm-nodes/paloalto/pan-cloudngfw-firewall.md
+          - analysis/arm-nodes/paloalto/pan-cloudngfw-localrulestack.md
+        - Purview:
+          - analysis/arm-nodes/purview/purview-account.md
+        - Service Bus:
+          - analysis/arm-nodes/servicebus/servicebus-namespace.md
+        - SignalR:
+          - analysis/arm-nodes/signalr/signalr.md
         - Web:
           - analysis/arm-nodes/web/server-farm.md
           - analysis/arm-nodes/web/web-site.md
+          - analysis/arm-nodes/web/web-certificate.md
+          - analysis/arm-nodes/web/static-website.md
       - Additional Nodes: 
         - analysis/additional-nodes.md
         - analysis/additional-nodes/bastion-ip-config.md
@@ -222,6 +248,7 @@ nav:
         - analysis/edges/can-access-registry.md
         - analysis/edges/contains.md
         - analysis/edges/contains-image.md
+        - analysis/edges/encrypted-by.md
         - analysis/edges/federated-credential.md
         - analysis/edges/has-application.md
         - analysis/edges/has-approle.md
@@ -257,6 +284,7 @@ nav:
         - analysis/edges/has-rule.md
         - analysis/edges/has-run-command.md
         - analysis/edges/has-runbook.md
+        - analysis/edges/has-scoped-role.md
         - analysis/edges/has-secret.md
         - analysis/edges/has-snapshot.md
         - analysis/edges/has-source.md
@@ -268,6 +296,7 @@ nav:
         - analysis/edges/hosts.md
         - analysis/edges/hosts-site.md
         - analysis/edges/is-deployed.md
+        - analysis/edges/is-rbac-eligible.md
         - analysis/edges/is-role-eligible.md
         - analysis/edges/manages.md
         - analysis/edges/member-of.md
@@ -275,6 +304,7 @@ nav:
         - analysis/edges/owns.md
         - analysis/edges/deploys.md
         - analysis/edges/peer-to.md
+        - analysis/edges/peers-with.md
         - analysis/edges/references-package.md
         - analysis/edges/registered-owner.md
         - analysis/edges/registered-user.md
@@ -288,6 +318,22 @@ nav:
         - analysis/edges/uses-storage-dfs.md
         - analysis/edges/verified-domain.md
   - Dashboard: analysis/dashboard.md
+  - Post-Processing:
+      - analysis/post-processing.md
+      - analysis/post-processing/normalize-ids.md
+      - analysis/post-processing/deduplicate-nodes.md
+      - analysis/post-processing/deduplicate-relationships.md
+      - analysis/post-processing/deduplicate-container-registry.md
+      - analysis/post-processing/deduplicate-graph-applications.md
+      - analysis/post-processing/deduplicate-graph-roles.md
+      - analysis/post-processing/deduplicate-service-principals.md
+      - analysis/post-processing/deduplicate-storage.md
+      - analysis/post-processing/fix-dfs-without-id.md
+      - analysis/post-processing/link-tsuser-to-graphuser.md
+      - analysis/post-processing/remove-memberof-graphrole.md
+      - analysis/post-processing/set-approle-properties.md
+      - analysis/post-processing/set-arm-eligible-properties.md
+      - analysis/post-processing/set-hasscopedrole-properties.md
   - FAQ: faq.md
   - Developer Notes: developer-notes.md
   - Getting Help: getting-help.md

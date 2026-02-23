@@ -29,11 +29,14 @@ macro_rules! define_spec_registry {
                 use crate::graph::specs::SpecTrait;
 
                 $(
-                    self.$field = self
-                        .$field
-                        .into_iter()
-                        .filter(|spec| labels.contains(&spec.get_label().to_string()))
-                        .collect();
+                    // Ignore filtering for post-processing specs since they need to always run
+                    if stringify!($field) != "cirro_post_processing_specs" {
+                        self.$field = self
+                            .$field
+                            .into_iter()
+                            .filter(|spec| labels.contains(&spec.get_label().to_string()))
+                            .collect();
+                    }
                 )*
 
                 self
