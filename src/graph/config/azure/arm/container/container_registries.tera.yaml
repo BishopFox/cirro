@@ -1,0 +1,25 @@
+name: "Container Registries"
+label: "{{ LABELS.ContainerRegistry }}"
+table_name: "resources"
+resource_type: "microsoft.containerregistry/registries"
+properties:
+  - "/id"
+  - "/sku"
+  - "/properties"
+cypher: |
+    UNWIND $batch AS row
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+    SET obj:{{ LABELS.ContainerRegistry }}
+    SET obj += {
+        sku: row.sku.name,
+        adminUserEnabled: row.properties.adminUserEnabled,
+        anonymousPullEnabled: row.properties.anonymousPullEnabled,
+        creationDate: row.properties.creationDate,
+        dataEndpointEnabled: row.properties.dataEndpointEnabled,
+        dataEndpointHostNames: row.properties.dataEndpointHostNames,
+        loginServer: row.properties.loginServer,
+        metadataSearch: row.properties.metadataSearch,
+        networkRuleBypassOptions: row.properties.networkRuleBypassOptions,
+        publicNetworkAccess: row.properties.publicNetworkAccess,
+        roleAssignmentMode: row.properties.roleAssignmentMode
+    }

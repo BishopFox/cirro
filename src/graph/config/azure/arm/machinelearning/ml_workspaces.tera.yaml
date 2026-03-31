@@ -1,0 +1,25 @@
+name: "ML Workspaces"
+label: "{{ LABELS.MLWorkspace }}"
+table_name: "resources"
+resource_type: "microsoft.machinelearningservices/workspaces"
+properties:
+  - "/id"
+  - "/properties"
+cypher: |
+    UNWIND $batch AS row
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+    SET obj:{{ LABELS.MLWorkspace }}
+    SET obj += {
+       allowRoleAssignmentOnRG: row.properties.allowRoleAssignmentOnResourceGroup,
+       creationTime: row.properties.creationTime,
+       discoveryUrl: row.properties.discoveryUrl,
+       friendlyName: row.properties.friendlyName,
+       networkAclBypass: row.properties.networkAcls.bypass,
+       networkAclDefaultAction: row.properties.networkAcls.defaultAction,
+       notebookInfoFqdn: row.properties.notebookInfo.fqdn,
+       isPrivateLinkEnabled: row.properties.notebookInfo.isPrivateLinkEnabled,
+       publicNetworkAccess: row.properties.publicNetworkAccess,
+       softDeleteEnabled: row.properties.softDeleteEnabled,
+       tenantId: row.properties.tenantId
+    }
+    RETURN count(*) AS _

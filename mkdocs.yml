@@ -1,0 +1,330 @@
+# yaml-language-server: $schema=https://squidfunk.github.io/mkdocs-material/schema.json
+
+site_name: Cirro Documentation
+site_url: https://cirro.dev
+repo_url: https://github.com/bishopfox/cirro
+theme:
+  name: material
+  logo: assets/images/favicon.png
+  icon:
+    repo: fontawesome/brands/github-alt
+  font:
+    code: Roboto Mono
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: black
+      accent: light blue
+      toggle:
+        icon: material/weather-night  
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: black
+      accent: light blue
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  features:
+    - navigation.indexes
+    - navigation.instant
+    - navigation.instant.prefetch
+    - navigation.path
+    - navigation.sections
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - search.suggest
+    - toc.integrate
+markdown_extensions: 
+  - attr_list
+  - md_in_html
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji 
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+nav:
+  - Home: index.md
+  - Architecture: architecture.md
+  - Usage:
+      - Quick Start: usage/quick-start.md
+      - Collection: usage/cirro.md
+      - Graph Operations: usage/cirro-graph.md
+  - Analysis:
+      - Overview: analysis/cirro-graph-analysis.md
+  - Nodes and Edges:
+      - Graph Nodes: 
+        - analysis/graph-nodes.md
+        - analysis/graph-nodes/graph-org.md
+        - analysis/graph-nodes/graph-policy.md
+        - analysis/graph-nodes/graph-user.md
+        - analysis/graph-nodes/graph-group.md
+        - analysis/graph-nodes/graph-application.md
+        - analysis/graph-nodes/graph-service-principal.md
+        - analysis/graph-nodes/graph-device.md
+        - analysis/graph-nodes/graph-role.md
+        - analysis/graph-nodes/graph-administrative-unit.md
+        - analysis/graph-nodes/graph-named-location.md
+        - analysis/graph-nodes/graph-conditional-access-policy.md
+        - analysis/graph-nodes/graph-eligible-role-assignment.md
+      - ARM Nodes:
+        - analysis/arm-nodes.md
+        - App:
+          - analysis/arm-nodes/app/app-builder.md
+          - analysis/arm-nodes/app/app-managed-environment.md
+          - analysis/arm-nodes/app/container-app.md
+        - Automation:
+          - analysis/arm-nodes/automation/automation-account.md
+          - analysis/arm-nodes/automation/automation-runbook.md
+        - Azure Arc:
+          - analysis/arm-nodes/azurearc/arc-sql-server.md
+          - analysis/arm-nodes/azurearc/arc-sql-database.md
+        - Azure Active Directory:
+          - analysis/arm-nodes/azureactivedirectory/b2c-directory.md
+        - Azure Core:
+          - analysis/arm-nodes/azure-core/tenant.md
+          - analysis/arm-nodes/azure-core/subscription.md
+          - analysis/arm-nodes/azure-core/resource-group.md
+          - analysis/arm-nodes/azure-core/management-group.md
+        - CDN:
+          - analysis/arm-nodes/cdn/cdn-profile.md
+          - analysis/arm-nodes/cdn/afd-endpoint.md
+        - Cognitive Services:
+          - analysis/arm-nodes/cognitiveservices/cognitive-services-account.md
+        - Communication:
+          - analysis/arm-nodes/communication/communication-services.md
+          - analysis/arm-nodes/communication/email-service.md
+          - analysis/arm-nodes/communication/email-service-domain.md
+        - Compute:
+          - analysis/arm-nodes/compute/virtual-machine.md
+          - analysis/arm-nodes/compute/virtual-machine-scale-set.md
+          - analysis/arm-nodes/compute/gallery.md
+          - analysis/arm-nodes/compute/gallery-app.md
+          - analysis/arm-nodes/compute/gallery-app-version.md
+          - analysis/arm-nodes/compute/gallery-image.md
+          - analysis/arm-nodes/compute/gallery-image-version.md
+          - analysis/arm-nodes/compute/vm-application.md
+          - analysis/arm-nodes/compute/disk.md
+          - analysis/arm-nodes/compute/disk-encryption-set.md
+          - analysis/arm-nodes/compute/snapshot.md
+          - analysis/arm-nodes/compute/availability-set.md
+          - analysis/arm-nodes/compute/restore-point-collection.md
+          - analysis/arm-nodes/compute/ssh-public-key.md
+          - analysis/arm-nodes/compute/vm-extension.md
+          - analysis/arm-nodes/compute/compute-image.md
+          - analysis/arm-nodes/compute/vm-run-command.md
+        - Container:
+          - analysis/arm-nodes/container/container-registry.md
+          - analysis/arm-nodes/container/container-group.md
+        - Fabric:
+          - analysis/arm-nodes/fabric/fabric-capacity.md
+        - Dashboard:
+          - analysis/arm-nodes/dashboard/grafana-dashboard.md
+        - Data Factory:
+          - analysis/arm-nodes/datafactory/data-factory.md
+        - Event Grid:
+          - analysis/arm-nodes/eventgrid/event-grid-topic.md
+          - analysis/arm-nodes/eventgrid/event-grid-system-topic.md
+        - Event Hub:
+          - analysis/arm-nodes/eventhub/eventhub-namespace.md
+        - Hybrid Compute:
+          - analysis/arm-nodes/hybridcompute/hybrid-machine.md
+          - analysis/arm-nodes/hybridcompute/hybrid-ip-address.md
+          - analysis/arm-nodes/hybridcompute/hybrid-extension.md
+        - Identity:
+          - analysis/arm-nodes/identity/user-assigned-identity.md
+        - Insights:
+          - analysis/arm-nodes/insights/activity-log-alert.md
+        - Key Vault:
+          - analysis/arm-nodes/keyvault/keyvault.md
+        - Network:
+          - analysis/arm-nodes/network/bastion-host.md
+          - analysis/arm-nodes/network/dns-zone.md
+          - analysis/arm-nodes/network/ipconfig.md
+          - analysis/arm-nodes/network/network-interface.md
+          - analysis/arm-nodes/network/nsg.md
+          - analysis/arm-nodes/network/nsg-rule.md
+          - analysis/arm-nodes/network/expressroute-circuit.md
+          - analysis/arm-nodes/network/private-dns-zone.md
+          - analysis/arm-nodes/network/private-endpoint.md
+          - analysis/arm-nodes/network/public-ip-address.md
+          - analysis/arm-nodes/network/route-table.md
+          - analysis/arm-nodes/network/subnet.md
+          - analysis/arm-nodes/network/virtual-network.md
+        - NetApp:
+          - analysis/arm-nodes/netapp/netapp-account.md
+          - analysis/arm-nodes/netapp/netapp-capacity-pool.md
+          - analysis/arm-nodes/netapp/netapp-volume.md
+          - analysis/arm-nodes/netapp/netapp-snapshot-policy.md
+        - Recovery Services:
+          - analysis/arm-nodes/recoveryservices/recovery-vault.md
+        - SQL:
+          - analysis/arm-nodes/sql/sql-server.md
+          - analysis/arm-nodes/sql/sql-database.md
+          - analysis/arm-nodes/sql/sql-virtual-machine.md
+        - SaaS:
+          - analysis/arm-nodes/saas/saas-resource.md
+        - Storage:
+          - analysis/arm-nodes/storage/storage-account.md
+          - analysis/arm-nodes/storage/classic-storage-account.md
+        - Synapse:
+          - analysis/arm-nodes/synapse/synapse-workspace.md
+        - Visual Studio:
+          - analysis/arm-nodes/visualstudio/visualstudio-account.md
+        - API Management:
+          - analysis/arm-nodes/apimanagement/apim-service.md
+        - App Configuration:
+          - analysis/arm-nodes/appconfiguration/appconfig-store.md
+        - Cache:
+          - analysis/arm-nodes/cache/redis-cache.md
+        - CosmosDB:
+          - analysis/arm-nodes/documentdb/cosmosdb-account.md
+        - Machine Learning:
+          - analysis/arm-nodes/machinelearning/ml-workspace.md
+        - Palo Alto:
+          - analysis/arm-nodes/paloalto/pan-cloudngfw-firewall.md
+          - analysis/arm-nodes/paloalto/pan-cloudngfw-localrulestack.md
+        - Purview:
+          - analysis/arm-nodes/purview/purview-account.md
+        - Service Bus:
+          - analysis/arm-nodes/servicebus/servicebus-namespace.md
+        - SignalR:
+          - analysis/arm-nodes/signalr/signalr.md
+        - Web:
+          - analysis/arm-nodes/web/server-farm.md
+          - analysis/arm-nodes/web/web-site.md
+          - analysis/arm-nodes/web/web-certificate.md
+          - analysis/arm-nodes/web/static-website.md
+      - Additional Nodes: 
+        - analysis/additional-nodes.md
+        - analysis/additional-nodes/bastion-ip-config.md
+        - analysis/additional-nodes/certificate.md
+        - analysis/additional-nodes/client-secret.md
+        - analysis/additional-nodes/container.md
+        - analysis/additional-nodes/container-image.md
+        - analysis/additional-nodes/env-var.md
+        - analysis/additional-nodes/custom-dns-config.md
+        - analysis/additional-nodes/expressroute-circuit-peering.md
+        - analysis/additional-nodes/federated-identity-credential.md
+        - analysis/additional-nodes/graph-app-role.md
+        - analysis/additional-nodes/hybrid-extension.md
+        - analysis/additional-nodes/hybrid-ip-address.md
+        - analysis/additional-nodes/ip-config.md
+        - analysis/additional-nodes/key-vault-secret.md
+        - analysis/additional-nodes/netapp-account-ad-domain.md
+        - analysis/additional-nodes/netapp-volume-mount.md
+        - analysis/additional-nodes/network-gateway.md
+        - analysis/additional-nodes/network-peering.md
+        - analysis/additional-nodes/network-route.md
+        - analysis/additional-nodes/nsg-rule.md
+        - analysis/additional-nodes/private-endpoint-connection.md
+        - analysis/additional-nodes/private-link-service-connection.md
+        - analysis/additional-nodes/registry-credential.md
+        - analysis/additional-nodes/runbook-parameter.md
+        - analysis/additional-nodes/service-principal-endpoint.md
+        - analysis/additional-nodes/storage-account-key.md
+        - analysis/additional-nodes/storage-account-dfs.md
+        - analysis/additional-nodes/subnet.md
+        - analysis/additional-nodes/verified-domain.md
+        - analysis/additional-nodes/vm-extension.md
+        - analysis/additional-nodes/vm-run-command.md
+        - analysis/additional-nodes/vm-run-command-parameter.md
+      - Tailscale Nodes:
+        - analysis/tailscale-nodes.md
+        - analysis/tailscale-nodes/ts-user.md
+        - analysis/tailscale-nodes/ts-device.md
+        - analysis/tailscale-nodes/ts-tailnet.md
+      - Edges:
+        - analysis/edges/assigned-approle.md
+        - analysis/edges/associated-with.md
+        - analysis/edges/authenticates.md
+        - analysis/edges/can-access-registry.md
+        - analysis/edges/contains.md
+        - analysis/edges/contains-image.md
+        - analysis/edges/delegated-to-client.md
+        - analysis/edges/encrypted-by.md
+        - analysis/edges/has-alert.md
+        - analysis/edges/has-application.md
+        - analysis/edges/has-approle.md
+        - analysis/edges/has-config.md
+        - analysis/edges/has-container.md
+        - analysis/edges/has-db.md
+        - analysis/edges/has-dfs-filesystem.md
+        - analysis/edges/has-dns-config.md
+        - analysis/edges/has-envvar.md
+        - analysis/edges/has-endpoint.md
+        - analysis/edges/has-extension.md
+        - analysis/edges/has-gallery-image.md
+        - analysis/edges/has-identity.md
+        - analysis/edges/has-ip.md
+        - analysis/edges/has-linked-domain.md
+        - analysis/edges/has-nic.md
+        - analysis/edges/has-nsg.md
+        - analysis/edges/has-oauth-grant.md
+        - analysis/edges/has-parameter.md
+        - analysis/edges/has-peering.md
+        - analysis/edges/has-policy.md
+        - analysis/edges/has-private-endpoint.md
+        - analysis/edges/has-restorepoint.md
+        - analysis/edges/has-role.md
+        - analysis/edges/has-rulestack.md
+        - analysis/edges/has-route.md
+        - analysis/edges/has-route-table.md
+        - analysis/edges/has-rule.md
+        - analysis/edges/has-run-command.md
+        - analysis/edges/has-runbook.md
+        - analysis/edges/has-scoped-role.md
+        - analysis/edges/has-secret.md
+        - analysis/edges/has-snapshot.md
+        - analysis/edges/has-source.md
+        - analysis/edges/has-sql-vm.md
+        - analysis/edges/has-user-grant.md
+        - analysis/edges/has-version.md
+        - analysis/edges/has-vmapp.md
+        - analysis/edges/hosts.md
+        - analysis/edges/is-deployed.md
+        - analysis/edges/is-rbac-eligible.md
+        - analysis/edges/is-role-eligible.md
+        - analysis/edges/manages.md
+        - analysis/edges/member-of.md
+        - analysis/edges/mounts.md
+        - analysis/edges/owns.md
+        - analysis/edges/deploys.md
+        - analysis/edges/peers-with.md
+        - analysis/edges/references-package.md
+        - analysis/edges/registered-owner.md
+        - analysis/edges/registered-user.md
+        - analysis/edges/represented-by.md
+        - analysis/edges/same-user.md
+        - analysis/edges/used-by.md
+        - analysis/edges/uses-key-vault.md
+        - analysis/edges/uses-storage.md
+        - analysis/edges/uses-storage-dfs.md
+        - analysis/edges/verified-domain.md
+  - Dashboard: analysis/dashboard.md
+  - Post-Processing:
+      - analysis/post-processing.md
+      - analysis/post-processing/normalize-ids.md
+      - analysis/post-processing/deduplicate-nodes.md
+      - analysis/post-processing/deduplicate-relationships.md
+      - analysis/post-processing/deduplicate-container-registry.md
+      - analysis/post-processing/deduplicate-graph-applications.md
+      - analysis/post-processing/deduplicate-graph-roles.md
+      - analysis/post-processing/deduplicate-service-principals.md
+      - analysis/post-processing/deduplicate-storage.md
+      - analysis/post-processing/fix-dfs-without-id.md
+      - analysis/post-processing/link-tsuser-to-graphuser.md
+      - analysis/post-processing/remove-memberof-graphrole.md
+      - analysis/post-processing/set-approle-properties.md
+      - analysis/post-processing/set-arm-eligible-properties.md
+      - analysis/post-processing/set-hasscopedrole-properties.md
+  - FAQ: faq.md
+  - Developer Notes: developer-notes.md
+  - Getting Help: getting-help.md

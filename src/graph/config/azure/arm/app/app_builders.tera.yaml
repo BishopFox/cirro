@@ -1,0 +1,13 @@
+name: "App Builders"
+label: "{{ LABELS.AppBuilder }}"
+table_name: "resources"
+resource_type: "microsoft.app/builders"
+properties:
+  - "/id"
+  - "/resources"
+  - "/properties"
+cypher: |
+    UNWIND $batch AS row
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+    SET obj:{{ LABELS.AppBuilder }}
+    RETURN count(*) AS _

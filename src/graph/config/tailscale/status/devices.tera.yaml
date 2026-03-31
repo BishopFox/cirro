@@ -1,0 +1,70 @@
+name: "Tailscale Devices"
+label: "{{ LABELS.TSDevice }}"
+cypher: |
+  WITH $status_data AS data
+
+  // Create Self device
+  MERGE (d:{{ LABELS.TSDevice }} {id: toLower(toString(data.Self.ID))})
+  SET d += {
+    publicKey: data.Self.PublicKey,
+    hostname: data.Self.Hostname,
+    dnsName: data.Self.DNSName,
+    certDomains: data.CertDomains,
+    os: data.Self.OS,
+    tailscaleIPs: data.Self.TailscaleIPs,
+    allowedIPs: data.Self.AllowedIPs,
+    relay: data.Self.Relay,
+    created: data.Self.Created,
+    lastWrite: data.Self.LastWrite,
+    lastSeen: data.Self.LastSeen,
+    lastHandshake: data.Self.LastHandshake,
+    online: data.Self.Online,
+    exitNode: data.Self.ExitNode,
+    active: data.Self.Active,
+    keyExpiry: data.Self.KeyExpiry,
+    tags: data.Self.Tags
+  }
+
+  // Link Self device to Tailnet
+  MERGE (tn:{{ LABELS.TSTailnet }} {id: toLower(data.CurrentTailnet.Name)})
+  MERGE (tn)-[:{{ REL.CONTAINS }}]->(d)
+
+  // Link Self device to TSUser
+  MERGE (u:{{ LABELS.TSUser }} {id: toLower(toString(data.Self.UserID))})
+  MERGE (u)-[:{{ REL.OWNS }}]->(d)
+
+  WITH data, u, d, tn, coalesce(data.Peer, {}) AS peerMap
+  UNWIND keys(peerMap) AS peerKey
+  WITH data, u, d, tn, peerMap[peerKey] AS row
+
+  MERGE (pd:{{ LABELS.TSDevice }} {id: toLower(toString(row.ID))})
+  SET pd += {
+    publicKey: row.PublicKey,
+    hostname: row.Hostname,
+    dnsName: row.DNSName,
+    os: row.OS,
+    tailscaleIPs: row.TailscaleIPs,
+    allowedIPs: row.AllowedIPs,
+    primaryRoutes: row.PrimaryRoutes,
+    relay: row.Relay,
+    created: row.Created,
+    lastWrite: row.LastWrite,
+    lastSeen: row.LastSeen,
+    lastHandshake: row.LastHandshake,
+    noFileSharingReason: row.NoFileSharingReason,
+    online: row.Online,
+    exitNode: row.ExitNode,
+    active: row.Active,
+    keyExpiry: row.KeyExpiry,
+    sshHostKeys: row.sshHostKeys,
+    tags: row.Tags
+  }
+
+  MERGE (tn)-[:{{ REL.CONTAINS }}]->(pd)
+
+  MERGE (pu:{{ LABELS.TSUser }} {id: toLower(toString(row.UserID))})
+  MERGE (pu)-[:{{ REL.OWNS }}]->(pd)
+
+  // Return total devices processed = 1 self + distinct peers
+  WITH count(DISTINCT pd) AS peerCount
+  RETURN peerCount + 1 AS count;

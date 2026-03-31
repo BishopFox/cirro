@@ -1,0 +1,15 @@
+name: "Set AppRole Relation Properties"
+label: "PostProcessingSetAppRoleRelationProperties"
+priority: 0
+cypher: |
+   MATCH (:{{ LABELS.GraphObject }})-[r:{{ REL.ASSIGNED_APPROLE }}]->(o:{{ LABELS.GraphServicePrincipal }})-[:{{ REL.HAS_APPROLE }}]->(ar:{{ LABELS.GraphAppRole }})
+   WHERE r.appRoleId = ar.id
+   SET r += {
+        displayName: ar.displayName,
+        description: ar.description,
+        isEnabled: ar.isEnabled,
+        isPreAuthorizationRequired: ar.isPreAuthorizationRequired,
+        isPrivate: ar.isPrivate,
+        origin: ar.origin,
+        value: ar.value
+    }

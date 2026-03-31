@@ -1,0 +1,21 @@
+name: "Recovery Services Vaults"
+label: "{{ LABELS.RecoveryVault }}"
+table_name: "resources"
+resource_type: "microsoft.recoveryservices/vaults"
+properties:
+  - "/id"
+  - "/properties"
+cypher: |
+    UNWIND $batch AS row
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+    SET obj:{{ LABELS.RecoveryVault }}
+    SET obj += {
+        bcdrSecurityLevel: row.properties.bcdrSecurityLevel,
+        privateEndpointStateForBackup: row.properties.privateEndpointStateForBackup,
+        privateEndpointStateForSiteRecovery: row.properties.privateEndpointStateForSiteRecovery,
+        publicNetworkAccess: row.properties.publicNetworkAccess,
+        crossSubscriptionRestoreState: row.properties.restoreSettings.crossSubscriptionRestoreSettings.crossSubscriptionRestoreState,
+        multiUserAuthorization: row.properties.securitySettings.multiUserAuthorization,
+        softDeleteState: row.properties.securitySettings.softDeleteSettings.softDeleteState,
+        softDeleteRetentionPeriodInDays: row.properties.securitySettings.softDeleteSettings.softDeleteRetentionPeriodInDays
+    }

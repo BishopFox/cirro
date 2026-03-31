@@ -1,0 +1,19 @@
+name: "Event Grid Topics"
+label: "{{ LABELS.EventGridTopic }}"
+table_name: "resources"
+resource_type: "microsoft.eventgrid/topics"
+properties:
+  - "/id"
+  - "/properties"
+cypher: |
+    UNWIND $batch AS row
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+    SET obj:{{ LABELS.EventGridTopic }}
+    SET obj += {
+        dataResidencyBoundary: row.properties.dataResidencyBoundary,
+        disableLocalAuth: row.properties.disableLocalAuth,
+        endpoint: row.properties.endpoint,
+        inputSchema: row.properties.inputSchema,
+        minimumTlsVersionAllowed: row.properties.minimumTlsVersionAllowed,
+        publicNetworkAccess: row.properties.publicNetworkAccess
+    }

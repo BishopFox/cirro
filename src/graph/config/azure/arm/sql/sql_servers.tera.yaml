@@ -1,0 +1,19 @@
+name: "SQL Servers"
+label: "{{ LABELS.SqlServer }}"
+table_name: "resources"
+resource_type: "microsoft.sql/servers"
+properties:
+  - "/id"
+  - "/properties"
+cypher: |
+    UNWIND $batch AS row
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+    SET obj:{{ LABELS.SqlServer }}
+    SET obj += {
+        administratorLogin: row.properties.administratorLogin,
+        fullyQualifiedDomainName: row.properties.fullyQualifiedDomainName,
+        publicNetworkAccess: row.properties.publicNetworkAccess,
+        restrictOutboundNetworkAccess: row.properties.restrictOutboundNetworkAccess,
+        state: row.properties.state,
+        version: row.properties.version
+    }

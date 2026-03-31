@@ -1,0 +1,61 @@
+name: "Disks"
+label: "{{ LABELS.Disk }}"
+table_name: "resources"
+resource_type: "microsoft.compute/disks"
+properties:
+  - "/id"
+  - "/properties"
+cypher: |
+    UNWIND $batch AS row
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+    SET obj:{{ LABELS.Disk }}
+    SET obj += {
+        diskSizeGB: row.properties.diskSizeGB,
+        diskState: row.properties.diskState,
+        osType: row.properties.osType,
+        hyperVGeneration: row.properties.hyperVGeneration,
+        networkAccessPolicy: row.properties.networkAccessPolicy,
+        publicNetworkAccess: row.properties.publicNetworkAccess,
+        timeCreated: row.properties.timeCreated,
+        uniqueId: row.properties.uniqueId
+    }
+
+    // Handle disk creation source based on createOption
+    WITH obj, row
+    SET obj.fromImage = CASE 
+        WHEN row.properties.creationData.createOption = 'FromImage' AND row.properties.creationData.imageReference.id IS NOT NULL
+        THEN toLower(row.properties.creationData.imageReference.id)
+        ELSE null
+    END
+    SET obj.sourceUri = CASE
+        WHEN row.properties.creationData.createOption = 'Import' AND row.properties.creationData.sourceUri IS NOT NULL
+        THEN row.properties.creationData.sourceUri
+        WHEN row.properties.creationData.createOption = 'Copy' AND row.properties.creationData.sourceResourceId IS NOT NULL
+        THEN row.properties.creationData.sourceResourceId
+        ELSE null
+    END
+
+    // Create source relationships for Import and Copy operations
+    // TODO: Revisit this and prevent Disks/Snapshot/StorageAccount mislabeling
+    //WITH obj, row
+    // CALL (obj, row) {
+    //    WITH obj, row WHERE row.properties.creationData.createOption IN ['Import', 'Copy']
+    //    WITH obj, row,
+    //        CASE row.properties.creationData.createOption
+    //            WHEN 'Import' THEN row.properties.creationData.storageAccountId
+    //            WHEN 'Copy' THEN row.properties.creationData.sourceResourceId
+    //        END AS sourceId
+    //    WHERE sourceId IS NOT NULL
+    //    MERGE (s:{{ LABELS.ArmResource }} {id: toLower(sourceId)})
+    //    MERGE (obj)-[:{{ REL.HAS_SOURCE }}]->(s)
+    // }
+
+    WITH obj, row
+    CALL (obj, row) {
+        WITH obj, row WHERE row.properties.encryption.diskEncryptionSetId IS NOT NULL
+        MERGE (des:{{ LABELS.ArmResource }} {id: toLower(row.properties.encryption.diskEncryptionSetId)})
+        SET des:{{ LABELS.DiskEncryptionSet }}
+        MERGE (obj)-[:{{ REL.ENCRYPTED_BY }}]->(des)
+    }
+
+    RETURN count(*) AS _

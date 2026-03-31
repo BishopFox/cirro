@@ -1,0 +1,72 @@
+name: "Graph Devices"
+label: "{{ LABELS.GraphDevice }}"
+table_name: "devices"
+properties:
+  - "/displayName"
+  - "/id"
+  - "/accountEnabled"
+  - "/deviceId"
+  - "/isCompliant"
+  - "/isManaged"
+  - "/manufacturer"
+  - "/memberOf"
+  - "/model"
+  - "/onPremisesLastSyncDateTime"
+  - "/onPremisesSyncEnabled"
+  - "/operatingSystem"
+  - "/operatingSystemVersion"
+  - "/profileType"
+  - "/trustType"
+  - "/registeredUsers"
+  - "/registeredOwners"
+cypher: |
+  UNWIND $batch as row
+  CALL (row) {
+    MERGE (obj:{{ LABELS.GraphObject }} {id: toLower(row.id)})
+    SET obj:{{ LABELS.GraphDevice }}
+    SET obj += {
+        displayName: row.displayName,
+        accountEnabled: row.accountEnabled,
+        deviceId: row.deviceId,
+        isCompliant: row.isCompliant,
+        isManaged: row.isManaged,
+        manufacturer: row.manufacturer,
+        model: row.model,
+        onPremisesLastSyncDateTime: row.onPremisesLastSyncDateTime,
+        onPremisesSyncEnabled: row.onPremisesSyncEnabled,
+        operatingSystem: row.operatingSystem,
+        operatingSystemVersion: row.operatingSystemVersion,
+        profileType: row.profileType,
+        trustType: row.trustType
+    }
+    
+    // Unwind memberOf
+    WITH row, obj
+    CALL {
+        WITH row, obj
+        UNWIND coalesce(row.memberOf, []) AS memberOf
+        MERGE (m:{{ LABELS.GraphObject }} {id: toLower(memberOf)})
+        MERGE (obj)-[:{{ REL.MEMBER_OF }}]->(m)
+    }
+
+    // Unwind registered users
+    WITH row, obj
+    CALL {
+        WITH row, obj
+        UNWIND coalesce(row.registeredUsers, []) AS registeredUser
+        MERGE (u:{{ LABELS.GraphObject }} {id: toLower(registeredUser)})
+        MERGE (u)-[:{{ REL.REGISTERED_USER }}]->(obj)
+    }
+
+    // Unwind registered owners
+    WITH row, obj
+    CALL {
+        WITH row, obj
+        UNWIND coalesce(row.registeredOwners, []) AS registeredOwner
+        MERGE (o:{{ LABELS.GraphObject }} {id: toLower(registeredOwner)})
+        MERGE (o)-[:{{ REL.REGISTERED_OWNER }}]->(obj)
+    }
+
+  } IN TRANSACTIONS OF 5000 ROWS
+
+  RETURN count(*) AS _

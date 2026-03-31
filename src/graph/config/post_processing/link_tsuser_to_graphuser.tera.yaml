@@ -1,0 +1,21 @@
+name: "Link TSUser to GraphUser"
+label: "PostProcessingLinkTSUserToGraphUser"
+priority: 1000
+cypher: |
+  CALL apoc.periodic.iterate(
+    "
+    MATCH (tsu:{{ LABELS.TSUser }})
+    WHERE NOT (tsu)-[:{{REL.SAME_USER }}]->(:{{ LABELS.GraphUser }})
+    RETURN tsu
+    ",
+    "
+    WITH tsu
+    OPTIONAL MATCH (gu:{{ LABELS.GraphUser }})
+    WHERE toLower(gu.userPrincipalName) = toLower(tsu.loginName)
+    FOREACH (_ IN CASE WHEN gu IS NULL THEN [] ELSE [1] END |
+      MERGE (tsu)-[:{{REL.SAME_USER }}]->(gu)
+    )
+    RETURN 1
+    ",
+    {batchSize:200, parallel:true}
+  )

@@ -1,0 +1,20 @@
+name: "Virtual Machine Extensions"
+label: "{{ LABELS.VMExtension }}"
+table_name: "resources"
+resource_type: "microsoft.compute/virtualmachines/extensions"
+properties:
+  - "/id"
+  - "/properties"
+cypher: |
+    UNWIND $batch AS row
+    MERGE (obj:{{ LABELS.VMExtension }} {id: toLower(row.id)})
+
+    SET obj += {
+        autoUpgradeMinorVersion: row.properties.autoUpgradeMinorVersion,
+        provisioningState: row.properties.provisioningState,
+        publisher: row.properties.publisher,
+        triggerForceUpgrade: row.properties.triggerForceUpgrade,
+        extType: row.properties.type,
+        vmType: row.properties.settings.vmType,
+        settings: apoc.convert.toJson(row.properties.settings)
+    }

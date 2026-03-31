@@ -1,0 +1,15 @@
+name: "Availability Sets"
+label: "{{ LABELS.AvailabilitySet }}"
+table_name: "resources"
+resource_type: "microsoft.compute/availabilitysets"
+properties:
+  - "/id"
+  - "/sku"
+  - "/properties"
+cypher: |
+    UNWIND $batch AS row
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+    SET obj:{{ LABELS.AvailabilitySet }}
+    SET obj += {
+        sku: row.sku.name
+    }

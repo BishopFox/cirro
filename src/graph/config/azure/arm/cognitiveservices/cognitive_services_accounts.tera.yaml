@@ -1,0 +1,16 @@
+name: "Cognitive Services"
+label: "{{ LABELS.CognitiveServices }}"
+table_name: "resources"
+resource_type: "microsoft.cognitiveservices/accounts"
+properties:
+  - "/id"
+  - "/properties"
+cypher: |
+    UNWIND $batch AS row
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+    SET obj:{{ LABELS.CognitiveServices }}
+    SET obj += {
+        customSubDomainName: row.properties.customSubDomainName,
+        endpoint: row.properties.endpoint,
+        publicNetworkAccess: row.properties.publicNetworkAccess
+    }

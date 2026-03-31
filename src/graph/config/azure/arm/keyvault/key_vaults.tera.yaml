@@ -1,0 +1,40 @@
+name: "Key Vaults"
+label: "{{ LABELS.KeyVault }}"
+table_name: "resources"
+resource_type: "microsoft.keyvault/vaults"
+properties:
+  - "/id"
+  - "/properties"
+index_properties:
+  - "{{ LABELS.KeyVault }}:vaultUri"
+cypher: |
+    UNWIND $batch AS row
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+    SET obj:{{ LABELS.KeyVault }}
+    SET obj += {
+        enableRbacAuthorization: row.properties.enableRbacAuthorization,
+        enableSoftDelete: row.properties.enableSoftDelete,
+        enabledForDeployment: row.properties.enabledForDeployment,
+        publicNetworkAccess: row.properties.publicNetworkAccess,
+        softDeleteRetentionInDays: row.properties.softDeleteRetentionInDays,
+        vaultUri: toLower(row.properties.vaultUri),
+        networkAclBypass: row.properties.networkAcls.bypass,
+        networkAclDefaultAction: row.properties.networkAcls.defaultAction,
+        allowedIps: [rule IN row.properties.networkAcls.ipRules | rule.value]
+    }
+
+    WITH obj, row
+        CALL {
+            WITH obj, row
+            UNWIND coalesce(row.properties.accessPolicies, []) AS policy
+            MERGE (p:{{ LABELS.GraphObject }} {id: toLower(policy.objectId)})
+            MERGE (p)-[r:{{ REL.HAS_POLICY }}]->(obj)
+
+            SET r += {
+                certificates: policy.permissions.certificates,
+                keys: policy.permissions.keys,
+                secrets: policy.permissions.secrets
+            }
+            RETURN count(*) AS _
+        }
+    RETURN count(*) AS _

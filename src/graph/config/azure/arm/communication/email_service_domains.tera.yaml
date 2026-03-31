@@ -1,0 +1,18 @@
+name: "Email Service Domains"
+label: "{{ LABELS.CommServiceDomain }}"
+table_name: "resources"
+resource_type: "microsoft.communication/emailservices/domains"
+properties:
+  - "/id"
+  - "/properties"
+cypher: |
+    UNWIND $batch AS row
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+    SET obj:{{ LABELS.CommServiceDomain }}
+    SET obj += {
+        dataLocation: row.properties.dataLocation,
+        domainManagement: row.properties.domainManagement,
+        fromSenderDomain: row.properties.fromSenderDomain,
+        mailFromSenderDomain: row.properties.mailFromSenderDomain,
+        userEngagementTracking: row.properties.userEngagementTracking
+    }

@@ -1,0 +1,20 @@
+name: "Gallery Applications"
+label: "{{ LABELS.GalleryApp }}"
+table_name: "resources"
+resource_type: "microsoft.compute/galleries/applications"
+properties:
+  - "/id"
+  - "/properties"
+cypher: |
+    UNWIND $batch AS row
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+    SET obj:{{ LABELS.GalleryApp }}
+    SET obj += {
+        supportedOSType: row.properties.supportedOSType
+    }
+
+    WITH obj, row
+    WITH obj, row, split(row.id, '/applications/')[0] AS galleryId
+    MERGE (g:{{ LABELS.ArmResource }} {id: toLower(galleryId)})
+    SET g:{{ LABELS.Gallery }}
+    MERGE (g)-[:{{ REL.HAS_APPLICATION }}]->(obj)

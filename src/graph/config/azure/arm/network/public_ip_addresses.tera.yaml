@@ -1,0 +1,19 @@
+name: "Public IP Addresses"
+label: "{{ LABELS.PublicIPAddress }}"
+table_name: "resources"
+resource_type: "microsoft.network/publicipaddresses"
+properties:
+  - "/id"
+  - "/properties"
+cypher: |
+    UNWIND $batch AS row
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+    SET obj:{{ LABELS.PublicIPAddress }}
+    SET obj += {
+        idleTimeoutInMinutes: row.properties.idleTimeoutInMinutes,
+        ipAddress: row.properties.ipAddress,
+        publicIPAddressVersion: row.properties.publicIPAddressVersion,
+        publicIPAllocationMethod: row.properties.publicIPAllocationMethod,
+        domainNameLabel: row.properties.dnsSettings.domainNameLabel,
+        fqdn: row.properties.dnsSettings.fqdn
+    }

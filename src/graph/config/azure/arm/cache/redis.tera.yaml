@@ -1,0 +1,22 @@
+name: "Redis Cache Instances"
+label: "{{ LABELS.RedisCache }}"
+table_name: "resources"
+resource_type: "microsoft.cache/redis"
+properties:
+  - "/id"
+  - "/properties"
+cypher: |
+    UNWIND $batch AS row
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+    SET obj:{{ LABELS.RedisCache }}
+    SET obj += {
+        hostname: row.properties.hostName,
+        disableAccessKeyAuthentication: row.properties.disableAccessKeyAuthentication,
+        enableNonSslPort: row.properties.enableNonSslPort,
+        minimumTlsVersion: row.properties.minimumTlsVersion,
+        port: row.properties.port,
+        sslPort: row.properties.sslPort,
+        redisVersion: row.properties.redisVersion,
+        updateChannel: row.properties.updateChannel,
+        instancePorts: [instance IN coalesce(row.properties.instances, []) | instance.sslPort]
+    }

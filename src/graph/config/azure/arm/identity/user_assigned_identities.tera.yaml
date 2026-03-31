@@ -1,0 +1,17 @@
+name: "User Assigned Identities"
+label: "{{ LABELS.UserAssignedIdentity }}"
+table_name: "resources"
+resource_type: "microsoft.managedidentity/userassignedidentities"
+properties:
+  - "/id"
+  - "/properties"
+cypher: |
+    UNWIND $batch AS row
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+    SET obj:{{ LABELS.UserAssignedIdentity }}
+    SET obj += {
+        clientId: row.properties.clientId,
+        tenantId: row.properties.tenantId
+    }
+    MERGE (o:{{ LABELS.GraphServicePrincipal }} {appId: row.properties.clientId})
+    MERGE (obj)-[:{{ REL.HAS_IDENTITY }}]->(o)

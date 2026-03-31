@@ -1,0 +1,30 @@
+name: "Deduplicate Service Principals by App ID"
+label: "PostProcessingDeduplicateServicePrincipals"
+priority: 1000
+cypher: |
+  CALL apoc.periodic.iterate(
+    "
+    MATCH (n:{{ LABELS.GraphServicePrincipal }})
+    WHERE n.appId IS NOT NULL
+    WITH toLower(n.appId) AS lid, collect(n) AS ns
+    WHERE size(ns) > 1
+    RETURN lid, ns
+    ",
+    "
+    WITH lid, ns
+    WITH
+        head(ns) AS keep,
+        tail(ns) AS dups,
+        lid
+    UNWIND dups AS d
+    CALL apoc.refactor.mergeNodes(
+        [keep, d],
+        {properties:'combine', mergeRels:true}
+    )
+    YIELD node
+    // Ensure appIds are lowercase
+    SET keep.appId = lid
+    RETURN 1
+  ",
+  {batchSize: 1000, parallel: false}
+  )

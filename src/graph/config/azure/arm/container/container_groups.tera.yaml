@@ -1,0 +1,50 @@
+name: "Container Groups"
+label: "{{ LABELS.ContainerGroup }}"
+table_name: "resources"
+resource_type: "microsoft.containerinstance/containergroups"
+properties:
+  - "/id"
+  - "/properties"
+cypher: |
+    UNWIND $batch AS row
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+    SET obj:{{ LABELS.ContainerGroup }}
+    SET obj += {
+        nameservers: row.properties.dnsConfig.nameservers,
+        osType: row.properties.osType,
+        restartPolicy: row.properties.restartPolicy,
+        provisioningState: row.properties.provisioningState,
+        ipAddress: row.properties.ipAddress.ip,
+        dnsNameLabel: row.properties.ipAddress.dnsNameLabel,
+        fqdn: row.properties.ipAddress.fqdn,
+        ipAddressType: row.properties.ipAddress.type,
+        ipAddressPorts: [port IN coalesce(row.properties.ipAddress.ports, []) | port.port + "/" + coalesce(port.protocol, "")]
+    }
+
+    // Iterate through containers in the container group
+    WITH obj, row
+    CALL {
+      WITH obj, row
+      UNWIND coalesce(row.properties.containers, []) AS container
+      MERGE (c:{{ LABELS.Container}} {image: toLower(container.properties.image)})
+      SET c += {
+          name: container.name,
+          environmentVariables: [envVar IN coalesce(container.properties.environmentVariables, []) | envVar.name + ":" + coalesce(envVar.value, "")],
+          ports: [port IN coalesce(container.properties.ports, []) | port.port + "/" + coalesce(port.protocol, "")]
+      }
+      
+      MERGE (obj)-[:{{ REL.HAS_CONTAINER }}]->(c)
+      RETURN count(*) AS _
+    }
+
+    // Iterate through image registry credentials
+    WITH obj, row
+    CALL {
+      WITH obj, row
+      UNWIND coalesce(row.properties.imageRegistryCredentials, []) AS registry
+      MERGE (r:{{ LABELS.RegistryCredential }} {username: toLower(registry.username), server: toLower(registry.server)})
+      SET r.isDelegatedIdentity = registry.isDelegatedIdentity
+      MERGE (r)-[:{{ REL.AUTHENTICATES }}]->(obj)
+      RETURN count(*) AS _
+    }
+    RETURN count(*) AS _

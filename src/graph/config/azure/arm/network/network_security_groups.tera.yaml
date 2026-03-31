@@ -1,0 +1,40 @@
+name: "Network Security Groups"
+label: "{{ LABELS.NetworkSecurityGroup }}"
+table_name: "resources"
+resource_type: "microsoft.network/networksecuritygroups"
+properties:
+  - "/id"
+  - "/properties"
+constraint_properties:
+  - "{{ LABELS.NSGRule }}:id"
+cypher: |
+    UNWIND $batch AS row
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+    SET obj:{{ LABELS.NetworkSecurityGroup }}
+
+    WITH obj, row
+        CALL {
+            WITH obj, row
+            UNWIND coalesce(row.properties.defaultSecurityRules, []) + coalesce(row.properties.securityRules, []) AS rule
+            MERGE (r:{{ LABELS.NSGRule }} {id: toLower(rule.id)})
+            SET r += {
+                name: rule.name,
+                access: rule.properties.access,
+                description: rule.properties.description,
+                destinationAddressPrefix: rule.properties.destinationAddressPrefix,
+                destinationAddressPrefixes: rule.properties.destinationAddressPrefixes,
+                destinationPortRange: rule.properties.destinationPortRange,
+                destinationPortRanges: rule.properties.destinationPortRanges,
+                direction: rule.properties.direction,
+                priority: rule.properties.priority,
+                protocol: rule.properties.protocol,
+                sourceAddressPrefix: rule.properties.sourceAddressPrefix,
+                sourceAddressPrefixes: rule.properties.sourceAddressPrefixes,
+                sourcePortRange: rule.properties.sourcePortRange,
+                sourcePortRanges: rule.properties.sourcePortRanges,
+                type: toLower(rule.type)
+            }
+            MERGE (obj)-[:{{ REL.HAS_RULE }}]->(r)
+            RETURN count(*) AS _
+        }
+    RETURN count(*) AS _

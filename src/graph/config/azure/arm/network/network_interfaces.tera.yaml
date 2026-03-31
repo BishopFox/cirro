@@ -1,0 +1,53 @@
+name: "Network Interfaces"
+label: "{{ LABELS.NetworkInterface }}"
+table_name: "resources"
+resource_type: "microsoft.network/networkinterfaces"
+properties:
+  - "/id"
+  - "/properties"
+cypher: |
+    UNWIND $batch AS row
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+    SET obj:{{ LABELS.NetworkInterface }}
+    SET obj += {
+        macAddress: row.properties.macAddress,
+        allowPort25Out: row.properties.allowPort25Out,
+        defaultOutboundConnectivityEnabled: row.properties.enableDefaultOutboundConnectivity,
+        appliedDnsServers: row.properties.dnsSettings.appliedDnsServers,
+        dnsServers: row.properties.dnsSettings.dnsServers
+    }
+
+    WITH obj, row WHERE row.properties.virtualMachine.id IS NOT NULL
+        MERGE (vm:{{ LABELS.ArmResource }} {id: toLower(row.properties.virtualMachine.id)})
+        SET vm:{{ LABELS.VirtualMachine }}
+        MERGE (vm)-[:{{ REL.HAS_NIC }}]->(obj) 
+
+    WITH obj, row WHERE row.properties.networkSecurityGroup IS NOT NULL
+        MERGE (nsg:{{ LABELS.ArmResource }} {id: toLower(row.properties.networkSecurityGroup.id)})
+        SET nsg:{{ LABELS.NetworkSecurityGroup }}
+        MERGE (obj)-[:{{ REL.HAS_NSG }}]->(nsg)
+
+    WITH obj, row
+        CALL {
+            WITH obj, row
+            UNWIND coalesce(row.properties.ipConfigurations, []) AS ipconfig
+            MERGE (ipconnode:{{ LABELS.IPConfiguration }} {id: toLower(ipconfig.id)})
+            SET ipconnode += {
+                name: ipconfig.name,
+                type: ipconfig.type,
+                privateIPAddress: ipconfig.properties.privateIPAddress,
+                privateIPAddressVersion: ipconfig.properties.privateIPAddressVersion,
+                privateIPAllocationMethod: ipconfig.properties.privateIPAllocationMethod
+            }
+            MERGE (obj)-[:{{ REL.HAS_CONFIG }}]->(ipconnode)
+            
+            MERGE (subnet:{{ LABELS.Subnet }} {id: toLower(ipconfig.properties.subnet.id)})
+            MERGE (subnet)-[:{{ REL.CONTAINS }}]->(ipconnode)
+
+            WITH obj, row, ipconnode, ipconfig WHERE ipconfig.properties.publicIPAddress IS NOT NULL
+                MERGE (pubip:{{ LABELS.ArmResource }} {id: toLower(ipconfig.properties.publicIPAddress.id)})
+                SET pubip:{{ LABELS.PublicIPAddress }}
+                MERGE (ipconnode)-[:{{ REL.HAS_IP }}]->(pubip)
+            RETURN count(*) AS _
+        }
+    RETURN count(*) AS _

@@ -1,0 +1,23 @@
+name: "Azure Arc SQL Databases"
+label: "{{ LABELS.ArcSqlDB }}"
+table_name: "resources"
+resource_type: "microsoft.azurearcdata/sqlserverinstances/databases"
+properties:
+  - "/id"
+  - "/properties"
+cypher: |
+   UNWIND $batch AS row
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+    SET obj:{{ LABELS.ArcSqlDB }}
+    SET obj += {
+        dataFileSizeMB: row.properties.dataFileSizeMB,
+        databaseCreationDate: row.properties.databaseCreationDate,
+        lastDatabaseUploadTime: row.properties.lastDatabaseUploadTime,
+        isReadOnly: row.properties.isReadOnly,
+        state: row.properties.state
+    }
+
+    WITH obj, row, split(toLower(obj.id), '/databases/')[0] AS serverId
+        MERGE (s:{{ LABELS.ArmResource }} {id: toLower(serverId)})
+        SET s:{{ LABELS.ArcSqlServer }}
+        MERGE (s)-[:{{ REL.HAS_DB }}]->(obj)

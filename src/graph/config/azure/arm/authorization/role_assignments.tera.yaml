@@ -1,0 +1,30 @@
+name: "Role Assignments"
+label: ""
+table_name: "roleAssignments"
+properties:
+  - "/id"
+  - "/description"
+  - "/roleName"
+  - "/roleType"
+  - "/permissions"
+  - "/properties"
+  - "/type"
+cypher: |
+    UNWIND $batch AS row
+    MERGE (o:GraphObject {id: toLower(row.properties.principalId)})
+    MERGE (r:ArmResource {id: toLower(row.properties.scope)})
+    WITH o, r, row
+        CALL apoc.merge.relationship(o, replace(row.roleName, " ", ""), {}, {}, r) YIELD rel
+        SET rel += {
+            id : row.id,
+            description : row.description,
+            roleName : row.roleName,
+            roleType : row.roleType,
+            actions : row.permissions[0].actions,
+            notActions : row.permissions[0].notActions,
+            dataActions : row.permissions[0].dataActions,
+            notDataActions : row.permissions[0].notDataActions,
+            scope : row.properties.scope,
+            roleDefinitionId : toLower(row.properties.roleDefinitionId),
+            type : toLower(row.type)
+        }

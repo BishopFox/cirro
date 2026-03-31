@@ -1,0 +1,17 @@
+name: "Fix Storage Account DFS Without ID"
+label: "PostProcessingFixStorageAccountDFSWithoutID"
+priority: 1001
+cypher: |
+  CALL apoc.periodic.iterate(
+    "
+    MATCH (sa:{{ LABELS.StorageAccount }})-[:{{ REL.HAS_DFS_FILESYSTEM }}]->(dfs:{{ LABELS.StorageAccountDFS }})
+    WHERE dfs.id IS NULL
+    RETURN sa, dfs
+    ",
+    "
+    WITH sa, dfs
+    SET dfs.id = toLower(sa.id) + '/filesystem/' + toLower(dfs.name)
+    RETURN 1
+  ",
+  {batchSize: 1000, parallel: false}
+  )

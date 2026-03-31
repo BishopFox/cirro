@@ -1,0 +1,31 @@
+name: "Purview Accounts"
+label: "{{ LABELS.PurviewAccount }}"
+table_name: "resources"
+resource_type: "microsoft.purview/accounts"
+properties:
+  - "/id"
+  - "/properties"
+  - "/sku"
+cypher: |
+    UNWIND $batch AS row
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+    SET obj:{{ LABELS.PurviewAccount }}
+    SET obj += {
+        awsExternalId: row.properties.cloudConnectors.awsExternalId,
+        createdAt: row.properties.createdAt,
+        createdBy: row.properties.createdBy,
+        defaultDomain: row.properties.defaultDomain,
+        endpoints: [e in keys(row.properties.endpoints) | row.properties.endpoints[e]],
+        friendlyName: row.properties.friendlyName,
+        managedResourcesPublicNetworkAccess: row.properties.managedResourcesPublicNetworkAccess,
+        publicNetworkAccess: row.properties.publicNetworkAccess
+    }
+
+    WITH obj, row
+    CALL {
+      WITH obj, row
+      WITH obj, row WHERE row.properties.ingestionStorage.id IS NOT NULL
+      MERGE (sa: {{ LABELS.ArmResource }} {id:row.properties.ingestionStorage.id})
+      SET sa:{{ LABELS.StorageAccount }}
+      MERGE (obj)-[:{{ REL.USES_STORAGE }}]->(sa)
+    }

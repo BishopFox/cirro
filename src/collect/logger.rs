@@ -1,0 +1,26 @@
+use colored::Colorize;
+
+pub fn setup_logger(verbose: bool) -> Result<(), fern::InitError> {
+    let level = if verbose {
+        log::LevelFilter::Debug
+    } else {
+        log::LevelFilter::Info
+    };
+
+    let _ = fern::Dispatch::new()
+        .format(move |out, message, record| {
+            let level_str = match record.level() {
+                log::Level::Error => "[E]".red().bold(),
+                log::Level::Warn => "[W]".yellow().bold(),
+                log::Level::Info => "[*]".green().bold(),
+                log::Level::Debug => "[D]".blue().bold(),
+                log::Level::Trace => "[T]".normal(),
+            };
+            out.finish(format_args!("{} {}", level_str, message))
+        })
+        .level(level)
+        .chain(std::io::stdout())
+        .apply()?;
+
+    Ok(())
+}

@@ -1,0 +1,28 @@
+name: "Static Websites"
+label: "{{ LABELS.StaticWebsite }}"
+table_name: "resources"
+resource_type: "microsoft.web/staticsites"
+properties:
+  - "/id"
+  - "/properties"
+cypher: |
+  UNWIND $batch AS row  
+  MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+  SET obj:{{ LABELS.StaticWebsite }}
+  SET obj += {
+      allowConfigFileUpdates: row.properties.allowConfigFileUpdates,
+      branch: row.properties.branch,
+      contentDistributionEndpoint: row.properties.contentDistributionEndpoint,
+      customDomains: row.properties.customDomains,
+      defaultHostName: row.properties.defaultHostName,
+      deploymentAuthPolicy: row.properties.deploymentAuthPolicy,
+      keyVaultReferenceIdentity: row.properties.keyVaultReferenceIdentity,
+      prettyName: row.properties.prettyName,
+      prettyNameHostname: row.properties.prettyNameHostname,
+      prettyNameStatus: row.properties.prettyNameStatus,
+      provider: row.properties.provider,
+      publicNetworkAccess: row.properties.publicNetworkAccess,
+      repositoryUrl: row.properties.repositoryUrl,
+      stableInboundIP: row.properties.stableInboundIP,
+      stagingEnvironmentPolicy: row.properties.stagingEnvironmentPolicy
+  }

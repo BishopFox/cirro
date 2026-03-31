@@ -1,0 +1,14 @@
+name: "Email Services"
+label: "{{ LABELS.EmailService }}"
+table_name: "resources"
+resource_type: "microsoft.communication/emailservices"
+properties:
+  - "/id"
+  - "/properties"
+cypher: |
+    UNWIND $batch AS row
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+    SET obj:{{ LABELS.EmailService }}
+    SET obj += {
+        dataLocation: row.properties.dataLocation
+    }

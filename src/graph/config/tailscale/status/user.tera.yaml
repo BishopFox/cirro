@@ -1,0 +1,14 @@
+name: "Tailscale Users"
+label: "{{ LABELS.TSUser }}"
+cypher: |
+  WITH $status_data AS data
+  WITH [k IN keys(data.User) | data.User[k]] AS users
+  UNWIND users AS row
+
+  MERGE (u:{{ LABELS.TSUser }} {id: toLower(toString(row.ID))})
+  SET u += {
+    loginName: row.LoginName,
+    displayName: row.DisplayName
+  }
+
+  RETURN count(DISTINCT u) AS count;

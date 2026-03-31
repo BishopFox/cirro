@@ -1,0 +1,48 @@
+name: "Storage Accounts"
+label: "{{ LABELS.StorageAccount }}"
+table_name: "resources"
+resource_type: "microsoft.storage/storageaccounts"
+properties:
+  - "/id"
+  - "/kind"
+  - "/properties"
+cypher: |
+    UNWIND $batch AS row
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+    SET obj:{{ LABELS.StorageAccount }}
+    SET obj += {
+        accessTier: row.properties.accessTier,
+        primaryLocation : row.properties.primaryLocation,
+        publicNetworkAccess: row.properties.publicNetworkAccess,
+        defaultToOAuthAuthentication: row.properties.defaultToOAuthAuthentication,
+        allowBlobPublicAccess: row.properties.allowBlobPublicAccess,
+        allowCrossTenantReplication: row.properties.allowCrossTenantReplication,
+        allowSharedKeyAccess: row.properties.allowSharedKeyAccess,
+        largeFileSharesState : row.properties.largeFileSharesState,
+        isLocalUserEnabled: row.properties.isLocalUserEnabled,
+        isNfsV3Enabled: row.properties.isNfsV3Enabled,
+        isSftpEnabled: row.properties.isSftpEnabled,
+        supportsHttpsTrafficOnly: row.properties.supportsHttpsTrafficOnly,
+        minimumTlsVersion: row.properties.minimumTlsVersion,
+        networkAclBypass: row.properties.networkAcls.bypass,
+        networkAclDefaultAction: row.properties.networkAcls.defaultAction
+    }
+
+    // Handling FileStorage kind
+    WITH obj, row
+    CALL (obj, row){
+        WITH obj, row
+        WHERE toLower(row.kind) = 'filestorage'
+        SET obj += {
+          defaultSharePermission: row.properties.azureFilesIdentityBasedAuthentication.defaultSharePermission,
+          directoryServiceOptions: row.properties.azureFilesIdentityBasedAuthentication.directoryServiceOptions,
+          adDomainName: row.properties.azureFilesIdentityBasedAuthentication.activeDirectoryProperties.domainName,
+          adDomainSid: row.properties.azureFilesIdentityBasedAuthentication.activeDirectoryProperties.domainSid,
+          accountType: row.properties.azureFilesIdentityBasedAuthentication.activeDirectoryProperties.accountType,
+          forestName: row.properties.azureFilesIdentityBasedAuthentication.activeDirectoryProperties.forestName,
+          netBiosDomainName: row.properties.azureFilesIdentityBasedAuthentication.activeDirectoryProperties.netBiosDomainName,
+          samAccountName: row.properties.azureFilesIdentityBasedAuthentication.activeDirectoryProperties.samAccountName
+        }
+        RETURN count(*) AS _
+    }
+    RETURN count(*) AS _

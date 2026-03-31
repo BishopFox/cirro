@@ -1,0 +1,40 @@
+name: "Palo Alto Cloud NGFW Firewalls"
+label: "{{ LABELS.PanCloudNgfwFirewall }}"
+table_name: "resources"
+resource_type: "paloaltonetworks.cloudngfw/firewalls"
+properties:
+  - "/id"
+  - "/properties"
+cypher: |
+  UNWIND $batch AS row  
+  MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+  SET obj:{{ LABELS.PanCloudNgfwFirewall }}
+  SET obj += {
+      enableDnsProxy: row.properties.enableDnsProxy,
+      enabledDnsType: row.properties.enabledDnsType,
+      isPanoramaManaged: row.properties.isPanoramaManaged,
+      isStrataCloudManaged: row.properties.isStrataCloudManaged,
+      enableEgressNat: row.properties.networkProfile.enableEgressNat,
+      networkType: row.properties.networkProfile.networkType
+  }
+
+  WITH obj, row
+  CALL {
+    WITH obj, row
+    WITH obj, row WHERE row.properties.associatedRulestack.resourceId IS NOT NULL
+    MERGE (rs:{{ LABELS.ArmResource }} {id: toLower(row.properties.associatedRulestack.resourceId)})
+    SET rs:{{ LABELS.PanCloudNgfwLocalRulestack }}
+    MERGE (obj)-[:{{ REL.HAS_RULESTACK }}]->(rs)
+    RETURN count(*) AS _
+  }
+
+  WITH obj, row
+  CALL {
+      WITH obj, row
+      UNWIND coalesce(row.properties.networkProfile.publicIps, []) AS pubIps
+      MERGE (p:{{ LABELS.ArmResource }} {id: toLower(pubIps.resourceId)})
+      SET p:{{ LABELS.PublicIPAddress }}
+      MERGE (obj)-[:{{ REL.HAS_IP }}]->(p)
+      RETURN count(*) AS _
+  }
+  RETURN count(*) AS _

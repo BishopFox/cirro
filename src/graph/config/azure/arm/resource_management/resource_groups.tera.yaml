@@ -1,0 +1,22 @@
+name: "Resource Groups"
+label: "{{ LABELS.ResourceGroup }}"
+table_name: "resources"
+resource_type: "microsoft.resources/resourcegroups"
+properties:
+  - "/id"
+  - "/name"
+  - "/location"
+  - "/type"
+cypher: |
+    UNWIND $batch AS row
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+    SET obj:{{ LABELS.ResourceGroup }}
+    SET obj += {
+        name : row.name,
+        location : row.location,
+        type : row.type
+    }
+    WITH obj, row, split(toLower(obj.id), '/resourcegroups/')[0] AS subscriptionId
+    MERGE (s:{{ LABELS.ArmResource }} {id: toLower(subscriptionId)})
+    SET s:{{ LABELS.Subscription }}
+    MERGE (s)-[:{{ REL.CONTAINS }}]->(obj)

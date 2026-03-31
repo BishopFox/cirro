@@ -1,0 +1,29 @@
+name: "Subscriptions"
+label: "{{ LABELS.Subscription }}"
+table_name: "subscriptions"
+properties:
+  - "/id"
+  - "/displayName"
+  - "/authorizationSource"
+  - "/managedByTenants"
+  - "/state"
+  - "/subscriptionId"
+cypher: |
+    UNWIND $batch AS row
+    MERGE (s:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+    SET s:{{ LABELS.Subscription }}
+    SET s += {
+        displayName : row.displayName,
+        authorizationSource : row.authorizationSource,
+        state : row.state,
+        subscriptionId : row.subscriptionId,
+        tenantId : row.tenantId
+    }
+
+    WITH s, row
+    CALL {
+        WITH s, row
+        UNWIND coalesce(row.managedByTenants, []) AS tenant
+        MERGE (t:{{ LABELS.Tenant }} {id: toLower(tenant.tenantId)})
+        MERGE (t)-[:{{ REL.MANAGES }}]->(t)
+    }

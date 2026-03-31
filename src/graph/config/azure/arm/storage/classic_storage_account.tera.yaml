@@ -1,0 +1,19 @@
+name: "Classic Storage Accounts"
+label: "{{ LABELS.ClassicStorageAccount }}"
+table_name: "resources"
+resource_type: "microsoft.classicstorage/storageaccounts"
+properties:
+  - "/id"
+  - "/properties"
+cypher: |
+  UNWIND $batch AS row
+  MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+  SET obj:{{ LABELS.ClassicStorageAccount }}
+  SET obj += {
+      accountType: row.properties.accountType,
+      creationTime: row.properties.creationTime,
+      geoPrimaryRegion: row.properties.geoPrimaryRegion,
+      geoSecondaryRegion: row.properties.geoSecondaryRegion,
+      statusOfPrimaryRegion: row.properties.statusOfPrimaryRegion,
+      statusOfSecondaryRegion: row.properties.statusOfSecondaryRegion,
+  }

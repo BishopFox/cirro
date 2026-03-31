@@ -1,0 +1,77 @@
+name: "Hybrid Machines"
+label: "{{ LABELS.HybridMachine }}"
+table_name: "resources"
+resource_type: "microsoft.hybridcompute/machines"
+properties:
+  - "/id"
+  - "/resources"
+  - "/properties"
+constraint_properties:
+  - "{{ LABELS.HybridIPAddress }}:address"
+  - "{{ LABELS.HybridExtension }}:id"
+cypher: |
+    UNWIND $batch AS row
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+    SET obj:{{ LABELS.HybridMachine }}
+    SET obj += {
+        adFqdn: row.properties.adFqdn,
+        agentVersion: row.properties.agentVersion,
+        clientPublicKey: row.properties.clientPublicKey,
+        cloud: row.properties.cloudMetadata.provider,
+        displayName: row.properties.displayName,
+        dnsFqdn: row.properties.dnsFqdn,
+        domainName: row.properties.domainName,
+        lastStatusChange: row.properties.lastStatusChange,
+        machineFqdn: row.properties.machineFqdn,
+        osName: row.properties.osName,
+        computerName: row.properties.osProfile.computerName,
+        osSku: row.properties.osSku,
+        osVersion: row.properties.osVersion,
+        status: row.properties.status,
+        vmId: row.properties.vmId,
+        vmUuid: row.properties.vmUuid,
+
+        // The following exists for AWS
+        awsAccountId: row.properties.detectedProperties["AWS-accountId"],
+        awsInstanceId: row.properties.detectedProperties["AWS-instanceId"],
+        awsRegion: row.properties.detectedProperties["AWS-region"],
+        model: row.properties.detectedProperties.model,
+        mssqldiscovered: row.properties.detectedProperties.mssqldiscovered,
+        totalPhysicalMemoryInGb: row.properties.detectedProperties.totalPhysicalMemoryInGb
+    }
+
+    WITH obj, row
+        CALL {
+            WITH obj, row
+            UNWIND coalesce(row.properties.networkProfile.networkInterfaces, []) AS nic
+            WITH obj, row, nic
+                UNWIND coalesce(nic.ipAddresses, []) AS ipAddress
+                MERGE (ip:{{ LABELS.HybridIPAddress }} {address: ipAddress.address})
+                SET ip += {
+                    ipAddressVersion: ipAddress.ipAddressVersion,
+                    subnet: ipAddress.subnet.addressPrefix
+                }
+                MERGE (obj)-[:{{ REL.HAS_IP }}]->(ip)
+            RETURN count(*) AS _
+        }
+    
+    WITH obj, row
+        CALL {
+            WITH obj, row
+            UNWIND coalesce(row.resources, []) AS resource
+            WITH obj, resource WHERE toLower(resource.type) = "microsoft.hybridcompute/machines/extensions"
+                MERGE (e:{{ LABELS.HybridExtension }} {id: toLower(resource.id)})
+                SET e += {
+                    name: resource.name,
+                    type: resource.type,
+                    location: resource.location,
+                    typeHandlerVersion: resource.properties.typeHandlerVersion,
+                    autoUpgradeMinorVersion: resource.properties.autoUpgradeMinorVersion,
+                    enableAutomaticUpgrade: resource.properties.enableAutomaticUpgrade,
+                    statusMessage: resource.properties.instanceView.status.message,
+                    provisioningState: resource.properties.provisioningState
+                }
+                MERGE (obj)-[:{{ REL.HAS_EXTENSION }}]->(e)
+            RETURN count(*) AS _
+        }
+    RETURN count(*) AS _

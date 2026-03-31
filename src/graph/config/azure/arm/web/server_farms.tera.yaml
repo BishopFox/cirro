@@ -1,0 +1,21 @@
+name: "Server Farms"
+label: "{{ LABELS.ServerFarm }}"
+table_name: "resources"
+resource_type: "microsoft.web/serverfarms"
+properties:
+  - "/id"
+  - "/properties"
+cypher: |
+  UNWIND $batch AS row
+  MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+  SET obj:{{ LABELS.ServerFarm }}
+  SET obj += {
+      adminRuntimeSiteName: row.properties.adminRuntimeSiteName,
+      adminSiteName: row.properties.adminSiteName,
+      createdTime: row.properties.createdTime,
+      kind: row.properties.kind,
+      mdmId: row.properties.mdmId,
+      numberOfSites: row.properties.numberOfSites,
+      planName: row.properties.planName,
+      status: row.properties.status
+  }

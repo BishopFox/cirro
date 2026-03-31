@@ -1,0 +1,36 @@
+name: "Virtual Machine Run Commands"
+label: "{{ LABELS.VMRunCommand }}"
+table_name: "resources"
+resource_type: "microsoft.compute/virtualmachines/runcommands"
+properties:
+  - "/id"
+  - "/properties"
+cypher: |
+    UNWIND $batch AS row
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+    SET obj:{{ LABELS.VMRunCommand }}
+
+    SET obj += {
+        asyncExecution: row.properties.asyncExecution,
+        runAsUser: row.properties.runAsUser,
+        timeoutInSeconds: row.properties.timeoutInSeconds,
+        treatFailureAsDeploymentFailure: row.properties.treatFailureAsDeploymentFailure,
+        script: row.properties.source.script
+    }
+
+    WITH obj, row, split(toLower(obj.id), '/runcommands/')[0] AS vmId
+    MERGE (vm:{{ LABELS.ArmResource }} {id: toLower(vmId)})
+    SET vm:{{ LABELS.VirtualMachine }}
+    MERGE (vm)-[:{{ REL.HAS_RUN_COMMAND }}]->(obj)
+
+    WITH obj, row
+    CALL {
+        WITH obj, row
+        UNWIND coalesce(row.properties.parameters, []) AS param
+        MERGE (p:{{ LABELS.VMRunCommandParameter }} {name: param.name})
+        SET p.value = param.value
+
+        MERGE (obj)-[:{{ REL.HAS_PARAMETER }}]->(p)
+        RETURN count(*) AS _
+    }
+    RETURN count(*) AS _

@@ -1,0 +1,16 @@
+name: "Event Grid System Topics"
+label: "{{ LABELS.EventGridTopic }}"
+table_name: "resources"
+resource_type: "microsoft.eventgrid/systemTopics"
+properties:
+  - "/id"
+  - "/properties"
+cypher: |
+    UNWIND $batch AS row
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+    SET obj:{{ LABELS.EventGridTopic }}
+    SET obj += {
+        topicType: row.properties.topicType
+    }
+    MERGE (s:{{ LABELS.ArmResource }} {id: toLower(row.properties.source)})
+    MERGE (obj)-[:{{ REL.HAS_SOURCE }}]->(s)

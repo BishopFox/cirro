@@ -1,0 +1,37 @@
+name: "NetApp Accounts"
+label: "{{ LABELS.NetAppAccount }}"
+table_name: "resources"
+resource_type: "microsoft.netapp/netappaccounts"
+properties:
+  - "/id"
+  - "/properties"
+cypher: |
+    UNWIND $batch AS row
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+    SET obj:{{ LABELS.NetAppAccount }}
+    SET obj += {
+        multiADStatus: row.properties.multiADStatus,
+        provisioningState: row.properties.provisioningState,
+        encryptionKeySource: row.properties.encryption.keySource
+    }
+
+    // Iterate over Active Directories and create relationships
+    WITH obj, row, row.properties.activeDirectories AS activeDirectories
+    UNWIND activeDirectories AS ad
+    MERGE (adNode:{{ LABELS.NetAppAccountADDomain }} {activeDirectoryId: toLower(ad.activeDirectoryId)})
+    SET adNode += {
+        administrators: ad.administrators,
+        aesEncryption: ad.aesEncryption,
+        allowLocalNfsUsersWithLdap: ad.allowLocalNfsUsersWithLdap,
+        dns: ad.dns,
+        encryptDCConnections: ad.encryptDCConnections,
+        ldapOverTLS: ad.ldapOverTLS,
+        ldapSigning: ad.ldapSigning,
+        organizationalUnit: ad.organizationalUnit,
+        site: ad.site,
+        smbServerName: ad.smbServerName,
+        status: ad.status,
+        username: ad.username
+    }
+    MERGE (obj)-[:{{ REL.IS_DEPLOYED }}]->(adNode)
+    RETURN count(*) AS _

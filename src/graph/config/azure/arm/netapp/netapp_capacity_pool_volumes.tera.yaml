@@ -1,0 +1,52 @@
+name: "NetApp Account Capacity Pool Volumes"
+label: "{{ LABELS.NetAppVolume }}"
+table_name: "resources"
+resource_type: "microsoft.netapp/netappaccounts/capacitypools/volumes"
+properties:
+  - "/id"
+  - "/properties"
+cypher: |
+    UNWIND $batch AS row
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+    SET obj:{{ LABELS.NetAppVolume }}
+    SET obj += {
+        baremetalTenantId: row.properties.baremetalTenantId,
+        coolAccess: row.properties.coolAccess,
+        creationToken: row.properties.creationToken,
+        encryptionKeySource: row.properties.encryptionKeySource,
+        fileSystemId: row.properties.fileSystemId,
+        isDefaultQuotaEnabled: row.properties.isDefaultQuotaEnabled,
+        isLargeVolume: row.properties.isLargeVolume,
+        kerberosEnabled: row.properties.kerberosEnabled,
+        ldapEnabled: row.properties.ldapEnabled,
+        maximumNumberOfFiles: row.properties.maximumNumberOfFiles,
+        protocolTypes: row.properties.protocolTypes,
+        securityStyle: row.properties.securityStyle,
+        smbAccessBasedEnumeration: row.properties.smbAccessBasedEnumeration,
+        smbContinuouslyAvailable: row.properties.smbContinuouslyAvailable,
+        smbEncryption: row.properties.smbEncryption,
+        smbNonBrowsable: row.properties.smbNonBrowsable,
+        snapshotDirectoryVisible: row.properties.snapshotDirectoryVisible,
+        usageThreshold: row.properties.usageThreshold,
+        volumeType: row.properties.volumeType
+    }
+
+    // Create relationship to target NetApp Capacity Pool
+    WITH obj, row, split(toLower(row.id), '/volumes/')[0] AS netappCapacityPoolId
+    MERGE (n:{{ LABELS.ArmResource }} {id: toLower(netappCapacityPoolId)})
+    SET n:{{ LABELS.NetAppCapacityPool }}
+    MERGE (n)-[:{{ REL.CONTAINS }}]->(obj)
+
+    // Iterate over mount targets
+    WITH obj, row, row.properties.mountTargets AS mountTargets
+    UNWIND mountTargets AS mt
+    MERGE (mtNode:{{ LABELS.NetAppVolumeMount }} {mountTargetId: toLower(mt.mountTargetId)})
+    SET mtNode += {
+        fileSystemId: mt.fileSystemId,
+        ipAddress: mt.ipAddress,
+        mountTargetId: mt.mountTargetId,
+        smbServerFqdn: mt.smbServerFqdn
+    }
+    MERGE (obj)-[:{{ REL.MOUNTS }}]->(mtNode)
+    
+    RETURN count(*) AS _

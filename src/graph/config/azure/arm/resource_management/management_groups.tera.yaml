@@ -1,0 +1,55 @@
+name: "Management Group"
+label: "{{ LABELS.ManagementGroup }}"
+table_name: "managementGroupEntities"
+properties:
+  - "/id"
+  - "/properties"
+  - "/type"
+cypher: |
+    UNWIND $batch AS row
+    WITH row
+    CALL {
+        WITH row
+        WITH row
+        WHERE toLower(row.type) = 'microsoft.management/managementgroups'
+        MERGE (obj:{{ LABELS.ManagementGroup }} {id: toLower(row.id)})
+        SET obj.displayName = row.properties.displayName
+
+        // If parent is null -> Tenant
+        WITH row, obj
+        CALL {
+            WITH row, obj
+            WITH row, obj
+            WHERE row.properties.parent.id IS NULL
+
+            // Merge the tenant into existing tenant objects but avoid GraphOrg
+            MERGE (t:{{ LABELS.Tenant }} {id: toLower("/tenants/" + row.properties.tenantId)})
+            MERGE (t)-[:{{ REL.CONTAINS }}]->(obj)
+            RETURN count(*) AS _
+        }
+
+        // If parent not null -> parent group
+        WITH row, obj
+        CALL {
+            WITH row, obj
+            WITH row, obj
+            WHERE row.properties.parent.id IS NOT NULL
+            MERGE (p:{{ LABELS.ManagementGroup }} {id: toLower(row.properties.parent.id)})
+            MERGE (p)-[:{{ REL.CONTAINS }}]->(obj)
+            RETURN count(*) AS _
+        }
+        RETURN count(*) AS _
+    }
+
+    WITH row
+    CALL {
+        WITH row
+        WITH row
+        WHERE toLower(row.type) = '/subscriptions'
+        MERGE (s:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+        SET s:{{ LABELS.Subscription }}
+        MERGE (mg:{{ LABELS.ManagementGroup }} {id: toLower(row.properties.parent.id)})
+        MERGE (mg)-[:{{ REL.CONTAINS }}]->(s)
+        RETURN count(*) AS _
+    }
+    RETURN count(*) AS _

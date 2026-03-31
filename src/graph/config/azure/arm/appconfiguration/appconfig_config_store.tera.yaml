@@ -1,0 +1,19 @@
+name: "App Configuration Stores"
+label: "{{ LABELS.AppConfigurationStore }}"
+table_name: "resources"
+resource_type: "microsoft.appconfiguration/configurationstores"
+properties:
+  - "/id"
+  - "/properties"
+cypher: |
+    UNWIND $batch AS row
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+    SET obj:{{ LABELS.AppConfigurationStore }}
+    SET obj += {
+        creationDate: row.properties.creationDate,
+        endpoint: row.properties.endpoint,
+        disableLocalAuth: row.properties.disableLocalAuth,
+        enablePurgeProtection: row.properties.enablePurgeProtection,
+        softDeleteRetentionInDays: row.properties.softDeleteRetentionInDays,
+        defaultKeyValueRevisionRetentionPeriodInSeconds: row.properties.defaultKeyValueRevisionRetentionPeriodInSeconds
+    }

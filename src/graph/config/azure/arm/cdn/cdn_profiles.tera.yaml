@@ -1,0 +1,17 @@
+name: "CDN Profiles"
+label: "{{ LABELS.CdnProfile }}"
+table_name: "resources"
+resource_type: "microsoft.cdn/profiles"
+properties:
+  - "/id"
+  - "/properties"
+  - "/sku"
+cypher: |
+    UNWIND $batch AS row
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+    SET obj:{{ LABELS.CdnProfile }}
+    SET obj += {
+        frontDoorId: row.properties.frontDoorId,
+        resourceState: row.properties.resourceState,
+        sku: row.sku.name
+    }

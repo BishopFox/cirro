@@ -1,0 +1,28 @@
+name: "Deduplicate Graph Roles by Role Template ID"
+label: "PostProcessingDeduplicateGraphRolesByRoleTemplateId"
+priority: 1000
+cypher: |
+  CALL apoc.periodic.iterate(
+    "
+    MATCH (n:{{ LABELS.GraphRole }})
+    WHERE n.roleTemplateId IS NOT NULL
+    WITH toLower(n.roleTemplateId) AS lid, collect(n) AS ns
+    WHERE size(ns) > 1
+    RETURN lid, ns
+    ",
+    "
+    WITH lid, ns
+    WITH
+        head(ns) AS keep,
+        tail(ns) AS dups,
+        lid
+    UNWIND dups AS d
+    CALL apoc.refactor.mergeNodes(
+        [keep, d],
+        {properties:'combine', mergeRels:true}
+    )
+    YIELD node
+    RETURN 1
+  ",
+  {batchSize: 1000, parallel: false}
+  )

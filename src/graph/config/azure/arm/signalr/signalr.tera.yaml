@@ -1,0 +1,24 @@
+name: "SignalR"
+label: "{{ LABELS.SignalR }}"
+table_name: "resources"
+resource_type: "microsoft.signalrservice/signalr"
+properties:
+  - "/id"
+  - "/properties"
+cypher: |
+    UNWIND $batch AS row
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+    SET obj:{{ LABELS.ServiceBusNamespace }}
+    SET obj += {
+      allowedOrigins: row.properties.cors.allowedOrigins,
+      disableAadAuth: row.properties.disableAadAuth,
+      disableLocalAuth: row.properties.disableLocalAuth,
+      externalIp: row.properties.externalIP,
+      hostName: row.properties.hostName,
+      hostNamePrefix: row.properties.hostNamePrefix,
+      publicNetworkAccess: row.properties.publicNetworkAccess,
+      publicPort: row.properties.publicPort,
+      serverPort: row.properties.serverPort,
+      clientCertEnabled: row.properties.tls.clientCertEnabled,
+      version: row.properties.version
+    }

@@ -1,0 +1,18 @@
+name: "Private DNS Zones"
+label: "{{ LABELS.PrivateDnsZone }}"
+table_name: "resources"
+resource_type: "microsoft.network/privatednszones"
+properties:
+  - "/id"
+  - "/properties"
+cypher: |
+    UNWIND $batch AS row
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+    SET obj:{{ LABELS.PrivateDnsZone }}
+
+    SET obj += {
+        internalId: row.properties.internalId,
+        numberOfRecordSets: row.properties.numberOfRecordSets,
+        numberOfVirtualNetworkLinks: row.properties.numberOfVirtualNetworkLinks,
+        numberOfVirtualNetworkLinksWithRegistration: row.properties.numberOfVirtualNetworkLinksWithRegistration
+    }

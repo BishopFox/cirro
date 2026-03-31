@@ -1,0 +1,46 @@
+name: "Automation Runbooks"
+label: "{{ LABELS.AutomationRunbook }}"
+table_name: "resources"
+resource_type: "microsoft.automation/automationaccounts/runbooks"
+properties:
+  - "/id"
+  - "/properties"
+cypher: |
+    UNWIND $batch AS row
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+    SET obj:{{ LABELS.AutomationRunbook }}
+    SET obj += {
+        creationTime: row.properties.creationTime,
+        lastModifiedTime: row.properties.lastModifiedTime,
+        description: row.properties.description,
+        jobCount: row.properties.jobCount,
+        runbookType: row.properties.runbookType,
+        state: row.properties.state,
+        runtimeEnvironment: row.properties.runtimeEnvironment
+    }
+
+    WITH obj, row, split(toLower(obj.id), '/runbooks/')[0] AS runbookId
+        MERGE (a:{{ LABELS.ArmResource }} {id: toLower(runbookId)})
+        SET a:{{ LABELS.AutomationAccount }}
+        MERGE (a)-[:{{ REL.HAS_RUNBOOK }}]->(obj)
+
+    WITH obj, row
+        CALL {
+            WITH obj, row
+            WITH obj, row, coalesce(row.properties.parameters, {}) AS parameters
+            UNWIND keys(parameters) AS paramName
+                WITH obj, paramName, parameters[paramName] AS paramMap
+
+                // Create a unique identifier for the parameter to avoid name collisions
+                MERGE (p:RunbookParameter {id: toLower(obj.id + "/param/" + paramName)})
+                SET p += {
+                    name: paramName,
+                    defaultValue: paramMap.defaultValue,
+                    isMandatory: paramMap.isMandatory,
+                    position: paramMap.position,
+                    type: paramMap.type
+                }
+                MERGE (obj)-[:{{ REL.HAS_PARAMETER }}]->(p)
+            RETURN count(*) AS _
+        }
+    RETURN count(*) AS _

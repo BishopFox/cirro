@@ -1,0 +1,14 @@
+name: "Restore Point Collections"
+label: "{{ LABELS.RestorePointCollection }}"
+table_name: "resources"
+resource_type: "microsoft.compute/restorepointcollections"
+properties:
+  - "/id"
+  - "/properties"
+cypher: |
+    UNWIND $batch AS row
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+    SET obj:{{ LABELS.RestorePointCollection }}
+
+    MERGE (vm:{{ LABELS.ArmResource }} {id: toLower(row.properties.source.id)})
+    MERGE (vm)-[:{{ REL.HAS_RESTOREPOINT }}]->(obj)

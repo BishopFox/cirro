@@ -1,0 +1,40 @@
+name: "Graph Policies"
+label: "{{ LABELS.GraphPolicy }}"
+table_name: "policies"
+properties:
+  - "/id"
+  - "/displayName"
+  - "/description"
+  - "/allowEmailVerifiedUsersToJoinOrganization"
+  - "/allowInvitesFrom"
+  - "/allowUserConsentForRiskyApps"
+  - "/allowedToSignUpEmailBasedSubscriptions"
+  - "/allowedToUseSSPR"
+  - "/blockMsolPowerShell"
+  - "/defaultUserRolePermissions"
+column_mappings:
+  id: "_uniq_id"
+cypher: |
+  UNWIND $batch as row
+  WITH row, split(row._uniq_id, '_')[0] AS organization_id, split(row._uniq_id, '_')[1] AS policy_type
+      MERGE (obj:{{ LABELS.GraphPolicy }} {id: toLower(row._uniq_id)})
+      WITH obj, organization_id, policy_type, row WHERE toLower(policy_type) = "authorizationpolicy"
+          SET obj += {
+              displayName: row.displayName,
+              description: row.description,
+              allowEmailVerifiedUsersToJoinOrganization: row.allowEmailVerifiedUsersToJoinOrganization,
+              allowInvitesFrom: row.allowInvitesFrom,
+              allowUserConsentForRiskyApps: row.allowUserConsentForRiskyApps,
+              allowedToSignUpEmailBasedSubscriptions: row.allowedToSignUpEmailBasedSubscriptions,
+              allowedToUseSSPR: row.allowedToUseSSPR,
+              blockMsolPowerShell: row.blockMsolPowerShell,
+              allowedToCreateApps: row.defaultUserRolePermissions.allowedToCreateApps,
+              allowedToCreateSecurityGroups: row.defaultUserRolePermissions.allowedToCreateSecurityGroups,
+              allowedToCreateTenants: row.defaultUserRolePermissions.allowedToCreateTenants,
+              allowedToReadOtherUsers: row.defaultUserRolePermissions.allowedToReadOtherUsers,
+              allowedToReadBitlockerKeysForOwnedDevice: row.defaultUserRolePermissions.allowedToReadBitlockerKeysForOwnedDevice,
+              policyType: policy_type
+          }
+          WITH obj, row, organization_id
+          MERGE (org:{{ LABELS.GraphOrg }} {id: toLower(organization_id)})
+          MERGE (org)-[:{{ REL.HAS_POLICY }}]->(obj)

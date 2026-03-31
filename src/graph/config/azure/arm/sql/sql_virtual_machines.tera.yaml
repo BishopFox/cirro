@@ -1,0 +1,25 @@
+name: "SQL Virtual Machines"
+label: "{{ LABELS.SqlVirtualMachine }}"
+table_name: "resources"
+resource_type: "microsoft.sqlvirtualmachine/sqlvirtualmachines"
+properties:
+  - "/id"
+  - "/properties"
+cypher: |
+  UNWIND $batch AS row
+  MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+  SET obj:{{ LABELS.SqlVirtualMachine }}
+  SET obj += {
+      additionalVmPatch: row.properties.additionalVmPatch,
+      enableAutomaticUpgrade: row.properties.enableAutomaticUpgrade,
+      leastPrivilegeMode: row.properties.leastPrivilegeMode,
+      osType: row.properties.osType,
+      sqlImageOffer: row.properties.sqlImageOffer,
+      sqlImageSku: row.properties.sqlImageSku,
+      sqlServerLicenseType: row.properties.sqlServerLicenseType,
+      sqlManagement: row.properties.sqlManagement
+  }
+
+  MERGE (vm:{{ LABELS.ArmResource }} {id: toLower(row.properties.virtualMachineResourceId)})
+  SET vm:{{ LABELS.VirtualMachine }}
+  MERGE (vm)-[:{{ REL.HAS_SQL_VM }}]->(obj)

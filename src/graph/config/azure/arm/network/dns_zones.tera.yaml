@@ -1,0 +1,16 @@
+name: "DNS Zones"
+label: "{{ LABELS.DnsZone }}"
+table_name: "resources"
+resource_type: "microsoft.network/dnszones"
+properties:
+  - "/id"
+  - "/properties"
+cypher: |
+    UNWIND $batch AS row
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+    SET obj:{{ LABELS.DnsZone }}
+    SET obj += {
+        nameServers: row.properties.nameServers,
+        numberOfRecordSets: row.properties.numberOfRecordSets,
+        zoneType: row.properties.zoneType
+    }

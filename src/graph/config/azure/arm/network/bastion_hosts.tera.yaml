@@ -1,0 +1,42 @@
+name: "Bastion Hosts"
+label: "{{ LABELS.BastionHost }}"
+table_name: "resources"
+resource_type: "microsoft.network/bastionhosts"
+properties:
+  - "/id"
+  - "/properties"
+cypher: |
+  UNWIND $batch AS row  
+  MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+  SET obj:{{ LABELS.BastionHost }}
+  SET obj += {
+      disableCopyPaste: row.properties.disableCopyPaste,
+      dnsName: row.properties.dnsName,
+      enableIpConnect: row.properties.enableIpConnect,
+      enableKerberos: row.properties.enableKerberos,
+      enablePrivateOnlyBastion: row.properties.enablePrivateOnlyBastion,
+      enableSessionRecording: row.properties.enableSessionRecording,
+      enableShareableLink: row.properties.enableShareableLink,
+      enableTunneling: row.properties.enableTunneling,
+      scaleUnits: row.properties.scaleUnits
+  }
+
+  WITH obj, row
+  CALL {
+      WITH obj, row
+      UNWIND coalesce(row.properties.ipConfigurations, []) AS ipconfig
+      MERGE (b:{{ LABELS.BastionIPConfig }} {id: toLower(ipconfig.id)})
+      SET b += {
+          privateIPAllocationMethod: ipconfig.properties.privateIPAllocationMethod
+      }
+      MERGE (obj)-[:{{ REL.HAS_CONFIG }}]->(b)
+      MERGE (i:{{ LABELS.ArmResource }} {id: toLower(ipconfig.properties.publicIPAddress.id)})
+      SET i:{{ LABELS.PublicIPAddress }}
+      MERGE (b)-[:{{ REL.HAS_IP }}]->(i)
+      
+      MERGE (sub:{{ LABELS.Subnet }} {id: toLower(ipconfig.properties.subnet.id)})
+      MERGE (sub)-[:{{ REL.CONTAINS }}]->(b)
+
+      RETURN count(*) AS _
+  }
+  RETURN count(*) AS _

@@ -1,0 +1,53 @@
+name: "Administrative Units"
+label: "{{ LABELS.GraphAdministrativeUnit }}"
+table_name: "administrativeUnits"
+properties:
+  - "/id"
+  - "/description"
+  - "/displayName"
+  - "/isMemberManagementRestricted"
+  - "/members"
+  - "/membershipRule"
+  - "/membershipRuleProcessingState"
+  - "/membershipType"
+  - "/scopedRoleMembers"
+  - "/visibility"
+cypher: |
+  UNWIND $batch as row
+  CALL (row) {
+      MERGE (obj:{{ LABELS.GraphObject }} {id: toLower(row.id)})
+      SET obj:{{ LABELS.GraphAdministrativeUnit }}
+      SET obj += {
+          description: row.description,
+          displayName: row.displayName,
+          isMemberManagementRestricted: row.isMemberManagementRestricted,
+          membershipRule: row.membershipRule,
+          membershipRuleProcessingState: row.membershipRuleProcessingState,
+          membershipType: row.membershipType,
+          visibility: row.visibility
+      }
+
+      // Unwind members
+      WITH row, obj
+      CALL (row, obj) {
+        UNWIND coalesce(row.members, []) AS member
+        MERGE (m:{{ LABELS.GraphObject }} {id: toLower(member)})
+        MERGE (m)-[:{{ REL.MEMBER_OF }}]->(obj)
+        RETURN count(*) AS _
+      }
+
+      // Scoped role members
+     WITH row, obj
+     CALL (row, obj) {
+        UNWIND coalesce(row.scopedRoleMembers, []) AS srm
+        MERGE (m:{{ LABELS.GraphObject }} {id: toLower(srm["roleMemberInfo/id"])})
+        MERGE (m)-[r: {{ REL.HAS_SCOPED_ROLE }}]->(obj)
+        SET r += {
+            roleId: srm["roleId"]
+        }
+        RETURN count(*) AS _
+    }
+    RETURN count(*) AS _
+  } IN TRANSACTIONS OF 5000 ROWS
+
+  RETURN count(*) AS _

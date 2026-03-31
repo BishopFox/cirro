@@ -1,0 +1,49 @@
+name: "Virtual Machines"
+label: "{{ LABELS.VirtualMachine }}"
+table_name: "resources"
+resource_type: "microsoft.compute/virtualmachines"
+properties:
+  - "/id"
+  - "/resources"
+  - "/properties"
+cypher: |
+    UNWIND $batch AS row
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+    SET obj:{{ LABELS.VirtualMachine }}
+    SET obj += {
+        vmSize: row.properties.hardwareProfile.vmSize,
+        adminUsername: row.properties.osProfile.adminUsername,
+        allowExtensionOperations: row.properties.osProfile.allowExtensionOperations,
+        computerName: row.properties.osProfile.computerName,
+        vmId: row.properties.vmId,
+        os: row.properties.storageProfile.osDisk.osType,
+        image: row.properties.storageProfile.imageReference.offer,
+        imageVersion: row.properties.storageProfile.imageReference.exactVersion
+    }
+
+    WITH obj, row
+        CALL {
+            WITH obj, row
+            UNWIND coalesce(row.properties.networkProfile.networkInterfaces, []) AS nic
+            MERGE (n:{{ LABELS.ArmResource }} {id: toLower(nic.id)})
+            SET n:{{ LABELS.NetworkInterface }}
+            MERGE (obj)-[:{{ REL.HAS_NIC }}]->(n)
+            RETURN count(*) AS _
+        }
+    
+    WITH obj, row
+        CALL {
+            WITH obj, row
+            UNWIND coalesce(row.resources, []) AS resource
+            WITH obj, resource WHERE toLower(resource.type) = "microsoft.compute/virtualmachines/extensions"
+                MERGE (e:{{ LABELS.VMExtension }} {id: toLower(resource.id)})
+                SET e += {
+                    name: resource.name,
+                    type: toLower(resource.type),
+                    location: resource.location,
+                    provisioningState: resource.properties.provisioningState
+                }
+                MERGE (obj)-[:{{ REL.HAS_EXTENSION }}]->(e)
+            RETURN count(*) AS _
+        }
+    RETURN count(*) AS _

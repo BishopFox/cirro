@@ -1,0 +1,20 @@
+services:
+  cirro-neo4j:
+    image: neo4j:latest
+    pull_policy: always
+    container_name: cirro-neo4j
+    restart: unless-stopped
+    ports:
+      - "7477:7474"
+      - "7688:7687"
+    volumes:
+      - cirro-data:/data
+    environment:
+      - NEO4J_AUTH=neo4j/password
+      - NEO4J_PLUGINS=["apoc"]
+      - NEO4J_server_memory_heap_initial__size=4G
+      - NEO4J_server_memory_heap_max__size=8G
+
+volumes:
+  cirro-data:
+

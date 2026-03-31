@@ -1,0 +1,14 @@
+name: "SSH Public Keys"
+label: "{{ LABELS.SSHPublicKey }}"
+table_name: "resources"
+resource_type: "microsoft.compute/sshpublickeys"
+properties:
+  - "/id"
+  - "/properties"
+cypher: |
+    UNWIND $batch AS row
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+    SET obj:{{ LABELS.SSHPublicKey }}
+    SET obj += {
+        publicKey: row.properties.publicKey
+    }

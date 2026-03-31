@@ -1,0 +1,33 @@
+name: "Azure Arc SQL Servers"
+label: "{{ LABELS.ArcSqlServer }}"
+table_name: "resources"
+resource_type: "microsoft.azurearcdata/sqlserverinstances"
+properties:
+  - "/id"
+  - "/properties"
+cypher: |
+    UNWIND $batch AS row
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+    SET obj:{{ LABELS.ArcSqlServer }}
+    SET obj += {
+        azureDefenderStatus: row.properties.azureDefenderStatus,
+        collation: row.properties.collation,
+        currentVersion: row.properties.currentVersion,
+        edition: row.properties.edition,
+        instanceName: row.properties.instanceName,
+        licenseType: row.properties.licenseType,
+        patchLevel: row.properties.patchLevel,
+        productId: row.properties.productId,
+        status: row.properties.status,
+        tcpDynamicPorts: row.properties.tcpDynamicPorts,
+        tcpStaticPorts: row.properties.tcpStaticPorts,
+        vCore: row.properties.vCore,
+        version: row.properties.version
+    }
+
+    CALL (obj, row) {
+        WITH obj, row WHERE row.properties.containerResourceId IS NOT NULL
+          MERGE (h:{{ LABELS.ArmResource }} {id: toLower(row.properties.containerResourceId)})
+          MERGE (h)-[:{{ REL.HOSTS }}]->(obj)
+    }
+   

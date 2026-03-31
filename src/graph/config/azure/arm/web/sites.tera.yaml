@@ -1,0 +1,54 @@
+name: "Sites"
+label: "{{ LABELS.WebSite }}"
+table_name: "resources"
+resource_type: "microsoft.web/sites"
+properties:
+  - "/id"
+  - "/properties"
+cypher: |
+  UNWIND $batch AS row  
+  MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+  SET obj:{{ LABELS.WebSite }}
+  SET obj += {
+      adminEnabled: row.properties.adminEnabled,
+      clientCertEnabled: row.properties.clientCertEnabled,
+      clientCertMode: row.properties.clientCertMode,
+      defaultHostName: row.properties.defaultHostName,
+      enabled: row.properties.enabled,
+      enabledHostNames: row.properties.enabledHostNames,
+      ftpUsername: row.properties.ftpUsername,
+      ftpsHostName: row.properties.ftpsHostName,
+      httpsOnly: row.properties.httpsOnly,
+      inFlightFeatures: row.properties.inFlightFeatures,
+      inboundIpAddress: row.properties.inboundIpAddress,
+      inboundIpv6Address: row.properties.inboundIpv6Address,
+      ipMode: row.properties.ipMode,
+      repositorySiteName: row.properties.repositorySiteName,
+      keyVaultReferenceIdentity: row.properties.keyVaultReferenceIdentity,
+      kind: row.properties.kind,
+      lastModifiedTimeUtc: row.properties.lastModifiedTimeUtc,
+      publicNetworkAccess: row.properties.publicNetworkAccess,
+      linuxFxVersion: row.properties.siteConfig.linuxFxVersion,
+      windowsFxVersion: row.properties.siteConfig.windowsFxVersion,
+      sku: row.properties.siteConfig.sku
+  }
+
+  MERGE (sf:{{ LABELS.ArmResource }} {id: toLower(row.properties.serverFarmId)})
+  SET sf:{{ LABELS.ServerFarm }}
+  MERGE (sf)-[:HOSTS_SITE]->(obj)
+
+  // Link to Web Certificates
+  WITH obj, row
+  CALL {
+    WITH obj, row
+    WITH obj, row WHERE row.properties.hostNameSslStates IS NOT NULL
+    UNWIND row.properties.hostNameSslStates AS sslState
+
+    WITH obj, row, sslState WHERE sslState.sslState IN ['SniEnabled'] AND sslState.certificateResourceId IS NOT NULL
+    MERGE (wc:{{ LABELS.ArmResource }} {id: toLower(sslState.certificateResourceId)})
+    SET wc:{{ LABELS.WebCertificate }}
+    MERGE (obj)-[:USES_CERTIFICATE]->(wc)
+    RETURN count(*) AS _
+  }
+
+  RETURN count(*) AS _

@@ -1,0 +1,25 @@
+name: "Data Factories"
+label: "{{ LABELS.DataFactory }}"
+table_name: "resources"
+resource_type: "microsoft.datafactory/factories"
+properties:
+  - "/id"
+  - "/properties"
+cypher: |
+    UNWIND $batch AS row
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+    SET obj:{{ LABELS.DataFactory }}
+    SET obj += {
+        createTime: row.properties.createTime,
+        publicNetworkAccess: row.properties.publicNetworkAccess,
+        version: row.properties.version,
+        repoAccountName: row.properties.repoConfiguration.accountName,
+        repoBranch: row.properties.repoConfiguration.collaborationBranch,
+        repoDisablePublish: row.properties.repoConfiguration.disablePublish,
+        repoHostname: row.properties.repoConfiguration.hostname,
+        repoLastCommitId: row.properties.repoConfiguration.lastCommitId,
+        repoName: row.properties.repoConfiguration.repositoryName,
+        repoRootFolder: row.properties.repoConfiguration.rootFolder,
+        repoTenantId: row.properties.repoConfiguration.tenantId,
+        repoType: row.properties.repoConfiguration.type
+    }

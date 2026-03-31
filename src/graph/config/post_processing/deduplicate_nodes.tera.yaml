@@ -1,0 +1,30 @@
+name: "Remove Duplicate Nodes"
+label: "PostProcessingDeduplicateNodes"
+priority: 0
+cypher: |
+  CALL apoc.periodic.iterate(
+    "
+    MATCH (n)
+    WHERE n.id IS NOT NULL
+    WITH toLower(n.id) AS lid, collect(n) AS ns
+    WHERE size(ns) > 1
+    RETURN lid, ns
+    ",
+    "
+    WITH lid, ns
+    WITH
+        head(ns) AS keep,
+        tail(ns) AS dups,
+        lid
+    UNWIND dups AS d
+    CALL apoc.refactor.mergeNodes(
+        [keep, d],
+        {properties:'combine', mergeRels:true}
+    )
+    YIELD node
+    // Ensure ids are lowercase
+    SET keep.id = lid
+    RETURN 1
+  ",
+  {batchSize: 1000, parallel: false}
+  )

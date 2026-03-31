@@ -1,0 +1,14 @@
+name: "Galleries"
+label: "{{ LABELS.Gallery }}"
+table_name: "resources"
+resource_type: "microsoft.compute/galleries"
+properties:
+  - "/id"
+  - "/properties"
+cypher: |
+    UNWIND $batch AS row
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+    SET obj:{{ LABELS.Gallery }}
+    SET obj += {
+        uniqueName: row.properties.identifier.uniqueName
+    }

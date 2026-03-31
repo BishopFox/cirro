@@ -1,0 +1,16 @@
+name: "Normalize IDs"
+label: "PostProcessingNormalizeIDs"
+priority: 0
+cypher: |
+  CALL apoc.periodic.iterate(
+  "
+  MATCH (n)
+  WHERE n.id IS NOT NULL AND n.id <> toLower(n.id)
+  RETURN n
+  ",
+  "
+  SET n.id = toLower(n.id)
+  RETURN 1
+  ",
+  {batchSize: 1000, parallel: true}
+  );

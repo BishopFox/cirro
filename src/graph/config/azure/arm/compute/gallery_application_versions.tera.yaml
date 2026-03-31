@@ -1,0 +1,26 @@
+name: "Gallery Application Versions"
+label: "{{ LABELS.GalleryAppVersion }}"
+table_name: "resources"
+resource_type: "microsoft.compute/galleries/applications/versions"
+properties:
+  - "/id"
+  - "/properties"
+cypher: |
+    UNWIND $batch AS row
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+    SET obj:{{ LABELS.GalleryAppVersion }}
+    SET obj += {
+        excludeFromLatest: row.properties.publishingProfile.excludeFromLatest,
+        installAction: row.properties.publishingProfile.manageActions.install,
+        removeAction: row.properties.publishingProfile.manageActions.remove,
+        publishedDate: row.properties.publishingProfile.publishedDate,
+        packageFileName: row.properties.publishingProfile.settings.packageFileName,
+        scriptBehaviorAfterReboot: row.properties.publishingProfile.settings.scriptBehaviorAfterReboot,
+        source: row.properties.publishingProfile.settings.source.mediaLink
+    }
+
+    WITH obj, row
+    WITH obj, row, split(row.id, '/versions/')[0] AS galleryAppId
+    MERGE (g:{{ LABELS.ArmResource }} {id: toLower(galleryAppId)})
+    SET g:{{ LABELS.GalleryApp }}
+    MERGE (g)-[:{{ REL.HAS_VERSION }}]->(obj)

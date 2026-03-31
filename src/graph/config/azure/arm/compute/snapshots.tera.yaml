@@ -1,0 +1,29 @@
+name: "Snapshots"
+label: "{{ LABELS.Snapshot }}"
+table_name: "resources"
+resource_type: "microsoft.compute/snapshots"
+properties:
+  - "/id"
+  - "/properties"
+cypher: |
+    UNWIND $batch AS row
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+    SET obj:{{ LABELS.Snapshot }}
+    SET obj += {
+        createOption: row.properties.creationData.createOption,
+        dataAccessAuthMode: row.properties.dataAccessAuthMode,
+        diskSizeBytes: row.properties.diskSizeBytes,
+        diskSizeGB: row.properties.diskSizeGB,
+        diskState: row.properties.diskState,
+        hyperVGeneration: row.properties.hyperVGeneration,
+        incremental: row.properties.incremental,
+        networkAccessPolicy: row.properties.networkAccessPolicy,
+        osType: row.properties.osType,
+        publicNetworkAccess: row.properties.publicNetworkAccess
+    }
+
+
+    FOREACH (_ IN CASE WHEN row.properties.creationData.sourceResourceId IS NOT NULL THEN [1] ELSE [] END |
+        MERGE (h:{{ LABELS.ArmResource }} {id: toLower(row.properties.creationData.sourceResourceId)})
+        MERGE (h)-[:{{ REL.HAS_SNAPSHOT }}]->(obj)
+    )

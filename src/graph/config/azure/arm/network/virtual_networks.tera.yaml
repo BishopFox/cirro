@@ -1,0 +1,63 @@
+name: "Virtual Networks"
+label: "{{ LABELS.VirtualNetwork }}"
+table_name: "resources"
+resource_type: "microsoft.network/virtualnetworks"
+properties:
+  - "/id"
+  - "/properties"
+cypher: |
+    UNWIND $batch AS row
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+    SET obj:{{ LABELS.VirtualNetwork }}
+    SET obj += {
+        resourceGuid: row.properties.resourceGuid,
+        provisioningState: row.properties.provisioningState,
+        enableDdosProtection: row.properties.enableDdosProtection,
+        enableVmProtection: row.properties.enableVmProtection,
+        addressSpace: row.properties.addressSpace.addressPrefixes
+    }
+
+    WITH obj, row
+        CALL {
+            WITH obj, row
+            UNWIND coalesce(row.properties.subnets, []) AS subnet
+            MERGE (s:{{ LABELS.Subnet }} {id: toLower(subnet.id)})
+            SET s += {
+                name: subnet.name,
+                addressPrefix: subnet.properties.addressPrefix,
+                privateEndpointNetworkPolicies: subnet.properties.privateEndpointNetworkPolicies,
+                privateLinkServiceNetworkPolicies: subnet.properties.privateLinkServiceNetworkPolicies
+            }
+            MERGE (obj)-[:{{ REL.CONTAINS }}]->(s)
+
+            WITH s, subnet WHERE subnet.properties.routeTable IS NOT NULL
+                MERGE (rt:{{ LABELS.ArmResource }} {id: toLower(subnet.properties.routeTable.id)})
+                MERGE (s)-[:{{ REL.HAS_CONFIG }}]->(rt)
+
+            WITH s, subnet WHERE subnet.properties.networkSecurityGroup IS NOT NULL
+                MERGE (nsg:{{ LABELS.ArmResource }} {id: toLower(subnet.properties.networkSecurityGroup.id)})
+                MERGE (s)-[:{{ REL.HAS_NSG }}]->(nsg)
+            RETURN count(*) AS _
+        }
+
+    WITH obj, row
+        CALL {
+            WITH obj, row
+            UNWIND coalesce(row.properties.virtualNetworkPeerings, []) AS peering
+            MERGE (p:{{ LABELS.NetworkPeering }} {id: toLower(peering.id)})
+            SET p += {
+                name: peering.name,
+                allowVirtualNetworkAccess: peering.properties.allowVirtualNetworkAccess,
+                allowForwardedTraffic: peering.properties.allowForwardedTraffic,
+                allowGatewayTransit: peering.properties.allowGatewayTransit,
+                useRemoteGateways: peering.properties.useRemoteGateways,
+                peeringState: peering.properties.peeringState
+            }
+            MERGE (obj)-[:{{ REL.HAS_PEERING }}]->(p)
+
+            WITH p, peering WHERE peering.properties.remoteVirtualNetwork IS NOT NULL
+                MERGE (remote:{{ LABELS.ArmResource }} {id: toLower(peering.properties.remoteVirtualNetwork.id)})
+                MERGE (p)-[:{{ REL.PEERS_WITH }}]->(remote)
+            RETURN count(*) AS _
+        }
+    RETURN count(*) AS _

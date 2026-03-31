@@ -1,0 +1,50 @@
+name: "OAuth2 Permission Grants"
+label: ""
+table_name: "oauth2PermissionGrants"
+properties:
+  - "/id"
+  - "/clientId"
+  - "/consentType"
+  - "/principalId"
+  - "/resourceId"
+  - "/scope"
+  # These properties are currently ignored: https://learn.microsoft.com/en-us/graph/api/resources/oauth2permissiongrant?view=graph-rest-beta#properties
+  - "/startTime"
+  - "/expiryTime"
+cypher: |
+  UNWIND $batch as row
+  CALL (row) {
+    // When principalId IS NULL, create tenant-level grant (typically admin consent)
+    FOREACH (_ IN CASE WHEN row.principalId IS NULL THEN [1] ELSE [] END |
+      MERGE (client:{{ LABELS.GraphObject }} {id: toLower(row.clientId)})
+      MERGE (resource:{{ LABELS.GraphObject }} {id: toLower(row.resourceId)})
+      MERGE (client)-[r:{{ REL.HAS_OAUTH_GRANT }}]->(resource)
+      SET r += {
+          id: row.id,
+          scopes: split(btrim(row.scope), " "),
+          consentType: row.consentType,
+          principalId: row.principalId,
+          startTime: row.startTime,
+          expiryTime: row.expiryTime
+      }
+    )
+    
+    // When principalId IS NOT NULL, create user-specific delegated grant
+    FOREACH (_ IN CASE WHEN row.principalId IS NOT NULL THEN [1] ELSE [] END |
+      MERGE (principal:{{ LABELS.GraphObject }} {id: toLower(row.principalId)})
+      MERGE (client:{{ LABELS.GraphObject }} {id: toLower(row.clientId)})
+      MERGE (resource:{{ LABELS.GraphObject }} {id: toLower(row.resourceId)})
+      MERGE (principal)-[r:{{ REL.DELEGATED_TO_CLIENT }}]->(client)
+      SET r += {
+          id: row.id,
+          scopes: split(btrim(row.scope), " "),
+          consentType: row.consentType,
+          principalId: row.principalId,
+          startTime: row.startTime,
+          expiryTime: row.expiryTime
+      }
+      MERGE (client)-[:{{ REL.HAS_USER_GRANT }}]->(resource)
+    )
+  } IN TRANSACTIONS OF 5000 ROWS
+
+  RETURN count(*) AS _

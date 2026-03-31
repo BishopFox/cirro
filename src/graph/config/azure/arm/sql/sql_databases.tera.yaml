@@ -1,0 +1,27 @@
+name: "SQL Databases"
+label: "{{ LABELS.SqlDatabase }}"
+table_name: "resources"
+resource_type: "microsoft.sql/servers/databases"
+properties:
+  - "/id"
+  - "/properties"
+cypher: |
+    UNWIND $batch AS row
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+    SET obj:{{ LABELS.SqlDatabase }}
+    SET obj += {
+        collation: row.properties.collation,
+        creationDate: row.properties.creationDate,
+        currentServiceObjectiveName: row.properties.currentServiceObjectiveName,
+        databaseId: row.properties.databaseId,
+        pausedDate: row.properties.pausedDate,
+        earliestRestoreDate: row.properties.earliestRestoreDate,
+        isInfraEncryptionEnabled: row.properties.isInfraEncryptionEnabled,
+        maxSizeBytes: row.properties.maxSizeBytes,
+        status: row.properties.status
+    }
+
+    WITH obj, row, split(toLower(obj.id), '/databases/')[0] AS serverId
+        MERGE (s:{{ LABELS.ArmResource }} {id: toLower(serverId)})
+        SET s:{{ LABELS.SqlServer }}
+        MERGE (s)-[:{{ REL.HAS_DB }}]->(obj)

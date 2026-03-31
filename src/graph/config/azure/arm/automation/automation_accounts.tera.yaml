@@ -1,0 +1,17 @@
+name: "Automation Accounts"
+label: "{{ LABELS.AutomationAccount }}"
+table_name: "resources"
+resource_type: "microsoft.automation/automationaccounts"
+properties:
+  - "/id"
+  - "/properties"
+cypher: |
+    UNWIND $batch AS row
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+    SET obj:{{ LABELS.AutomationAccount }}
+    SET obj += {
+        creationTime: row.properties.creationTime,
+        lastModifiedTime: row.properties.lastModifiedTime,
+        registrationUrl: row.properties.registrationUrl,
+        automationHybridServiceUrl: row.properties.automationHybridServiceUrl
+    }

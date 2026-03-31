@@ -1,0 +1,23 @@
+name: "DocumentDB Database Accounts"
+label: "{{ LABELS.DocumentDB }}"
+table_name: "resources"
+resource_type: "microsoft.documentdb/databaseaccounts"
+properties:
+  - "/id"
+  - "/properties"
+cypher: |
+    UNWIND $batch AS row
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+    SET obj:{{ LABELS.DocumentDB }}
+    SET obj += {
+        enabledApiTypes: row.properties.EnabledApiTypes,
+        documentEndpoint: row.properties.documentEndpoint,
+        instanceId: row.properties.instanceId,
+        networkAclBypass: row.properties.networkAclBypass,
+        publicNetworkAccess: row.properties.publicNetworkAccess,
+        sqlEndpoint: row.properties.sqlEndpoint,
+        readLocations: [x IN coalesce(row.properties.readLocations, []) | x.documentEndpoint],
+        writeLocations: [x IN coalesce(row.properties.writeLocations, []) | x.documentEndpoint],
+        ipRules: [rule IN coalesce(row.properties.ipRules, []) | rule.ipAddressOrRange],
+        isVirtualNetworkFilterEnabled: row.properties.isVirtualNetworkFilterEnabled
+    }

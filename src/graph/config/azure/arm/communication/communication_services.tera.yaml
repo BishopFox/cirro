@@ -1,0 +1,25 @@
+name: "Communication Services"
+label: "{{ LABELS.CommunicationServices }}"
+table_name: "resources"
+resource_type: "microsoft.communication/communicationservices"
+properties:
+  - "/id"
+  - "/properties"
+cypher: |
+    UNWIND $batch AS row
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+    SET obj:{{ LABELS.CommunicationServices }}
+    SET obj += {
+        dataLocation: row.properties.dataLocation,
+        hostName: row.properties.hostName,
+        immutableResourceId: row.properties.immutableResourceId
+    }
+
+    WITH obj, row
+    CALL {
+      WITH obj, row
+      UNWIND coalesce(row.properties.linkedDomains, []) AS linkedDomain
+      MERGE (ld:{{ LABELS.ArmResource }} {id: toLower(linkedDomain)})
+      SET ld:{{ LABELS.CommServiceDomain }}
+      MERGE (obj)-[:{{ REL.HAS_LINKED_DOMAIN }}]->(ld)
+    }

@@ -1,0 +1,36 @@
+name: "CAP Named Locations"
+label: "{{ LABELS.CAPNamedLocation }}"
+table_name: "namedLocations"
+properties:
+  - "/id"
+  - "/@odata.type"
+  - "/createdDateTime"
+  - "/modifiedDateTime"
+  - "/deletedDateTime"
+  - "/displayName"
+  - "/isTrusted"
+  - "/ipRanges"
+  - "/countriesAndRegions"
+  - "/countryLookupMethod"
+  - "/includeUnknownCountriesAndRegions"
+cypher: |
+  UNWIND $batch as row
+  CALL (row) {
+      MERGE (obj:{{ LABELS.GraphObject }} {id: toLower(row.id)})
+      SET obj:{{ LABELS.CAPNamedLocation }}
+      SET obj += {
+          odataType: toLower(ltrim(row['@odata.type'], '#')),
+          createdDateTime: row.createdDateTime,
+          modifiedDateTime: row.modifiedDateTime,
+          deletedDateTime: row.deletedDateTime,
+          displayName: row.displayName,
+          isTrusted: row.isTrusted,
+          ipRanges: apoc.convert.toJson(row.ipRanges),
+          countriesAndRegions: row.countriesAndRegions,
+          countryLookupMethod: row.countryLookupMethod,
+          includeUnknownCountriesAndRegions: row.includeUnknownCountriesAndRegions
+      }
+      RETURN count(*) AS _
+  } IN TRANSACTIONS OF 5000 ROWS
+
+  RETURN count(*) AS _

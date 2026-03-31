@@ -1,0 +1,12 @@
+name: "Set HasScopedRole Relation Properties"
+label: "PostProcessingSetHasScopedRoleRelationProperties"
+priority: 0
+cypher: |
+   MATCH (:{{ LABELS.GraphObject }})-[r:{{ REL.HAS_SCOPED_ROLE }}]->(o:{{ LABELS.GraphAdministrativeUnit }})
+   MATCH (gr:GraphRole {id: toLower(r.roleId)})
+   SET r += {
+        displayName: gr.displayName,
+        description: gr.description,
+        roleTemplateId: gr.roleTemplateId
+    }
+    RETURN count(*) AS _

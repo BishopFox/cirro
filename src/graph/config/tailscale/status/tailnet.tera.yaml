@@ -1,0 +1,14 @@
+name: "Tailnets"
+label: "{{ LABELS.TSTailnet }}"
+cypher: |
+  WITH $status_data AS data
+
+  // First create the tailnet node
+  // Older tailnet IDs use domains but should be unique
+  MERGE (tn:{{ LABELS.TSTailnet }} {id: toLower(data.CurrentTailnet.Name)})
+  SET tn += {
+      magicDnsEnabled: data.CurrentTailnet.MagicDNSEnabled,
+      magicDnsSuffix: data.CurrentTailnet.MagicDNSSuffix
+  }
+
+  RETURN 1 AS count

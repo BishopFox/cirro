@@ -1,0 +1,26 @@
+name: "Eligible ARM RBAC Assignments"
+label: ""
+table_name: "eligibleArmRBAC"
+properties:
+  - "/id"
+  - "/name"
+  - "/type"
+  - "/properties"
+cypher: |
+    UNWIND $batch AS row
+    MERGE (o:GraphObject {id: toLower(row.properties.principalId)})
+    MERGE (r:ArmResource {id: toLower(row.properties.scope)})
+
+    MERGE (o)-[rel:{{ REL.IS_RBAC_ELIGIBLE }}]->(r)
+    SET rel += {
+        id : row.id,
+        name : row.name,
+        type : toLower(row.type),
+        memberType : row.properties.memberType,
+        createdOn : row.properties.createdOn,
+        startDateTime : row.properties.startDateTime,
+        roleName: row.properties.expandedProperties.roleDefinition.displayName,
+        endDateTime : row.properties.endDateTime,
+        scope : toLower(row.properties.scope),
+        roleDefinitionId : toLower(row.properties.roleDefinitionId)
+    }

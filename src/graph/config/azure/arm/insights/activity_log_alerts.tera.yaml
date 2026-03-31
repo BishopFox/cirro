@@ -1,0 +1,26 @@
+name: "Activity Log Alerts"
+label: "{{ LABELS.ActivityLogAlert }}"
+table_name: "resources"
+resource_type: "microsoft.insights/activitylogalerts"
+properties:
+  - "/id"
+  - "/properties"
+cypher: |
+    UNWIND $batch AS row
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+    SET obj:{{ LABELS.ActivityLogAlert }}
+    SET obj += {
+        description: row.properties.description,
+        enabled: row.properties.enabled,
+        condition: apoc.convert.toJson(row.properties.condition)
+    }
+
+    WITH obj, row
+        CALL {
+            WITH obj, row
+            UNWIND coalesce(row.properties.scopes, []) AS scope
+            MERGE (t:{{ LABELS.ArmResource }} {id: toLower(scope)})
+            MERGE (t)-[r:{{ REL.HAS_ALERT }}]->(obj)
+            RETURN count(*) AS _
+        }
+    RETURN count(*) AS _

@@ -1,0 +1,88 @@
+name: "Generic ARM Resources"
+label: "{{ LABELS.ArmResource }}"
+table_name: "resources"
+resource_type: "!microsoft.resources/resourcegroups"
+properties:
+  - "/id"
+  - "/identity"
+  - "/kind"
+  - "/location"
+  - "/managedBy"
+  - "/name"
+  - "/systemData"
+  - "/type"
+  - "/tags"
+column_mappings:
+  rg_id: "_rg_id"
+cypher: |
+    UNWIND $batch AS row
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+    SET obj += {
+        id : row.id,
+        kind : row.kind,
+        location : row.location,
+        name : row.name,
+        type : toLower(row.type),
+        tags : [key in keys(row.tags) | key + ":" + row.tags[key]],
+        systemCreatedAt: row.systemData.createdAt,
+        systemCreatedBy: row.systemData.createdBy,
+        systemCreatedByType: row.systemData.createdByType,
+        systemLastModifiedAt: row.systemData.lastModifiedAt,
+        systemLastModifiedBy: row.systemData.lastModifiedBy,
+        systemLastModifiedByType: row.systemData.lastModifiedByType
+    }
+    MERGE (rg:{{ LABELS.ArmResource }} {id: toLower(row._rg_id)})
+    SET rg:{{ LABELS.ResourceGroup }}
+    MERGE (rg)-[:{{ REL.CONTAINS }}]->(obj)
+
+
+    WITH obj, row
+    CALL {
+        WITH obj, row
+        WITH obj, row WHERE row.managedBy IS NOT NULL 
+        MERGE (h:{{ LABELS.ArmResource }} {id: toLower(row.managedBy)})
+        MERGE (h)-[:{{ REL.MANAGES }}]->(obj)
+        RETURN count(*) AS _
+    }
+
+    WITH obj, row
+    CALL {
+        WITH obj, row
+        WITH obj, row WHERE row.identity IS NOT NULL AND toLower(row.identity.type) = 'systemassigned' AND row.identity.principalId IS NOT NULL
+            MERGE (i:{{ LABELS.GraphObject }} {id: toLower(row.identity.principalId)})
+            SET i:{{ LABELS.GraphServicePrincipal }}
+            MERGE (obj)-[:{{ REL.HAS_IDENTITY }}]->(i)
+        RETURN count(*) AS _
+    }
+
+    WITH obj, row
+    CALL {
+        WITH obj, row
+        WITH obj, row WHERE row.identity IS NOT NULL AND toLower(row.identity.type) = 'userassigned'
+            UNWIND keys(row.identity.userAssignedIdentities) AS subKey
+            WITH obj, subKey, row.identity.userAssignedIdentities[subKey] AS ident
+                MERGE (i:{{ LABELS.ArmResource }} {id: toLower(subKey)})
+                SET i:{{ LABELS.UserAssignedIdentity }}
+                MERGE (obj)-[:{{ REL.HAS_IDENTITY }}]->(i)
+
+                WITH obj, i, ident WHERE ident.clientId IS NOT NULL
+                MERGE (o:{{ LABELS.GraphServicePrincipal }} {appId: ident.clientId})
+                MERGE (i)-[:{{ REL.REPRESENTED_BY }}]->(o)
+        RETURN count(*) AS _
+    }
+
+    WITH obj, row
+    CALL {
+        WITH obj, row
+        UNWIND coalesce(row.properties.privateEndpointConnections, []) AS conn
+        MERGE (p:{{ LABELS.ArmResource }} {id: toLower(conn.id)})
+        SET p:{{ LABELS.PrivateEndpointConnection }}
+        SET p += {
+            name: conn.name,
+            type: conn.type,
+            groupIds: conn.properties.groupIds
+        }
+        MERGE (obj)-[:{{ REL.HAS_PRIVATE_ENDPOINT }}]->(p)
+        RETURN count(*) AS _
+    }
+    RETURN count(*) AS _
