@@ -1,7 +1,7 @@
 # yaml-language-server: $schema=https://squidfunk.github.io/mkdocs-material/schema.json
 
 site_name: Cirro Documentation
-site_url: https://cirro.dev
+site_url: https://cirrograph.io
 repo_url: https://github.com/bishopfox/cirro
 theme:
   name: material
