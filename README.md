@@ -3,7 +3,7 @@
 
 Cirro is an extensible security research platform that enables researchers and penetration testers to collect, analyze, and visualize cloud environments and identity relationships through graph databases. Built with a modular architecture, Cirro can be extended to support multiple platforms and data sources.
 
-You can check out the [Documentation](https://crispy-adventure-qre5p1k.pages.github.io/) for more info.
+You can check out the [Documentation](https://bishopfox.github.io/cirro) for more info.
 
 ## Features
 
