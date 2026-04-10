@@ -1,0 +1,39 @@
+name: "Key Vault Certificates"
+label: "{{ LABELS.KeyVaultCertificate }}"
+table_name: "keyVaultItems"
+resource_type: "certificate"
+properties:
+  - "/id"
+  - "/name"
+  - "/subject"
+  - "/x509Thumbprint"
+  - "/x509ThumbprintHex"
+  - "/attributes"
+  - "/tags"
+cypher: |
+  UNWIND $batch AS row
+  MERGE (obj:{{ LABELS.KeyVaultCertificate }} {id: toLower(row.id)})
+  SET obj += {
+      name: row.name,
+      subject: row.subject,
+      x509Thumbprint: row.x509Thumbprint,
+      x509ThumbprintHex: row.x509ThumbprintHex,
+      enabled: row.attributes.enabled,
+      notBefore: row.attributes.notBefore,
+      expires: row.attributes.expires,
+      created: row.attributes.created,
+      updated: row.attributes.updated,
+      recoverableDays: row.attributes.recoverableDays,
+      recoveryLevel: row.attributes.recoveryLevel,
+      tags: [key IN keys(row.tags) | key + ":" + row.tags[key]]
+  }
+
+  // Relationship to parent Key Vault
+  // We can merge on KeyVault.vaultUri since the certificate metadata doesn't include a direct reference to the vault ARM resource ID
+  // KeyVault.vaultUri format: https://{vault-name}.vault.azure.net/
+  // Certificate id format: https://{vault-name}.vault.azure.net/certificates/{certificate-name}
+  WITH obj, row
+  MERGE (vault:{{ LABELS.KeyVault }} {vaultUri: toLower(substring(row.id, 0, apoc.text.indexOf(row.id, "certificates/")))})
+  MERGE (vault)-[:{{ REL.HAS_CERTIFICATE }}]->(obj)
+
+  RETURN count(*) AS _

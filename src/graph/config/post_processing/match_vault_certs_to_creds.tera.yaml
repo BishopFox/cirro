@@ -1,0 +1,18 @@
+name: "Match Vault Certificates to Client Certificates"
+label: "PostProcessingMatchVaultCertificatesToClientCertificates"
+priority: 1000
+cypher: |
+  CALL apoc.periodic.iterate(
+    "
+    MATCH (c:{{ LABELS.Certificate }})
+    MATCH (s:{{ LABELS.KeyVaultCertificate }})
+    WHERE s.x509ThumbprintHex = c.thumbprint
+    RETURN c, s
+    ",
+    "
+    WITH c, s
+    MERGE (s)-[:{{ REL.MATCHES_CERT }}]->(c)
+    RETURN 1
+    ",
+    {batchSize:1000, parallel:false}
+  )

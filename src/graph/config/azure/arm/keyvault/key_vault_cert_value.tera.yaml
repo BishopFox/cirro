@@ -1,0 +1,57 @@
+name: "Key Vault Certificate Values"
+label: "{{ LABELS.KeyVaultCertificateValue }}"
+table_name: "keyVaultItems"
+resource_type: "certificatevalue"
+properties:
+  - "/id"
+  - "/name"
+  - "/cer"
+  - "/contentType"
+  - "/kid"
+  - "/sid"
+  - "/policy"
+  - "/x509Thumbprint"
+  - "/x509ThumbprintHex"
+  - "/attributes"
+  - "/tags"
+cypher: |
+  UNWIND $batch AS row
+  MERGE (obj:{{ LABELS.KeyVaultCertificateValue }} {id: toLower(row.id)})
+  SET obj += {
+      name: row.name,
+      cer: row.cer,
+      contentType: row.contentType,
+      kid: row.kid,
+      sid: row.sid,
+      x509Thumbprint: row.x509Thumbprint,
+      x509ThumbprintHex: row.x509ThumbprintHex,
+      enabled: row.attributes.enabled,
+      notBefore: row.attributes.notBefore,
+      expires: row.attributes.expires,
+      created: row.attributes.created,
+      updated: row.attributes.updated,
+      recoverableDays: row.attributes.recoverableDays,
+      recoveryLevel: row.attributes.recoveryLevel,
+      issuerTransparency: row.policy.issuerParameters.certificateTransparency,
+      issuerType: row.policy.issuerParameters.certificateType,
+      issuerName: row.policy.issuerParameters.name,
+      exportable: row.policy.keyProperties.exportable,
+      keyType: row.policy.keyProperties.keyType,
+      secretContentType: row.policy.secretProperties.contentType,
+      keyUsage: row.policy.x509Properties.keyUsage,
+      x509SubjectName: row.policy.x509Properties.subject,
+      x509DnsNames: row.policy.x509Properties.subjectAlternativeNames.dnsNames,
+      x509Emails: row.policy.x509Properties.subjectAlternativeNames.emails,
+      x509Upns: row.policy.x509Properties.subjectAlternativeNames.upns,
+      tags: [key IN keys(row.tags) | key + ":" + row.tags[key]]
+  }
+
+  // Relationship to parent Key Vault Certificate
+  // We can merge on KeyVault.vaultUri since the certificate metadata doesn't include a direct reference to the vault ARM resource ID
+  // KeyVault.vaultUri format: https://{vault-name}.vault.azure.net/
+  // Certificate id format: https://{vault-name}.vault.azure.net/certificates/{certificate-name}
+  WITH obj, row
+  WITH obj, row, toLower(apoc.text.replace(row.id, '/[^/]+$', '')) AS certId
+  MERGE (cert:{{ LABELS.KeyVaultCertificate }} {id: certId})
+  MERGE (cert)-[:{{ REL.HAS_VERSION }}]->(obj)
+  RETURN count(*) AS _
