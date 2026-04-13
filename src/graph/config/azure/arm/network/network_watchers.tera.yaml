@@ -1,0 +1,14 @@
+name: "Network Watchers"
+label: "{{ LABELS.NetworkWatcher }}"
+table_name: "resources"
+resource_type: "microsoft.network/networkwatchers"
+properties:
+  - "/id"
+  - "/properties"
+cypher: |
+  UNWIND $batch AS row
+  MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+  SET obj:{{ LABELS.NetworkWatcher }}
+  SET obj += {
+      provisioningState: row.properties.provisioningState
+  }

@@ -19,3 +19,5 @@ Represents Azure Key Vault instances.
 
 **Relationships:**
 - `HAS_POLICY` → GraphObject (access policies for users/service principals)
+- `HAS_SECRET` → KeyVaultSecret
+- `HAS_CERTIFICATE` → KeyVaultCertificate
