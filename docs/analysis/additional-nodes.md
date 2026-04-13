@@ -15,6 +15,10 @@ These nodes are not direct objects in Entra ID or Azure but are created as a res
 - **[HybridExtension](additional-nodes/hybrid-extension.md)** - Extensions attached to hybrid machines
 - **[HybridIPAddress](additional-nodes/hybrid-ip-address.md)** - IP addresses discovered for hybrid machines
 - **[IPConfig](additional-nodes/ip-config.md)** - IP configuration details for network interfaces
+- **[KeyVaultCertificate](additional-nodes/key-vault-certificate.md)** - Key Vault certificate metadata
+- **[KeyVaultCertificateValue](additional-nodes/key-vault-certificate-value.md)** - Versioned Key Vault certificate data and policy details
+- **[KeyVaultSecret](additional-nodes/key-vault-secret.md)** - Key Vault secret metadata
+- **[KeyVaultSecretValue](additional-nodes/key-vault-secret-value.md)** - Versioned Key Vault secret values
 - **[NetworkGateway](additional-nodes/network-gateway.md)** - Virtual network gateways
 - **[NetworkPeering](additional-nodes/network-peering.md)** - Virtual network peering connections
 - **[NetworkRoute](additional-nodes/network-route.md)** - Individual routes within route tables

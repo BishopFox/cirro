@@ -149,6 +149,7 @@ nav:
           - analysis/arm-nodes/network/dns-zone.md
           - analysis/arm-nodes/network/ipconfig.md
           - analysis/arm-nodes/network/network-interface.md
+          - analysis/arm-nodes/network/network-watcher.md
           - analysis/arm-nodes/network/nsg.md
           - analysis/arm-nodes/network/nsg-rule.md
           - analysis/arm-nodes/network/expressroute-circuit.md
@@ -217,7 +218,10 @@ nav:
         - analysis/additional-nodes/hybrid-extension.md
         - analysis/additional-nodes/hybrid-ip-address.md
         - analysis/additional-nodes/ip-config.md
+        - analysis/additional-nodes/key-vault-certificate.md
+        - analysis/additional-nodes/key-vault-certificate-value.md
         - analysis/additional-nodes/key-vault-secret.md
+        - analysis/additional-nodes/key-vault-secret-value.md
         - analysis/additional-nodes/netapp-account-ad-domain.md
         - analysis/additional-nodes/netapp-volume-mount.md
         - analysis/additional-nodes/network-gateway.md
@@ -315,6 +319,7 @@ nav:
       - analysis/post-processing/deduplicate-nodes.md
       - analysis/post-processing/deduplicate-relationships.md
       - analysis/post-processing/deduplicate-container-registry.md
+      - analysis/post-processing/deduplicate-keyvault-by-uri.md
       - analysis/post-processing/deduplicate-graph-applications.md
       - analysis/post-processing/deduplicate-graph-roles.md
       - analysis/post-processing/deduplicate-service-principals.md

@@ -14,6 +14,7 @@ Post-processing steps run after all resources and graph objects have been ingest
 | [Set ARM Eligible Properties](post-processing/set-arm-eligible-properties.md) | 0 | Enrich IS_RBAC_ELIGIBLE relationships |
 | [Set HasScopedRole Properties](post-processing/set-hasscopedrole-properties.md) | 0 | Enrich HAS_SCOPED_ROLE relationships |
 | [Deduplicate Container Registry](post-processing/deduplicate-container-registry.md) | 1000 | Merge container registries by login server |
+| [Deduplicate Key Vault by URI](post-processing/deduplicate-keyvault-by-uri.md) | 1000 | Merge Key Vault nodes by vault URI |
 | [Deduplicate Graph Applications](post-processing/deduplicate-graph-applications.md) | 1000 | Merge graph applications by app ID |
 | [Deduplicate Graph Roles](post-processing/deduplicate-graph-roles.md) | 1000 | Merge graph roles by role template ID |
 | [Deduplicate Service Principals](post-processing/deduplicate-service-principals.md) | 1000 | Merge service principals by app ID |
