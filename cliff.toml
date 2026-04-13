@@ -26,7 +26,7 @@ body = """
 
 {% for group, commits in commits | group_by(attribute="group") %}
     ### {{ group | upper_first }}
-    {%- for commit in commits %}
+    {% for commit in commits | unique(attribute="message") %}
         - {{ commit.message | split(pat="\n") | first | upper_first | trim }}\
             {% if commit.remote.username %} by @{{ commit.remote.username }}{%- endif -%}
             {% if commit.remote.pr_number %} in \
@@ -76,27 +76,28 @@ trim = true
 # See https://www.conventionalcommits.org
 conventional_commits = true
 # Exclude commits that do not match the conventional commits specification.
-filter_unconventional = false
+filter_unconventional = true
 # An array of regex based parsers to modify commit messages prior to further processing.
 commit_preprocessors = [
-  # Remove issue numbers.
-  { pattern = '\((\w+\s)?#([0-9]+)\)', replace = "" },
+    # Remove issue numbers.
+    { pattern = '\((\w+\s)?#([0-9]+)\)', replace = "" },
 ]
 # An array of regex based parsers for extracting data from the commit message.
 # Assigns commits to groups.
 # Optionally sets the commit's scope and can decide to exclude commits from further processing.
 commit_parsers = [
-  { message = "^[a|A]dd", group = "Added" },
-  { message = "^[s|S]upport", group = "Added" },
-  { message = "^[r|R]emove", group = "Removed" },
-  { message = "^.*: add", group = "Added" },
-  { message = "^.*: support", group = "Added" },
-  { message = "^.*: remove", group = "Removed" },
-  { message = "^.*: delete", group = "Removed" },
-  { message = "^test", group = "Fixed" },
-  { message = "^fix", group = "Fixed" },
-  { message = "^.*: fix", group = "Fixed" },
-  { message = "^.*", group = "Changed" },
+    { message = "^[a|A]dd", group = "Added" },
+    { message = "^[s|S]upport", group = "Added" },
+    { message = "^[r|R]emove", group = "Removed" },
+    { message = "^.*: add", group = "Added" },
+    { message = "^.*: support", group = "Added" },
+    { message = "^.*: remove", group = "Removed" },
+    { message = "^.*: delete", group = "Removed" },
+    { message = "^test", group = "Fixed" },
+    { message = "^fix", group = "Fixed" },
+    { message = "^.*: fix", group = "Fixed" },
+    { message = "^.*", group = "Changed" },
+    { body = "$^", skip = true },
 ]
 # Exclude commits that are not matched by any commit parser.
 filter_commits = false
