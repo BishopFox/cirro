@@ -115,6 +115,7 @@ nav:
           - analysis/arm-nodes/compute/disk-encryption-set.md
           - analysis/arm-nodes/compute/snapshot.md
           - analysis/arm-nodes/compute/availability-set.md
+          - analysis/arm-nodes/compute/restore-point.md
           - analysis/arm-nodes/compute/restore-point-collection.md
           - analysis/arm-nodes/compute/ssh-public-key.md
           - analysis/arm-nodes/compute/vm-extension.md
@@ -267,6 +268,7 @@ nav:
         - analysis/edges/has-extension.md
         - analysis/edges/has-gallery-image.md
         - analysis/edges/has-identity.md
+        - analysis/edges/has-instance.md
         - analysis/edges/has-ip.md
         - analysis/edges/has-linked-domain.md
         - analysis/edges/has-nic.md
@@ -276,7 +278,7 @@ nav:
         - analysis/edges/has-peering.md
         - analysis/edges/has-policy.md
         - analysis/edges/has-private-endpoint.md
-        - analysis/edges/has-restorepoint.md
+        - analysis/edges/has-restorepoints.md
         - analysis/edges/has-role.md
         - analysis/edges/has-rulestack.md
         - analysis/edges/has-route.md
@@ -326,6 +328,7 @@ nav:
       - analysis/post-processing/deduplicate-storage.md
       - analysis/post-processing/fix-dfs-without-id.md
       - analysis/post-processing/link-tsuser-to-graphuser.md
+      - analysis/post-processing/merge-vms-by-vmid.md
       - analysis/post-processing/remove-memberof-graphrole.md
       - analysis/post-processing/set-approle-properties.md
       - analysis/post-processing/set-arm-eligible-properties.md
