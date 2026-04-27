@@ -6,6 +6,8 @@ properties:
   - "/id"
   - "/resources"
   - "/properties"
+index_properties:
+  - "{{ LABELS.VirtualMachine }}:vmId"
 cypher: |
     UNWIND $batch AS row
     MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})

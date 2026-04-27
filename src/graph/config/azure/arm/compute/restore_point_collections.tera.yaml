@@ -5,10 +5,59 @@ resource_type: "microsoft.compute/restorepointcollections"
 properties:
   - "/id"
   - "/properties"
+  - "/restorePoints"
+  - "/source"
+constraint_properties:
+  - "{{ LABELS.RestorePoint }}:id"
+index_properties:
+  - "{{ LABELS.RestorePointCollection }}:restorePointCollectionId"
+  - "{{ LABELS.RestorePoint }}:vmId"
+  - "{{ LABELS.VirtualMachine }}:vmId"
 cypher: |
     UNWIND $batch AS row
     MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
     SET obj:{{ LABELS.RestorePointCollection }}
 
-    MERGE (vm:{{ LABELS.ArmResource }} {id: toLower(row.properties.source.id)})
-    MERGE (vm)-[:{{ REL.HAS_RESTOREPOINT }}]->(obj)
+    // Apparently, 'microsoft.compute/restorepointcollections' has two schemas
+    // This first one is the object schema, where the source is an object with an 'id' property
+    // The second one has the list of restore points, and no properties.
+    // So a user can collect the restore points, without collecting the properties of the restore point collection.
+    // And the `source` property contains the id of the source VM, which is what we want to link to.
+
+    // If the source is an object with an 'id' property, link to the source VM
+    CALL (obj, row) {
+        WITH obj, row
+        WHERE row.properties.source IS NOT NULL AND row.properties.source.id IS NOT NULL
+        SET obj.restorePointCollectionId =  row.properties.restorePointCollectionId
+        MERGE (vm:{{ LABELS.ArmResource }} {id: toLower(row.properties.source.id)})
+        MERGE (vm)-[:{{ REL.HAS_RESTOREPOINTS }}]->(obj)
+    }
+
+    // Or the RPC may have a `source` property that is a bag
+    CALL (obj, row) {
+        WITH obj, row
+        WHERE row.source IS NOT NULL AND row.source.id IS NOT NULL
+        MERGE (vm:{{ LABELS.ArmResource }} {id: toLower(row.source.id)})
+        MERGE (vm)-[:{{ REL.HAS_RESTOREPOINTS }}]->(obj)
+    }
+
+    // If restore points are present, link to them
+    // In the future, might want to link directly to the related disks
+    // But for now, link to the restore points themselves, which are ARM resources
+    // Linking to disks might be more confusing, since an RPC can be linked to multiple disks
+    // So we use the vmId to link the RPC to the VM, and then link the restore points to the RPC, which is a more direct relationship
+    CALL (obj, row) {
+        WITH obj, row
+        UNWIND coalesce(row.restorePoints, []) AS restorePoint
+        MERGE (rp:{{ LABELS.ArmResource }} {id: toLower(restorePoint.id)})
+        SET rp:{{ LABELS.RestorePoint }}
+        SET rp += {
+            consistencyMode: restorePoint.consistencyMode,
+            timeCreated: restorePoint.timeCreated
+        }
+        MERGE (obj)-[:{{ REL.HAS_INSTANCE }}]->(rp)
+
+        // Merge VMs by vmId in post-processing
+        MERGE (vm:{{ LABELS.VirtualMachine }} {vmId: toLower(restorePoint.sourceMetadata.vmId)})
+        MERGE (vm)-[:{{ REL.HAS_RESTOREPOINTS }}]->(obj)
+    }
