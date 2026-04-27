@@ -8,7 +8,7 @@ use rusqlite::{Connection, Result};
 use std::path::PathBuf;
 use tokio::time::Duration;
 
-#[derive(Debug, Clone, ValueEnum)]
+#[derive(Debug, Clone, ValueEnum, PartialEq, Eq)]
 pub enum IngestType {
     /// Azure data ingestion
     Az,
@@ -109,27 +109,39 @@ impl CirroIngestor {
     }
 
     /// Runs the ingestor
-    pub async fn run(&mut self, post_process_only: bool) -> Result<(), CirroError> {
+    pub async fn run(&mut self, post_process_only: bool, dry_run: bool) -> Result<(), CirroError> {
         // Start stopwatch to measure the time taken for the entire ingestion process
         let start_time = std::time::Instant::now();
         debug!("Ingestion started at: {:?}", start_time);
 
+        if dry_run {
+            info!("Dry-run enabled: no ingestion or post-processing queries will be executed");
+        }
+
         if !post_process_only {
             // Run the main ingestion logic
             match self.r#type {
-                IngestType::Az => self.process_cirro_azure_ingest().await?,
-                IngestType::TsStatus => self.process_cirro_tailscale_status_ingest().await?,
+                IngestType::Az => self.process_cirro_azure_ingest(dry_run).await?,
+                IngestType::TsStatus => self.process_cirro_tailscale_status_ingest(dry_run).await?,
             }
 
             // Ensure all transactions are committed before post-processing
-            self.finalize_transactions().await?;
+            if !dry_run {
+                self.finalize_transactions().await?;
+            }
         }
 
-        self.generic_post_process().await?;
+        if dry_run && self.r#type == IngestType::Az {
+            self.show_unimplemented_azure_resource_types().await?;
+        }
+
+        self.generic_post_process(dry_run).await?;
 
         // Calculate the total time taken for the ingestion process
-        let duration = start_time.elapsed();
-        info!("Cirro ingestion process completed in: {:.2?}", duration);
+        if !dry_run {
+            let duration = start_time.elapsed();
+            info!("Cirro ingestion process completed in: {:.2?}", duration);
+        }
 
         Ok(())
     }
@@ -183,7 +195,21 @@ impl CirroIngestor {
         Ok(())
     }
 
-    async fn generic_post_process(&mut self) -> Result<(), CirroError> {
+    async fn generic_post_process(&mut self, dry_run: bool) -> Result<(), CirroError> {
+        if dry_run {
+            info!("Dry-run: post-processing queries that would run:");
+            let mut post_processing_specs = self.specs.cirro_post_processing_specs.clone();
+            post_processing_specs.sort_by_key(|spec| spec.priority);
+            for spec in &post_processing_specs {
+                info!(
+                    "[dry-run] priority {} post-process spec: {}",
+                    spec.priority, spec.name
+                );
+                debug!("[dry-run] cypher: {}", spec.cypher);
+            }
+            return Ok(());
+        }
+
         info!("Waiting for all transactions to commit...");
 
         // Force a transaction commit by running a simple query that requires a read

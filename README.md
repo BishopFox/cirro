@@ -118,6 +118,24 @@ cirro graph ingest --type az --file cirro_output.db \
   --password password
 ```
 
+## Dry-Run Mode
+
+Preview what would be ingested and post-processed without writing any data to the graph database:
+
+```bash
+# Preview Azure ingestion and see which resource types have no implemented specs
+cirro graph ingest --type az --file cirro_output.db --dry-run
+
+# Preview Tailscale ingestion
+cirro graph ingest --type ts --file cirro_ts_socket.json --dry-run
+```
+
+In dry-run mode, Cirro will:
+
+- Report each spec and its row count that **would** be processed
+- Skip all Neo4j writes (no ingestion or post-processing queries execute)
+- For Azure, list resource types in the input data that have no implemented spec
+
 ## Dashboard
 
 CirroDash can be located here: [https://github.com/bishopfox/cirrodash](https://github.com/bishopfox/cirrodash)

@@ -6,7 +6,10 @@ use serde_json;
 
 impl CirroIngestor {
     /// Process ingest
-    pub async fn process_cirro_tailscale_status_ingest(&self) -> Result<(), CirroError> {
+    pub async fn process_cirro_tailscale_status_ingest(
+        &self,
+        dry_run: bool,
+    ) -> Result<(), CirroError> {
         info!(
             "Starting Cirro Tailscale Status ingest on file: {:?}",
             self.file.as_path().file_name().unwrap()
@@ -29,12 +32,24 @@ impl CirroIngestor {
         for spec in &self.specs.cirro_tailscale_status_specs {
             // If spec has a label, create constraints and indexes
             if !spec.label.is_empty() {
-                self.create_constraints_and_indexes_by_spec(spec).await?;
+                if dry_run {
+                    debug!(
+                        "[dry-run] Would create constraints/indexes for label {}",
+                        spec.label
+                    );
+                } else {
+                    self.create_constraints_and_indexes_by_spec(spec).await?;
+                }
             } else {
                 debug!(
                     "Spec {} does not have a label defined, skipping constraint and index creation",
                     spec.name
                 );
+            }
+
+            if dry_run {
+                info!("[dry-run] Would process Tailscale spec: {}", spec.name);
+                continue;
             }
 
             let mut result = self
@@ -64,6 +79,11 @@ impl CirroIngestor {
             })?;
 
             info!("Processed {:>5} : {}", count, spec.name);
+        }
+
+        if dry_run {
+            info!("[dry-run] Skipping Tailscale ingestion transaction finalization");
+            return Ok(());
         }
 
         // Ensure all Tailscale ingestion transactions are committed

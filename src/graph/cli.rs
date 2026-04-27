@@ -48,6 +48,10 @@ pub enum GraphCommands {
         #[arg(long, action = clap::ArgAction::SetTrue)]
         post_process: bool,
 
+        /// Show what would be ingested and post-processed without executing queries
+        #[arg(long, action = clap::ArgAction::SetTrue)]
+        dry_run: bool,
+
         /// Enable debug logging
         #[arg(long, action = clap::ArgAction::SetTrue)]
         debug: bool,
@@ -100,6 +104,7 @@ pub async fn handle_graph_command(command: GraphCommands) -> Result<(), CirroErr
             db_name,
             labels,
             post_process,
+            dry_run,
             debug,
         } => {
             if let Err(e) = setup_logger(debug) {
@@ -142,7 +147,7 @@ pub async fn handle_graph_command(command: GraphCommands) -> Result<(), CirroErr
                 CirroIngestor::new(r#type, file, server, user, password, db_name, labels).await;
 
             // Run the ingestor
-            if let Err(e) = ingestor.run(post_process).await {
+            if let Err(e) = ingestor.run(post_process, dry_run).await {
                 return Err(CirroError::Unknown(e.to_string()));
             }
         }
