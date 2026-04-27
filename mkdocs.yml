@@ -149,6 +149,7 @@ nav:
           - analysis/arm-nodes/network/bastion-host.md
           - analysis/arm-nodes/network/dns-zone.md
           - analysis/arm-nodes/network/ipconfig.md
+          - analysis/arm-nodes/network/github-network-settings.md
           - analysis/arm-nodes/network/network-interface.md
           - analysis/arm-nodes/network/network-watcher.md
           - analysis/arm-nodes/network/nsg.md
@@ -267,6 +268,7 @@ nav:
         - analysis/edges/has-endpoint.md
         - analysis/edges/has-extension.md
         - analysis/edges/has-gallery-image.md
+        - analysis/edges/has-github-setting.md
         - analysis/edges/has-identity.md
         - analysis/edges/has-instance.md
         - analysis/edges/has-ip.md
