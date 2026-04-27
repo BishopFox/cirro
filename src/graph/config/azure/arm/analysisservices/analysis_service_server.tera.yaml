@@ -1,0 +1,82 @@
+name: "Analysis Service Server"
+label: "{{ LABELS.AnalysisServiceServer }}"
+table_name: "resources"
+resource_type: "microsoft.analysisservices/servers"
+properties:
+  - "/id"
+  - "/properties"
+index_properties:
+  - "{{ LABELS.AnalysisServiceFirewallRule }}:name+serverId"
+cypher: |
+    UNWIND $batch AS row
+    MERGE (s:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+    SET s:{{ LABELS.AnalysisServiceServer }}
+    SET s += {
+        managedMode: row.properties.managedMode,
+        serverFullName: row.properties.serverFullName,
+        serverMonitorMode: row.properties.serverMonitorMode,
+        state: row.properties.state,
+        administrators: row.properties.asAdministrators.members,
+        enablePowerBIService: row.properties.ipV4FirewallSettings.enablePowerBIService
+    }
+
+    // Members is a list of strings that refer to users, groups, or service principals in the format:
+    // Users use UPN
+    // Service principals use app:<appId>@<tenantId>
+    // Groups use obj:<objectId>@<tenantId>
+    CALL (s, row) {
+        UNWIND coalesce(row.properties.asAdministrators.members, []) AS admin
+        WITH s, admin WHERE admin IS NOT NULL
+
+        // Extract the identifier and tenantId from the member string
+        // It's either going to be a GUID or a domain
+        WITH s, admin,
+            split(admin, '@') AS parts,
+            CASE
+                WHEN admin STARTS WITH 'app:' THEN 'servicePrincipal'
+                WHEN admin STARTS WITH 'obj:' THEN 'obj'
+                ELSE 'user'
+            END AS adminType
+        WITH s, admin, parts, adminType
+        WHERE size(parts) = 2
+        WITH s, admin, parts[0] AS identifier, parts[1] AS tenantId, adminType
+        WHERE identifier IS NOT NULL AND tenantId IS NOT NULL
+
+        // If it's a service principal, match to appId
+        CALL (s, identifier, adminType) {
+            WITH s, identifier, adminType
+            WHERE adminType = 'servicePrincipal'
+            MERGE (sp:{{ LABELS.GraphServicePrincipal }} {appId: toLower(identifier)})
+            MERGE (sp)-[:{{ REL.IS_ADMIN }}]->(s)
+        }
+
+        // If it's a obj, match to id
+        CALL (s, identifier, adminType) {
+            WITH s, identifier, adminType
+            WHERE adminType = 'obj'
+            MERGE (g:{{ LABELS.GraphObject }} {id: toLower(identifier)})
+            MERGE (g)-[:{{ REL.IS_ADMIN }}]->(s)
+        }
+
+        // If it's a user, match to UPN
+        // Double checking that it has a "." for a loose check to a domain, since UPNs should be in an email format
+        CALL (s, identifier, adminType, tenantId) {
+            WITH s, identifier, adminType, tenantId
+            WHERE adminType = 'user' AND tenantId CONTAINS '.'
+            MERGE (u:{{ LABELS.GraphUser }} {userPrincipalName: toLower(identifier + '@' + tenantId)})
+            MERGE (u)-[:{{ REL.IS_ADMIN }}]->(s)
+        }
+    }
+
+    // Next is ipV4FirewallSettings, which is a list of objects with properties name, startIpAddress, and endIpAddress
+    // Names are unique to a server, but not globally, so we need a composite key of server id and rule name to create the firewall rule nodes
+    CALL (s, row) {
+        UNWIND coalesce(row.properties.ipV4FirewallSettings.firewallRules, []) AS rule
+        MERGE (f:{{ LABELS.AnalysisServiceFirewallRule }} {name: rule.firewallRuleName, serverId: s.id})
+        SET f += {
+            rangeStart: rule.rangeStart,
+            rangeEnd: rule.rangeEnd
+        }
+        MERGE (s)-[:{{ REL.HAS_RULE }}]->(f)
+    }
+    RETURN count(*) AS _

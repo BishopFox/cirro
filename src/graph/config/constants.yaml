@@ -194,6 +194,7 @@ LABELS:
   GraphAdministrativeUnit: "GraphAdministrativeUnit"
 
   # Specialized Azure node types. These are not ARM resources or Graph objects but are created from properties of those.
+  AnalysisServiceFirewallRule: "AnalysisServiceFirewallRule"
   BastionIPConfig: "BastionIPConfig"
   Certificate: "Certificate"
   ClientSecret: "ClientSecret"

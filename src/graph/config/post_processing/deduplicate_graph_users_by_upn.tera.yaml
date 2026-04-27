@@ -1,0 +1,29 @@
+name: "Deduplicate Graph Users by UPN"
+label: "PostProcessingDeduplicateGraphUsersByUPN"
+priority: 1000
+cypher: |
+  CALL apoc.periodic.iterate(
+    "
+    MATCH (n:{{ LABELS.GraphUser }})
+    WHERE n.userPrincipalName IS NOT NULL
+    WITH toLower(n.userPrincipalName) AS lid, collect(n) AS ns
+    WHERE size(ns) > 1
+    RETURN lid, ns
+    ",
+    "
+    WITH lid, ns
+    WITH
+        head(ns) AS keep,
+        tail(ns) AS dups,
+        lid
+    UNWIND dups AS d
+    CALL apoc.refactor.mergeNodes(
+        [keep, d],
+        {properties:'combine', mergeRels:true}
+    )
+    YIELD node
+    SET keep.userPrincipalName = lid
+    RETURN 1
+  ",
+  {batchSize: 1000, parallel: false}
+  )

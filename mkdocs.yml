@@ -76,6 +76,8 @@ nav:
         - analysis/graph-nodes/graph-eligible-role-assignment.md
       - ARM Nodes:
         - analysis/arm-nodes.md
+        - Analysis Services:
+          - analysis/arm-nodes/analysisservices/analysis-service-server.md
         - App:
           - analysis/arm-nodes/app/app-builder.md
           - analysis/arm-nodes/app/app-managed-environment.md
@@ -207,6 +209,7 @@ nav:
           - analysis/arm-nodes/web/static-website.md
       - Additional Nodes: 
         - analysis/additional-nodes.md
+        - analysis/additional-nodes/analysis-service-firewall-rule.md
         - analysis/additional-nodes/bastion-ip-config.md
         - analysis/additional-nodes/certificate.md
         - analysis/additional-nodes/client-secret.md
@@ -297,6 +300,7 @@ nav:
         - analysis/edges/has-version.md
         - analysis/edges/has-vmapp.md
         - analysis/edges/hosts.md
+        - analysis/edges/is-admin.md
         - analysis/edges/is-deployed.md
         - analysis/edges/is-rbac-eligible.md
         - analysis/edges/is-role-eligible.md

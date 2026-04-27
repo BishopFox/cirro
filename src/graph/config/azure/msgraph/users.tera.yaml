@@ -32,6 +32,8 @@ properties:
   - "/surname"
   - "/userPrincipalName"
   - "/userType"
+index_properties:
+  - "{{ LABELS.GraphUser }}:userPrincipalName"
 cypher: |
   UNWIND $batch as row
   CALL (row) {
