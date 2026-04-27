@@ -1,16 +1,16 @@
 name: "GitHub Network Settings"
-label: "{{ LABELS.GitHubNetworkSettings }}"
+label: "{{ LABELS.GithubNetworkSettings }}"
 table_name: "resources"
 resource_type: "github.network/networksettings"
 properties:
   - "/id"
   - "/properties"
 index_properties:
-  - "{{ LABELS.GitHubNetworkSettings }}:businessId"
+  - "{{ LABELS.GithubNetworkSettings }}:businessId"
 cypher: |
     UNWIND $batch AS row
     MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
-    SET obj:{{ LABELS.GitHubNetworkSettings }}
+    SET obj:{{ LABELS.GithubNetworkSettings }}
     SET obj += {
         businessId: row.properties.businessId
     }
