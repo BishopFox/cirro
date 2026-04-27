@@ -19,10 +19,10 @@ pub struct CirroAzureIngestSpec {
     /// Properties to extract from the resource JSON
     pub properties: Vec<String>,
 
-    /// Optional list of Label:property pairs to create uniqueness constraints on
+    /// Optional list of Label:property or Label:prop1+prop2 pairs to create uniqueness constraints on
     pub constraint_properties: Option<Vec<String>>,
 
-    /// Optional list of Label:property pairs to create additional indexed properties
+    /// Optional list of Label:property or Label:prop1+prop2 pairs to create additional indexed properties
     pub index_properties: Option<Vec<String>>,
 
     /// Map of column values from SQL column values to Cypher parameters
