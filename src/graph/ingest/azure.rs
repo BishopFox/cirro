@@ -2,7 +2,7 @@ use crate::errors::CirroError;
 use crate::graph::ingest::CREATE_CONSTRAINT_QUERY;
 use crate::graph::ingest::ingestor::CirroIngestor;
 use crate::graph::specs::CirroAzureIngestSpec;
-use log::{debug, info};
+use log::{debug, info, warn};
 use neo4rs::{BoltType, query};
 use serde_json::Value;
 use std::collections::{BTreeMap, HashSet};
@@ -227,34 +227,50 @@ async fn process_spec(
         );
     }
 
-    // Create additional constraints from constraint_properties (format: "Label:property")
+    // Create additional constraints from constraint_properties.
+    // Supports single-property entries (Label:property) and composite entries
+    // (Label:prop1+prop2).
     if let Some(constraint_props) = &spec.constraint_properties {
         for entry in constraint_props {
-            if let Some((label, property)) = entry.split_once(':') {
+            if let Some((label, properties)) = parse_label_properties(entry) {
                 if dry_run {
+                    let property_list = properties.join(", ");
                     debug!(
-                        "[dry-run] Would create constraint for label {} on {}",
-                        label, property
+                        "[dry-run] Would create constraint for label {} on ({})",
+                        label, property_list
                     );
                 } else {
-                    create_constraint(graph, label, property).await?;
+                    create_constraint_for_properties(graph, label, &properties).await?;
                 }
+            } else {
+                warn!(
+                    "Skipping invalid constraint_properties entry '{}' in spec '{}'",
+                    entry, spec.name
+                );
             }
         }
     }
 
-    // Create additional indexes from index_properties (format: "Label:property")
+    // Create additional indexes from index_properties.
+    // Supports single-property entries (Label:property) and composite entries
+    // (Label:prop1+prop2).
     if let Some(index_props) = &spec.index_properties {
         for entry in index_props {
-            if let Some((label, property)) = entry.split_once(':') {
+            if let Some((label, properties)) = parse_label_properties(entry) {
                 if dry_run {
+                    let property_list = properties.join(", ");
                     debug!(
-                        "[dry-run] Would create index for label {} on {}",
-                        label, property
+                        "[dry-run] Would create index for label {} on ({})",
+                        label, property_list
                     );
                 } else {
-                    create_index(graph, label, property).await?;
+                    create_index_for_properties(graph, label, &properties).await?;
                 }
+            } else {
+                warn!(
+                    "Skipping invalid index_properties entry '{}' in spec '{}'",
+                    entry, spec.name
+                );
             }
         }
     }
@@ -374,6 +390,100 @@ async fn create_default_constraints_and_indexes(graph: &neo4rs::Graph) -> Result
     for label in ["GraphApplication", "GraphServicePrincipal"] {
         create_index(graph, label, "appId").await?;
     }
+
+    Ok(())
+}
+
+fn parse_label_properties(entry: &str) -> Option<(&str, Vec<String>)> {
+    let (label, props_raw) = entry.split_once(':')?;
+    let label = label.trim();
+    if label.is_empty() {
+        return None;
+    }
+
+    let properties: Vec<String> = props_raw
+        .split('+')
+        .map(str::trim)
+        .filter(|p| !p.is_empty())
+        .map(ToString::to_string)
+        .collect();
+
+    if properties.is_empty() {
+        None
+    } else {
+        Some((label, properties))
+    }
+}
+
+async fn create_constraint_for_properties(
+    graph: &neo4rs::Graph,
+    label_name: &str,
+    properties: &[String],
+) -> Result<(), CirroError> {
+    if properties.len() == 1 {
+        return create_constraint(graph, label_name, &properties[0]).await;
+    }
+
+    let pattern = properties
+        .iter()
+        .map(|property| format!("n.{}", property))
+        .collect::<Vec<_>>()
+        .join(", ");
+
+    let constraint_query = format!(
+        "CREATE CONSTRAINT IF NOT EXISTS FOR (n:{}) REQUIRE ({}) IS UNIQUE",
+        label_name, pattern
+    );
+    debug!("Executing query: {}", constraint_query);
+    graph.run(query(&constraint_query)).await.map_err(|e| {
+        CirroError::DatabaseError(format!(
+            "Failed to create composite constraint for {}.({}): {}",
+            label_name,
+            properties.join(", "),
+            e
+        ))
+    })?;
+
+    Ok(())
+}
+
+async fn create_index_for_properties(
+    graph: &neo4rs::Graph,
+    label_name: &str,
+    properties: &[String],
+) -> Result<(), CirroError> {
+    if properties.len() == 1 {
+        return create_index(graph, label_name, &properties[0]).await;
+    }
+
+    let pattern = properties
+        .iter()
+        .map(|property| format!("n.{}", property))
+        .collect::<Vec<_>>()
+        .join(", ");
+    let query_name = format!(
+        "{}_{}_idx",
+        label_name,
+        properties
+            .iter()
+            .map(|property| property.replace('.', "_"))
+            .collect::<Vec<_>>()
+            .join("_")
+    );
+
+    let index_query = format!(
+        "CREATE INDEX {} IF NOT EXISTS FOR (n:{}) ON ({})",
+        query_name, label_name, pattern
+    );
+    debug!("Executing query: {}", index_query);
+    graph.run(query(&index_query)).await.map_err(|e| {
+        CirroError::DatabaseError(format!(
+            "Failed to create composite index for {}.({}): {}",
+            label_name,
+            properties.join(", "),
+            e
+        ))
+    })?;
 
     Ok(())
 }
