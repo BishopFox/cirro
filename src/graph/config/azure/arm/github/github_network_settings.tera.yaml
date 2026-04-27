@@ -1,0 +1,20 @@
+name: "GitHub Network Settings"
+label: "{{ LABELS.GitHubNetworkSettings }}"
+table_name: "resources"
+resource_type: "github.network/networksettings"
+properties:
+  - "/id"
+  - "/properties"
+index_properties:
+  - "{{ LABELS.GitHubNetworkSettings }}:businessId"
+cypher: |
+    UNWIND $batch AS row
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+    SET obj:{{ LABELS.GitHubNetworkSettings }}
+    SET obj += {
+        businessId: row.properties.businessId
+    }
+
+    MERGE (sub: {{ LABELS.ArmResource }} {id: toLower(row.properties.subnetId)})
+    MERGE (sub)-[:{{ REL.HAS_GITHUB_SETTING }}]->(obj)
+    RETURN count(*) AS _
