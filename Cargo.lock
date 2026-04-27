@@ -360,6 +360,7 @@ dependencies = [
  "once_cell",
  "pem",
  "rayon",
+ "regex",
  "reqwest",
  "rsa",
  "rusqlite",

@@ -1,4 +1,5 @@
 use crate::collect::azure;
+use crate::collect::azure::cli_utils::{validate_tenant_id, validate_uuid};
 use crate::collect::logger::setup_logger;
 use crate::errors::CirroError;
 
@@ -50,7 +51,7 @@ pub struct CommonAuthArgs {
     pub new_state: bool,
 
     /// Filter ARM collection to specific subscription IDs (comma-separated or repeated)
-    #[arg(long = "subscription-ids", value_name = "ID", value_delimiter = ',', num_args = 1..)]
+    #[arg(long = "subscription-ids", value_name = "ID", value_delimiter = ',', num_args = 1.., value_parser = validate_uuid)]
     pub subscription_ids: Option<Vec<String>>,
 
     /// Limit subscription concurrency to avoid throttling (default: 5)
@@ -77,7 +78,7 @@ pub struct AccessTokenAuthArgs {
     pub new_state: bool,
 
     /// Filter ARM collection to specific subscription IDs (comma-separated or repeated)
-    #[arg(long = "subscription-ids", value_name = "ID", value_delimiter = ',', num_args = 1..)]
+    #[arg(long = "subscription-ids", value_name = "ID", value_delimiter = ',', num_args = 1.., value_parser = validate_uuid)]
     pub subscription_ids: Option<Vec<String>>,
 
     /// Limit subscription concurrency to avoid throttling (default: 5)
@@ -205,11 +206,11 @@ pub enum AzureCommands {
     /// Authenticate using Azure CLI
     Azcli {
         /// Tenant ID
-        #[arg(short, long)]
+        #[arg(short, long, value_parser = validate_tenant_id)]
         tenant_id: Option<String>,
 
         /// Subscription ID for az login authentication context
-        #[arg(short = 's', long = "login-subscription-id")]
+        #[arg(short = 's', long = "login-subscription-id", value_parser = validate_uuid)]
         login_subscription_id: Option<String>,
 
         #[clap(flatten)]
@@ -221,7 +222,7 @@ pub enum AzureCommands {
     /// Authenticate using a client secret
     ClientSecret {
         /// Client ID
-        #[arg(short, long)]
+        #[arg(short, long, value_parser = validate_uuid)]
         client_id: String,
 
         /// Client secret
@@ -229,7 +230,7 @@ pub enum AzureCommands {
         client_secret: String,
 
         /// Tenant ID
-        #[arg(short, long)]
+        #[arg(short, long, value_parser = validate_tenant_id)]
         tenant_id: String,
 
         #[clap(flatten)]
@@ -241,7 +242,7 @@ pub enum AzureCommands {
     /// Authenticate using a client certificate
     ClientCert {
         /// Client ID
-        #[arg(short, long)]
+        #[arg(short, long, value_parser = validate_uuid)]
         client_id: String,
 
         /// Path to the client certificate file (PEM format)
@@ -249,7 +250,7 @@ pub enum AzureCommands {
         client_certificate: PathBuf,
 
         /// Tenant ID
-        #[arg(short, long)]
+        #[arg(short, long, value_parser = validate_tenant_id)]
         tenant_id: String,
 
         #[clap(flatten)]
