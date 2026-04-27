@@ -5,19 +5,23 @@ use crate::graph::specs::CirroAzureIngestSpec;
 use log::{debug, info};
 use neo4rs::{BoltType, query};
 use serde_json::Value;
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashSet};
 use std::path::PathBuf;
 
 impl CirroIngestor {
     /// Process ingest
-    pub async fn process_cirro_azure_ingest(&self) -> Result<(), CirroError> {
+    pub async fn process_cirro_azure_ingest(&self, dry_run: bool) -> Result<(), CirroError> {
         info!(
             "Starting Cirro Azure ingest on file: {:?}",
             self.file.as_path().file_name().unwrap()
         );
 
         // Create constraints for base labels upfront
-        create_default_constraints_and_indexes(&self.graph).await?;
+        if dry_run {
+            info!("[dry-run] Would create default constraints and indexes");
+        } else {
+            create_default_constraints_and_indexes(&self.graph).await?;
+        }
 
         // Group spec indices by priority for concurrent execution
         let mut priority_groups: BTreeMap<u32, Vec<usize>> = BTreeMap::new();
@@ -38,8 +42,13 @@ impl CirroIngestor {
 
             for &i in indices {
                 let spec = &self.specs.cirro_azure_specs[i];
-                process_spec(&self.file, &self.graph, spec).await?;
+                process_spec(&self.file, &self.graph, spec, dry_run).await?;
             }
+        }
+
+        if dry_run {
+            info!("[dry-run] Skipping Azure ingestion transaction finalization");
+            return Ok(());
         }
 
         // Ensure all Azure ingestion transactions are committed
@@ -68,6 +77,68 @@ impl CirroIngestor {
 
         Ok(())
     }
+
+    pub async fn show_unimplemented_azure_resource_types(&self) -> Result<(), CirroError> {
+        let all_resource_types: HashSet<String> = self
+            .specs
+            .cirro_azure_specs
+            .iter()
+            .filter_map(|spec| spec.resource_type.clone())
+            .map(|resource_type| resource_type.trim_start_matches('!').to_lowercase())
+            .collect();
+
+        let mut stmt = self
+            .sql_conn
+            .as_ref()
+            .ok_or_else(|| {
+                CirroError::DatabaseError(
+                    "SQLite connection unavailable for dry-run resource type stats".to_string(),
+                )
+            })?
+            .prepare("SELECT DISTINCT lower(resource_type) FROM resources")
+            .map_err(|e| {
+                CirroError::DatabaseError(format!(
+                    "Failed to prepare SQL statement for fetching resource types: {}",
+                    e
+                ))
+            })?;
+
+        let sql_resource_types_iter =
+            stmt.query_map([], |row| row.get::<_, String>(0))
+                .map_err(|e| {
+                    CirroError::DatabaseError(format!(
+                        "Failed to execute SQL query for fetching resource types: {}",
+                        e
+                    ))
+                })?;
+
+        let sql_resource_types: HashSet<String> =
+            sql_resource_types_iter.filter_map(|res| res.ok()).collect();
+
+        let mut unimplemented_resource_types: Vec<String> = sql_resource_types
+            .difference(&all_resource_types)
+            .cloned()
+            .collect();
+        unimplemented_resource_types.sort();
+
+        info!(
+            "[dry-run] Azure resource type coverage: {} in input, {} implemented by specs, {} missing",
+            sql_resource_types.len(),
+            all_resource_types.len(),
+            unimplemented_resource_types.len()
+        );
+
+        if unimplemented_resource_types.is_empty() {
+            info!("[dry-run] All input resource types are covered by implemented specs");
+        } else {
+            info!(
+                "[dry-run] Resource types without implemented specs: {:?}",
+                unimplemented_resource_types
+            );
+        }
+
+        Ok(())
+    }
 }
 
 /// Process a single spec with its own SQLite connection and pipelined Neo4j writes
@@ -75,6 +146,7 @@ async fn process_spec(
     sql_file: &PathBuf,
     graph: &neo4rs::Graph,
     spec: &CirroAzureIngestSpec,
+    dry_run: bool,
 ) -> Result<(), CirroError> {
     let table_name = &spec.table_name;
     let resource_type = &spec.resource_type;
@@ -139,18 +211,34 @@ async fn process_spec(
         debug!("No {} found", spec.name);
         return Ok(());
     }
-    info!("Processing {:>5} {}", count, spec.name);
+    if dry_run {
+        info!("[dry-run] Would process {:>5} {}", count, spec.name);
+    } else {
+        info!("Processing {:>5} {}", count, spec.name);
+    }
 
     // Create constraints for this spec's label only when data exists
-    if !spec.label.is_empty() {
+    if !spec.label.is_empty() && !dry_run {
         create_constraint(graph, &spec.label, "id").await?;
+    } else if !spec.label.is_empty() {
+        debug!(
+            "[dry-run] Would create constraint for label {} on id",
+            spec.label
+        );
     }
 
     // Create additional constraints from constraint_properties (format: "Label:property")
     if let Some(constraint_props) = &spec.constraint_properties {
         for entry in constraint_props {
             if let Some((label, property)) = entry.split_once(':') {
-                create_constraint(graph, label, property).await?;
+                if dry_run {
+                    debug!(
+                        "[dry-run] Would create constraint for label {} on {}",
+                        label, property
+                    );
+                } else {
+                    create_constraint(graph, label, property).await?;
+                }
             }
         }
     }
@@ -159,9 +247,24 @@ async fn process_spec(
     if let Some(index_props) = &spec.index_properties {
         for entry in index_props {
             if let Some((label, property)) = entry.split_once(':') {
-                create_index(graph, label, property).await?;
+                if dry_run {
+                    debug!(
+                        "[dry-run] Would create index for label {} on {}",
+                        label, property
+                    );
+                } else {
+                    create_index(graph, label, property).await?;
+                }
             }
         }
+    }
+
+    if dry_run {
+        debug!(
+            "[dry-run] Would execute ingest query for spec: {}",
+            spec.name
+        );
+        return Ok(());
     }
 
     let limit = 2500;

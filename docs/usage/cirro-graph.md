@@ -24,6 +24,7 @@ cirro graph ingest --type <platform> --file <data-file> [options]
 - `--user`, `-u`: Database username (default: `neo4j`)
 - `--password`, `-p`: Database password (default: `password`)
 - `--db-name`, `-d`: Database name (default: `neo4j`)
+- `--dry-run`: Preview what would be ingested without writing any data to the graph database
 - `--debug`: Enable debug logging
 
 ### Supported Database Schemes
@@ -58,7 +59,26 @@ cirro graph ingest \
   --type az \
   --file cirro_output.db \
   --server bolt+s://secure-server:7687
+
+# Dry-run: preview Azure ingestion and see unimplemented resource types
+cirro graph ingest --type az --file cirro_output.db --dry-run
+
+# Dry-run: preview Tailscale ingestion
+cirro graph ingest --type ts --file cirro_ts_socket.json --dry-run
 ```
+
+### Dry-Run Mode
+
+The `--dry-run` flag lets you preview an ingestion without writing any data to the graph database.
+This is useful for validating a data file or auditing spec coverage before a full ingest.
+
+When `--dry-run` is specified, Cirro will:
+
+- Log each spec and the number of rows that **would** be processed
+- Skip all Neo4j writes (no ingest or post-processing queries are executed)
+- Skip transaction finalization
+- Print the list of post-processing specs that would run, in priority order
+- **Azure only**: compare the resource types present in the input data against all implemented specs and report any resource types that have no spec (i.e., would be silently skipped during a real ingest)
 
 !!! warning "Security Notice"
 
