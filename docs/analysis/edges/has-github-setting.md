@@ -6,7 +6,7 @@ Represents an association between a subnet resource and a GitHub network setting
 
 This relationship connects subnet resources to their GitHub network settings:
 
-- **ArmResource** → `HAS_GITHUB_SETTING` → **GitHubNetworkSettings** - Subnet resource linked to a GitHub network setting
+- **ArmResource** → `HAS_GITHUB_SETTING` → **GithubNetworkSettings** - Subnet resource linked to a GitHub network setting
 
 ## Properties
 
@@ -16,6 +16,6 @@ No additional properties on the relationship.
 
 ```cypher
 // Find subnet resources with GitHub network settings
-MATCH (sub:ArmResource)-[:HAS_GITHUB_SETTING]->(setting:GitHubNetworkSettings)
+MATCH (sub:ArmResource)-[:HAS_GITHUB_SETTING]->(setting:GithubNetworkSettings)
 RETURN sub.id, setting.businessId
 ```

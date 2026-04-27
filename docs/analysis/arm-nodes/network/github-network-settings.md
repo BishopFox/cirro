@@ -2,7 +2,7 @@
 
 Represents Azure GitHub network settings resources used to associate GitHub connectivity settings with a subnet.
 
-**Labels:** `:ArmResource:GitHubNetworkSettings`
+**Labels:** `:ArmResource:GithubNetworkSettings`
 
 **Properties:**
 
@@ -13,12 +13,12 @@ Represents Azure GitHub network settings resources used to associate GitHub conn
 
 ### Incoming
 
-- **ArmResource** → `HAS_GITHUB_SETTING` → **GitHubNetworkSettings** - Subnet resource associated with this GitHub network setting
+- **ArmResource** → `HAS_GITHUB_SETTING` → **GithubNetworkSettings** - Subnet resource associated with this GitHub network setting
 
 ## Examples
 
 ```cypher
 // Find GitHub network settings and their linked subnet resources
-MATCH (sub:ArmResource)-[:HAS_GITHUB_SETTING]->(setting:GitHubNetworkSettings)
+MATCH (sub:ArmResource)-[:HAS_GITHUB_SETTING]->(setting:GithubNetworkSettings)
 RETURN sub.id, setting.businessId
 ```
