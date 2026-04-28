@@ -1,0 +1,28 @@
+name: "Key Vault Managed HSMs"
+label: "{{ LABELS.ManagedHSM }}"
+table_name: "resources"
+resource_type: "microsoft.keyvault/managedhsms"
+properties:
+  - "/id"
+  - "/properties"
+index_properties:
+  - "{{ LABELS.ManagedHSM }}:hsmUri"
+cypher: |
+  UNWIND $batch AS row
+  MERGE (obj:{{ LABELS.ManagedHSM }} {id: toLower(row.id)})
+  SET obj += {
+      enablePurgeProtection: row.properties.enablePurgeProtection,
+      enableSoftDelete: row.properties.enableSoftDelete,
+      hsmUri: row.properties.hsmUri,
+      publicNetworkAccess: row.properties.publicNetworkAccess,
+      activationStatus: row.properties.securityDomainProperties.activationStatus,
+      activationStatusMessage: row.properties.securityDomainProperties.activationStatusMessage,
+      softDeleteRetentionInDays: row.properties.softDeleteRetentionInDays,
+      statusMessage: row.properties.statusMessage
+  }
+
+  CALL (obj, row) {
+    UNWIND coalesce(row.properties.initialAdminObjectIds, []) AS adminId
+    MERGE (go:{{ LABELS.GraphObject }} {id: toLower(adminId)})
+    MERGE (go)-[:{{ REL.IS_ADMIN }}]->(obj)
+  }

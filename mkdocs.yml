@@ -147,6 +147,7 @@ nav:
           - analysis/arm-nodes/insights/activity-log-alert.md
         - Key Vault:
           - analysis/arm-nodes/keyvault/keyvault.md
+          - analysis/arm-nodes/keyvault/managed-hsm.md
         - Network:
           - analysis/arm-nodes/network/bastion-host.md
           - analysis/arm-nodes/network/dns-zone.md
