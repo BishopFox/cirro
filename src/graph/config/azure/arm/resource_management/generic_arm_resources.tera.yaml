@@ -48,7 +48,7 @@ cypher: |
     WITH obj, row
     CALL {
         WITH obj, row
-        WITH obj, row WHERE row.identity IS NOT NULL AND toLower(row.identity.type) = 'systemassigned' AND row.identity.principalId IS NOT NULL
+        WITH obj, row WHERE row.identity IS NOT NULL AND toLower(row.identity.type) CONTAINS 'systemassigned' AND row.identity.principalId IS NOT NULL
             MERGE (i:{{ LABELS.GraphObject }} {id: toLower(row.identity.principalId)})
             SET i:{{ LABELS.GraphServicePrincipal }}
             MERGE (obj)-[:{{ REL.HAS_IDENTITY }}]->(i)
@@ -58,7 +58,7 @@ cypher: |
     WITH obj, row
     CALL {
         WITH obj, row
-        WITH obj, row WHERE row.identity IS NOT NULL AND toLower(row.identity.type) = 'userassigned'
+        WITH obj, row WHERE row.identity IS NOT NULL AND toLower(row.identity.type) CONTAINS 'userassigned'
             UNWIND keys(row.identity.userAssignedIdentities) AS subKey
             WITH obj, subKey, row.identity.userAssignedIdentities[subKey] AS ident
                 MERGE (i:{{ LABELS.ArmResource }} {id: toLower(subKey)})
