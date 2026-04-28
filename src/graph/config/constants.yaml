@@ -137,6 +137,7 @@ LABELS:
   KeyVaultCertificate: "KeyVaultCertificate"
   KeyVaultCertificateValue: "KeyVaultCertificateValue"
   ManagementGroup: "ManagementGroup"
+  ManagedHSM: "ManagedHSM"
   MLWorkspace: "MLWorkspace"
   NetAppAccount: "NetAppAccount"
   NetAppCapacityPool: "NetAppCapacityPool"
