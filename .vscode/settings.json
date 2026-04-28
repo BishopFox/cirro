@@ -13,5 +13,6 @@
   ],
   "python-envs.defaultEnvManager": "ms-python.python:system",
   "python-envs.pythonProjects": [],
-  "rust-analyzer.cargo.target": "x86_64-pc-windows-gnu"
+  "rust-analyzer.cargo.target": "x86_64-pc-windows-gnu",
+  "git.addAICoAuthor": "off"
 }
