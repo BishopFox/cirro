@@ -1,13 +1,12 @@
 name: Documentation
 on:
-  pull_request:
+  push:
     paths:
       - "docs/**"
       - "zensical.toml"
       - ".github/workflows/docs.yml"
     branches:
       - main
-    types: [closed]
 permissions:
   contents: read
   pages: write
@@ -18,7 +17,6 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
-    if: github.event.pull_request.merged == true
     steps:
       - uses: actions/configure-pages@v6
       - uses: actions/checkout@v6
