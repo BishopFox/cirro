@@ -1,0 +1,693 @@
+# ============================================================================
+#
+# The configuration produced by default is meant to highlight the features
+# that Zensical provides and to serve as a starting point for your own
+# projects.
+#
+# ============================================================================
+
+[project]
+repo_url = "https://github.com/bishopfox/cirro"
+
+# The site_name is shown in the page header and the browser window title
+#
+# Read more: https://zensical.org/docs/setup/basics/#site_name
+site_name = "Cirro Documentation"
+
+# The site_description is included in the HTML head and should contain a
+# meaningful description of the site content for use by search engines.
+#
+# Read more: https://zensical.org/docs/setup/basics/#site_description
+site_description = "Documentation for Cirro, the open-source graphing tool."
+
+# The site_author attribute. This is used in the HTML head element.
+#
+# Read more: https://zensical.org/docs/setup/basics/#site_author
+site_author = "Bishop Fox"
+
+# The site_url is the canonical URL for your site. When building online
+# documentation you should set this.
+# Read more: https://zensical.org/docs/setup/basics/#site_url
+#site_url = "https://www.example.com/"
+
+# The copyright notice appears in the page footer and can contain an HTML
+# fragment.
+#
+# Read more: https://zensical.org/docs/setup/basics/#copyright
+copyright = """
+Copyright &copy; 2026 Bishop Fox. All rights reserved.
+"""
+
+# Zensical supports both implicit navigation and explicitly defined navigation.
+# If you decide not to define a navigation here then Zensical will simply
+# derive the navigation structure from the directory structure of your
+# "docs_dir". The definition below demonstrates how a navigation structure
+# can be defined using TOML syntax.
+#
+# Read more: https://zensical.org/docs/setup/navigation/
+nav = [
+  { "Home" = "index.md" },
+  { "Architecture" = "architecture.md" },
+  { "Usage" = [
+    { "Quick Start" = "usage/quick-start.md" },
+    { "Collection" = "usage/cirro.md" },
+    { "Graph Operations" = "usage/cirro-graph.md" },
+  ] },
+  { "Analysis" = [
+    { "Overview" = "analysis/cirro-graph-analysis.md" },
+  ] },
+  { "Nodes and Edges" = [
+    { "MS Graph Nodes" = [
+      "analysis/graph-nodes.md",
+      "analysis/graph-nodes/graph-org.md",
+      "analysis/graph-nodes/graph-policy.md",
+      "analysis/graph-nodes/graph-user.md",
+      "analysis/graph-nodes/graph-group.md",
+      "analysis/graph-nodes/graph-application.md",
+      "analysis/graph-nodes/graph-service-principal.md",
+      "analysis/graph-nodes/graph-device.md",
+      "analysis/graph-nodes/graph-role.md",
+      "analysis/graph-nodes/graph-administrative-unit.md",
+      "analysis/graph-nodes/graph-named-location.md",
+      "analysis/graph-nodes/graph-conditional-access-policy.md",
+    ] },
+    { "ARM Nodes" = [
+      "analysis/arm-nodes.md",
+      { "Analysis Services" = [
+        "analysis/arm-nodes/analysisservices/analysis-service-server.md",
+      ] },
+      { "App" = [
+        "analysis/arm-nodes/app/app-builder.md",
+        "analysis/arm-nodes/app/app-managed-environment.md",
+        "analysis/arm-nodes/app/container-app.md",
+      ] },
+      { "Automation" = [
+        "analysis/arm-nodes/automation/automation-account.md",
+        "analysis/arm-nodes/automation/automation-runbook.md",
+      ] },
+      { "Azure Arc" = [
+        "analysis/arm-nodes/azurearc/arc-sql-server.md",
+        "analysis/arm-nodes/azurearc/arc-sql-database.md",
+      ] },
+      { "Azure Active Directory" = [
+        "analysis/arm-nodes/azureactivedirectory/b2c-directory.md",
+      ] },
+      { "Azure Core" = [
+        "analysis/arm-nodes/azure-core/tenant.md",
+        "analysis/arm-nodes/azure-core/subscription.md",
+        "analysis/arm-nodes/azure-core/resource-group.md",
+        "analysis/arm-nodes/azure-core/management-group.md",
+      ] },
+      { "CDN" = [
+        "analysis/arm-nodes/cdn/cdn-profile.md",
+        "analysis/arm-nodes/cdn/afd-endpoint.md",
+      ] },
+      { "Cognitive Services" = [
+        "analysis/arm-nodes/cognitiveservices/cognitive-services-account.md",
+      ] },
+      { "Communication" = [
+        "analysis/arm-nodes/communication/communication-services.md",
+        "analysis/arm-nodes/communication/email-service.md",
+        "analysis/arm-nodes/communication/email-service-domain.md",
+      ] },
+      { "Compute" = [
+        "analysis/arm-nodes/compute/virtual-machine.md",
+        "analysis/arm-nodes/compute/virtual-machine-scale-set.md",
+        "analysis/arm-nodes/compute/gallery.md",
+        "analysis/arm-nodes/compute/gallery-app.md",
+        "analysis/arm-nodes/compute/gallery-app-version.md",
+        "analysis/arm-nodes/compute/gallery-image.md",
+        "analysis/arm-nodes/compute/gallery-image-version.md",
+        "analysis/arm-nodes/compute/vm-application.md",
+        "analysis/arm-nodes/compute/disk.md",
+        "analysis/arm-nodes/compute/disk-encryption-set.md",
+        "analysis/arm-nodes/compute/snapshot.md",
+        "analysis/arm-nodes/compute/availability-set.md",
+        "analysis/arm-nodes/compute/restore-point.md",
+        "analysis/arm-nodes/compute/restore-point-collection.md",
+        "analysis/arm-nodes/compute/ssh-public-key.md",
+        "analysis/arm-nodes/compute/vm-extension.md",
+        "analysis/arm-nodes/compute/compute-image.md",
+        "analysis/arm-nodes/compute/vm-run-command.md",
+      ] },
+      { "Container" = [
+        "analysis/arm-nodes/container/container-registry.md",
+        "analysis/arm-nodes/container/container-group.md",
+      ] },
+      { "Fabric" = [
+        "analysis/arm-nodes/fabric/fabric-capacity.md",
+      ] },
+      { "Dashboard" = [
+        "analysis/arm-nodes/dashboard/grafana-dashboard.md",
+      ] },
+      { "Data Factory" = [
+        "analysis/arm-nodes/datafactory/data-factory.md",
+      ] },
+      { "Event Grid" = [
+        "analysis/arm-nodes/eventgrid/event-grid-topic.md",
+        "analysis/arm-nodes/eventgrid/event-grid-system-topic.md",
+      ] },
+      { "Event Hub" = [
+        "analysis/arm-nodes/eventhub/eventhub-namespace.md",
+      ] },
+      { "Hybrid Compute" = [
+        "analysis/arm-nodes/hybridcompute/hybrid-machine.md",
+        "analysis/arm-nodes/hybridcompute/hybrid-ip-address.md",
+        "analysis/arm-nodes/hybridcompute/hybrid-extension.md",
+      ] },
+      { "Identity" = [
+        "analysis/arm-nodes/identity/user-assigned-identity.md",
+      ] },
+      { "Insights" = [
+        "analysis/arm-nodes/insights/activity-log-alert.md",
+      ] },
+      { "Key Vault" = [
+        "analysis/arm-nodes/keyvault/keyvault.md",
+        "analysis/arm-nodes/keyvault/managed-hsm.md",
+      ] },
+      { "Network" = [
+        "analysis/arm-nodes/network/bastion-host.md",
+        "analysis/arm-nodes/network/dns-zone.md",
+        "analysis/arm-nodes/network/ipconfig.md",
+        "analysis/arm-nodes/network/github-network-settings.md",
+        "analysis/arm-nodes/network/network-interface.md",
+        "analysis/arm-nodes/network/network-watcher.md",
+        "analysis/arm-nodes/network/nsg.md",
+        "analysis/arm-nodes/network/nsg-rule.md",
+        "analysis/arm-nodes/network/expressroute-circuit.md",
+        "analysis/arm-nodes/network/private-dns-zone.md",
+        "analysis/arm-nodes/network/private-endpoint.md",
+        "analysis/arm-nodes/network/public-ip-address.md",
+        "analysis/arm-nodes/network/route-table.md",
+        "analysis/arm-nodes/network/subnet.md",
+        "analysis/arm-nodes/network/virtual-network.md",
+      ] },
+      { "NetApp" = [
+        "analysis/arm-nodes/netapp/netapp-account.md",
+        "analysis/arm-nodes/netapp/netapp-capacity-pool.md",
+        "analysis/arm-nodes/netapp/netapp-volume.md",
+        "analysis/arm-nodes/netapp/netapp-snapshot-policy.md",
+      ] },
+      { "Recovery Services" = [
+        "analysis/arm-nodes/recoveryservices/recovery-vault.md",
+      ] },
+      { "SQL" = [
+        "analysis/arm-nodes/sql/sql-server.md",
+        "analysis/arm-nodes/sql/sql-database.md",
+        "analysis/arm-nodes/sql/sql-virtual-machine.md",
+      ] },
+      { "SaaS" = [
+        "analysis/arm-nodes/saas/saas-resource.md",
+      ] },
+      { "Storage" = [
+        "analysis/arm-nodes/storage/storage-account.md",
+        "analysis/arm-nodes/storage/classic-storage-account.md",
+      ] },
+      { "Synapse" = [
+        "analysis/arm-nodes/synapse/synapse-workspace.md",
+      ] },
+      { "Visual Studio" = [
+        "analysis/arm-nodes/visualstudio/visualstudio-account.md",
+      ] },
+      { "API Management" = [
+        "analysis/arm-nodes/apimanagement/apim-service.md",
+      ] },
+      { "App Configuration" = [
+        "analysis/arm-nodes/appconfiguration/appconfig-store.md",
+      ] },
+      { "Cache" = [
+        "analysis/arm-nodes/cache/redis-cache.md",
+      ] },
+      { "CosmosDB" = [
+        "analysis/arm-nodes/documentdb/cosmosdb-account.md",
+      ] },
+      { "Machine Learning" = [
+        "analysis/arm-nodes/machinelearning/ml-workspace.md",
+      ] },
+      { "Palo Alto" = [
+        "analysis/arm-nodes/paloalto/pan-cloudngfw-firewall.md",
+        "analysis/arm-nodes/paloalto/pan-cloudngfw-localrulestack.md",
+      ] },
+      { "Purview" = [
+        "analysis/arm-nodes/purview/purview-account.md",
+      ] },
+      { "Service Bus" = [
+        "analysis/arm-nodes/servicebus/servicebus-namespace.md",
+      ] },
+      { "SignalR" = [
+        "analysis/arm-nodes/signalr/signalr.md",
+      ] },
+      { "Web" = [
+        "analysis/arm-nodes/web/server-farm.md",
+        "analysis/arm-nodes/web/web-site.md",
+        "analysis/arm-nodes/web/web-certificate.md",
+        "analysis/arm-nodes/web/static-website.md",
+      ] },
+    ] },
+    { "Additional Nodes" = [
+      "analysis/additional-nodes.md",
+      "analysis/additional-nodes/analysis-service-firewall-rule.md",
+      "analysis/additional-nodes/bastion-ip-config.md",
+      "analysis/additional-nodes/certificate.md",
+      "analysis/additional-nodes/client-secret.md",
+      "analysis/additional-nodes/container.md",
+      "analysis/additional-nodes/container-image.md",
+      "analysis/additional-nodes/env-var.md",
+      "analysis/additional-nodes/custom-dns-config.md",
+      "analysis/additional-nodes/expressroute-circuit-peering.md",
+      "analysis/additional-nodes/federated-identity-credential.md",
+      "analysis/additional-nodes/graph-app-role.md",
+      "analysis/additional-nodes/hybrid-extension.md",
+      "analysis/additional-nodes/hybrid-ip-address.md",
+      "analysis/additional-nodes/ip-config.md",
+      "analysis/additional-nodes/key-vault-certificate.md",
+      "analysis/additional-nodes/key-vault-certificate-value.md",
+      "analysis/additional-nodes/key-vault-secret.md",
+      "analysis/additional-nodes/key-vault-secret-value.md",
+      "analysis/additional-nodes/netapp-account-ad-domain.md",
+      "analysis/additional-nodes/netapp-volume-mount.md",
+      "analysis/additional-nodes/network-gateway.md",
+      "analysis/additional-nodes/network-peering.md",
+      "analysis/additional-nodes/network-route.md",
+      "analysis/additional-nodes/nsg-rule.md",
+      "analysis/additional-nodes/private-endpoint-connection.md",
+      "analysis/additional-nodes/private-link-service-connection.md",
+      "analysis/additional-nodes/registry-credential.md",
+      "analysis/additional-nodes/runbook-parameter.md",
+      "analysis/additional-nodes/service-principal-endpoint.md",
+      "analysis/additional-nodes/storage-account-key.md",
+      "analysis/additional-nodes/storage-account-dfs.md",
+      "analysis/additional-nodes/subnet.md",
+      "analysis/additional-nodes/verified-domain.md",
+      "analysis/additional-nodes/vm-extension.md",
+      "analysis/additional-nodes/vm-run-command.md",
+      "analysis/additional-nodes/vm-run-command-parameter.md",
+    ] },
+    { "Tailscale Nodes" = [
+      "analysis/tailscale-nodes.md",
+      "analysis/tailscale-nodes/ts-user.md",
+      "analysis/tailscale-nodes/ts-device.md",
+      "analysis/tailscale-nodes/ts-tailnet.md",
+    ] },
+    { "Edges" = [
+      "analysis/edges/assigned-approle.md",
+      "analysis/edges/associated-with.md",
+      "analysis/edges/authenticates.md",
+      "analysis/edges/can-access-registry.md",
+      "analysis/edges/contains.md",
+      "analysis/edges/contains-image.md",
+      "analysis/edges/delegated-to-client.md",
+      "analysis/edges/encrypted-by.md",
+      "analysis/edges/has-alert.md",
+      "analysis/edges/has-application.md",
+      "analysis/edges/has-approle.md",
+      "analysis/edges/has-config.md",
+      "analysis/edges/has-container.md",
+      "analysis/edges/has-db.md",
+      "analysis/edges/has-dfs-filesystem.md",
+      "analysis/edges/has-dns-config.md",
+      "analysis/edges/has-envvar.md",
+      "analysis/edges/has-endpoint.md",
+      "analysis/edges/has-extension.md",
+      "analysis/edges/has-gallery-image.md",
+      "analysis/edges/has-github-setting.md",
+      "analysis/edges/has-identity.md",
+      "analysis/edges/has-instance.md",
+      "analysis/edges/has-ip.md",
+      "analysis/edges/has-linked-domain.md",
+      "analysis/edges/has-nic.md",
+      "analysis/edges/has-nsg.md",
+      "analysis/edges/has-oauth-grant.md",
+      "analysis/edges/has-parameter.md",
+      "analysis/edges/has-peering.md",
+      "analysis/edges/has-policy.md",
+      "analysis/edges/has-private-endpoint.md",
+      "analysis/edges/has-restorepoints.md",
+      "analysis/edges/has-role.md",
+      "analysis/edges/has-rulestack.md",
+      "analysis/edges/has-route.md",
+      "analysis/edges/has-route-table.md",
+      "analysis/edges/has-rule.md",
+      "analysis/edges/has-run-command.md",
+      "analysis/edges/has-runbook.md",
+      "analysis/edges/has-scoped-role.md",
+      "analysis/edges/has-secret.md",
+      "analysis/edges/has-snapshot.md",
+      "analysis/edges/has-source.md",
+      "analysis/edges/has-sql-vm.md",
+      "analysis/edges/has-user-grant.md",
+      "analysis/edges/has-version.md",
+      "analysis/edges/has-vmapp.md",
+      "analysis/edges/hosts.md",
+      "analysis/edges/is-admin.md",
+      "analysis/edges/is-deployed.md",
+      "analysis/edges/is-rbac-eligible.md",
+      "analysis/edges/is-role-eligible.md",
+      "analysis/edges/manages.md",
+      "analysis/edges/member-of.md",
+      "analysis/edges/mounts.md",
+      "analysis/edges/owns.md",
+      "analysis/edges/deploys.md",
+      "analysis/edges/peers-with.md",
+      "analysis/edges/references-package.md",
+      "analysis/edges/registered-owner.md",
+      "analysis/edges/registered-user.md",
+      "analysis/edges/represented-by.md",
+      "analysis/edges/same-user.md",
+      "analysis/edges/used-by.md",
+      "analysis/edges/uses-key-vault.md",
+      "analysis/edges/uses-storage.md",
+      "analysis/edges/uses-storage-dfs.md",
+      "analysis/edges/verified-domain.md",
+    ] },
+  ] },
+  { "Dashboard" = "analysis/dashboard.md" },
+  { "Post-Processing" = [
+    "analysis/post-processing.md",
+    "analysis/post-processing/normalize-ids.md",
+    "analysis/post-processing/deduplicate-nodes.md",
+    "analysis/post-processing/deduplicate-relationships.md",
+    "analysis/post-processing/deduplicate-container-registry.md",
+    "analysis/post-processing/deduplicate-keyvault-by-uri.md",
+    "analysis/post-processing/deduplicate-graph-applications.md",
+    "analysis/post-processing/deduplicate-graph-roles.md",
+    "analysis/post-processing/deduplicate-service-principals.md",
+    "analysis/post-processing/deduplicate-storage.md",
+    "analysis/post-processing/fix-dfs-without-id.md",
+    "analysis/post-processing/link-tsuser-to-graphuser.md",
+    "analysis/post-processing/merge-vms-by-vmid.md",
+    "analysis/post-processing/remove-memberof-graphrole.md",
+    "analysis/post-processing/set-approle-properties.md",
+    "analysis/post-processing/set-arm-eligible-properties.md",
+    "analysis/post-processing/set-hasscopedrole-properties.md",
+  ] },
+  { "FAQ" = "faq.md" },
+  { "Developer Notes" = "developer-notes.md" },
+  { "Getting Help" = "getting-help.md" },
+]
+
+# With the "extra_css" option you can add your own CSS styling to customize
+# your Zensical project according to your needs. You can add any number of
+# CSS files.
+#
+# The path provided should be relative to the "docs_dir".
+#
+# Read more: https://zensical.org/docs/customization/#additional-css
+#
+#extra_css = ["stylesheets/extra.css"]
+
+# With the `extra_javascript` option you can add your own JavaScript to your
+# project to customize the behavior according to your needs.
+#
+# The path provided should be relative to the "docs_dir".
+#
+# Read more: https://zensical.org/docs/customization/#additional-javascript
+#extra_javascript = ["javascripts/extra.js"]
+
+# ----------------------------------------------------------------------------
+# Section for configuring theme options
+# ----------------------------------------------------------------------------
+[project.theme]
+
+# change this to "classic" to use the traditional Material for MkDocs look.
+#variant = "classic"
+
+# Zensical allows you to override specific blocks, partials, or whole
+# templates as well as to define your own templates. To do this, uncomment
+# the custom_dir setting below and set it to a directory in which you
+# keep your template overrides.
+#
+# Read more:
+# - https://zensical.org/docs/customization/#extending-the-theme
+#
+#custom_dir = "overrides"
+
+# With the "favicon" option you can set your own image to use as the icon
+# browsers will use in the browser title bar or tab bar. The path provided
+# must be relative to the "docs_dir".
+#
+# Read more:
+# - https://zensical.org/docs/setup/logo-and-icons/#favicon
+# - https://developer.mozilla.org/en-US/docs/Glossary/Favicon
+#
+favicon = "assets/images/favicon.png"
+
+# Zensical supports more than 60 different languages. This means that the
+# labels and tooltips that Zensical's templates produce are translated.
+# The "language" option allows you to set the language used. This language
+# is also indicated in the HTML head element to help with accessibility
+# and guide search engines and translation tools.
+#
+# The default language is "en" (English). It is possible to create
+# sites with multiple languages and configure a language selector. See
+# the documentation for details.
+#
+# Read more:
+# - https://zensical.org/docs/setup/language/
+#
+language = "en"
+
+# Zensical provides a number of feature toggles that change the behavior
+# of the documentation site.
+features = [
+  # Zensical includes an announcement bar. This feature allows users to
+  # dismiss it when they have read the announcement.
+  # https://zensical.org/docs/setup/header/#announcement-bar
+  "announce.dismiss",
+
+  # If you have a repository configured and turn on this feature, Zensical
+  # will generate an edit button for the page. This works for common
+  # repository hosting services.
+  # https://zensical.org/docs/setup/repository/#content-actions
+  #"content.action.edit",
+
+  # If you have a repository configured and turn on this feature, Zensical
+  # will generate a button that allows the user to view the Markdown
+  # code for the current page.
+  # https://zensical.org/docs/setup/repository/#content-actions
+  #"content.action.view",
+
+  # Code annotations allow you to add an icon with a tooltip to your
+  # code blocks to provide explanations at crucial points.
+  # https://zensical.org/docs/authoring/code-blocks/#code-annotations
+  "content.code.annotate",
+
+  # This feature turns on a button in code blocks that allow users to
+  # copy the content to their clipboard without first selecting it.
+  # https://zensical.org/docs/authoring/code-blocks/#code-copy-button
+  "content.code.copy",
+
+  # Code blocks can include a button to allow for the selection of line
+  # ranges by the user.
+  # https://zensical.org/docs/authoring/code-blocks/#code-selection-button
+  "content.code.select",
+
+  # Zensical can render footnotes as inline tooltips, so the user can read
+  # the footnote without leaving the context of the document.
+  # https://zensical.org/docs/authoring/footnotes/#footnote-tooltips
+  "content.footnote.tooltips",
+
+  # If you have many content tabs that have the same titles (e.g., "Python",
+  # "JavaScript", "Cobol"), this feature causes all of them to switch to
+  # at the same time when the user chooses their language in one.
+  # https://zensical.org/docs/authoring/content-tabs/#linked-content-tabs
+  "content.tabs.link",
+
+  # With this feature enabled users can add tooltips to links that will be
+  # displayed when the mouse pointer hovers the link.
+  # https://zensical.org/docs/authoring/tooltips/#improved-tooltips
+  "content.tooltips",
+
+  # With this feature enabled, Zensical will automatically hide parts
+  # of the header when the user scrolls past a certain point.
+  # https://zensical.org/docs/setup/header/#automatic-hiding
+  # "header.autohide",
+
+  # Turn on this feature to expand all collapsible sections in the
+  # navigation sidebar by default.
+  # https://zensical.org/docs/setup/navigation/#navigation-expansion
+  # "navigation.expand",
+
+  # This feature turns on navigation elements in the footer that allow the
+  # user to navigate to a next or previous page.
+  # https://zensical.org/docs/setup/footer/#navigation
+  "navigation.footer",
+
+  # When section index pages are enabled, documents can be directly attached
+  # to sections, which is particularly useful for providing overview pages.
+  # https://zensical.org/docs/setup/navigation/#section-index-pages
+  "navigation.indexes",
+
+  # When instant navigation is enabled, clicks on all internal links will be
+  # intercepted and dispatched via XHR without fully reloading the page.
+  # https://zensical.org/docs/setup/navigation/#instant-navigation
+  "navigation.instant",
+
+  # With instant prefetching, your site will start to fetch a page once the
+  # user hovers over a link. This will reduce the perceived loading time
+  # for the user.
+  # https://zensical.org/docs/setup/navigation/#instant-prefetching
+  "navigation.instant.prefetch",
+
+  # In order to provide a better user experience on slow connections when
+  # using instant navigation, a progress indicator can be enabled.
+  # https://zensical.org/docs/setup/navigation/#progress-indicator
+  #"navigation.instant.progress",
+
+  # When navigation paths are activated, a breadcrumb navigation is rendered
+  # above the title of each page
+  # https://zensical.org/docs/setup/navigation/#navigation-path
+  # "navigation.path",
+
+  # When pruning is enabled, only the visible navigation items are included
+  # in the rendered HTML, reducing the size of the built site by 33% or more.
+  # https://zensical.org/docs/setup/navigation/#navigation-pruning
+  #"navigation.prune",
+
+  # When sections are enabled, top-level sections are rendered as groups in
+  # the sidebar for viewports above 1220px, but remain as-is on mobile.
+  # https://zensical.org/docs/setup/navigation/#navigation-sections
+  "navigation.sections",
+
+  # When tabs are enabled, top-level sections are rendered in a menu layer
+  # below the header for viewports above 1220px, but remain as-is on mobile.
+  # https://zensical.org/docs/setup/navigation/#navigation-tabs
+  "navigation.tabs",
+
+  # When sticky tabs are enabled, navigation tabs will lock below the header
+  # and always remain visible when scrolling down.
+  # https://zensical.org/docs/setup/navigation/#sticky-navigation-tabs
+  "navigation.tabs.sticky",
+
+  # A back-to-top button can be shown when the user, after scrolling down,
+  # starts to scroll up again.
+  # https://zensical.org/docs/setup/navigation/#back-to-top-button
+  "navigation.top",
+
+  # When anchor tracking is enabled, the URL in the address bar is
+  # automatically updated with the active anchor as highlighted in the table
+  # of contents.
+  # https://zensical.org/docs/setup/navigation/#anchor-tracking
+  "navigation.tracking",
+
+  # When search highlighting is enabled and a user clicks on a search result,
+  # Zensical will highlight all occurrences after following the link.
+  # https://zensical.org/docs/setup/search/#search-highlighting
+  "search.highlight",
+
+  # When anchor following for the table of contents is enabled, the sidebar
+  # is automatically scrolled so that the active anchor is always visible.
+  # https://zensical.org/docs/setup/navigation/#anchor-following
+  "toc.follow",
+
+  # When navigation integration for the table of contents is enabled, it is
+  # always rendered as part of the navigation sidebar on the left.
+  # https://zensical.org/docs/setup/navigation/#navigation-integration
+  "toc.integrate",
+]
+
+# ----------------------------------------------------------------------------
+# You can configure your own logo to be shown in the header using the "logo"
+# option in the "theme" subsection. The logo must be a relative path to a file
+# in your "docs_dir", e.g., to use `docs/assets/logo.png` you would set:
+# ----------------------------------------------------------------------------
+logo = "assets/images/favicon.png"
+
+# ----------------------------------------------------------------------------
+# If you don't have a dedicated project logo, you can use a built-in icon from
+# the icon sets shipped in Zensical. Please note that the setting lives in a
+# different subsection, and that the above take precedence over the icon.
+#
+# Read more:
+# - https://zensical.org/docs/setup/logo-and-icons
+# - https://github.com/zensical/ui/tree/master/dist/.icons
+# ----------------------------------------------------------------------------
+#[project.theme.icon]
+#logo = "lucide/smile"
+
+# ----------------------------------------------------------------------------
+# In the "font" subsection you can configure the fonts used. By default, fonts
+# are loaded from Google Fonts, giving you a wide range of choices from a set
+# of suitably licensed fonts. There are options for a normal text font and for
+# a monospaced font used in code blocks.
+# ----------------------------------------------------------------------------
+#[project.theme.font]
+#text = "Inter"
+#code = "Jetbrains Mono"
+
+# ----------------------------------------------------------------------------
+# In the "palette" subsection you can configure options for the color scheme.
+# You can configure different color schemes, e.g., to turn on dark mode,
+# that the user can switch between. Each color scheme can be further
+# customized.
+#
+# Read more:
+# - https://zensical.org/docs/setup/colors/
+# ----------------------------------------------------------------------------
+[[project.theme.palette]]
+accent = "light blue"
+primary = "light blue"
+scheme = "default"
+toggle.icon = "lucide/sun"
+toggle.name = "Switch to dark mode"
+
+[[project.theme.palette]]
+accent = "light blue"
+primary = "light blue"
+scheme = "slate"
+toggle.icon = "lucide/moon"
+toggle.name = "Switch to light mode"
+
+[project.theme.icon]
+repo = "fontawesome/brands/github-alt"
+
+# ----------------------------------------------------------------------------
+# The "extra" section contains miscellaneous settings.
+# ----------------------------------------------------------------------------
+#[[project.extra.social]]
+#icon = "fontawesome/brands/github"
+#link = "https://github.com/user/repo"
+
+# ----------------------------------------------------------------------------
+# In this section you can configure the Markdown extensions that are used when
+# rendering your documentation. We enable the most useful extensions by default,
+# but you can customize this list to your needs.
+#
+# Read more:
+# - https://zensical.org/docs/setup/extensions/
+# ----------------------------------------------------------------------------
+[project.markdown_extensions.abbr]
+[project.markdown_extensions.admonition]
+[project.markdown_extensions.attr_list]
+[project.markdown_extensions.def_list]
+[project.markdown_extensions.footnotes]
+[project.markdown_extensions.md_in_html]
+[project.markdown_extensions.toc]
+permalink = true
+[project.markdown_extensions.pymdownx.arithmatex]
+generic = true
+[project.markdown_extensions.pymdownx.betterem]
+[project.markdown_extensions.pymdownx.caret]
+[project.markdown_extensions.pymdownx.details]
+[project.markdown_extensions.pymdownx.emoji]
+emoji_generator = "zensical.extensions.emoji.to_svg"
+emoji_index = "zensical.extensions.emoji.twemoji"
+[project.markdown_extensions.pymdownx.highlight]
+anchor_linenums = true
+line_spans = "__span"
+pygments_lang_class = true
+[project.markdown_extensions.pymdownx.inlinehilite]
+[project.markdown_extensions.pymdownx.keys]
+[project.markdown_extensions.pymdownx.magiclink]
+[project.markdown_extensions.pymdownx.mark]
+[project.markdown_extensions.pymdownx.smartsymbols]
+[project.markdown_extensions.pymdownx.superfences]
+custom_fences = [
+  { name = "mermaid", class = "mermaid", format = "pymdownx.superfences.fence_code_format" },
+]
+[project.markdown_extensions.pymdownx.tabbed]
+alternate_style = true
+combine_header_slug = true
+[project.markdown_extensions.pymdownx.tasklist]
+custom_checkbox = true
+[project.markdown_extensions.pymdownx.tilde]

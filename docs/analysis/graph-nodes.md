@@ -1,4 +1,4 @@
-# Graph Nodes
+# GraphObject
 
 <h2>GraphObject (Base Label)</h2>
 
