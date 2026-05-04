@@ -1,0 +1,47 @@
+name: "Oracle Autonomous Database"
+label: "{{ LABELS.OracleAutonomousDB }}"
+table_name: "resources"
+resource_type: "oracle.database/autonomousdatabases"
+properties:
+  - "/id"
+  - "/properties"
+cypher: |
+    UNWIND $batch AS row
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+    SET obj:{{ LABELS.OracleAutonomousDB }}
+
+    SET obj += {
+        actualUsedDataStorageSizeInTbs: row.properties.actualUsedDataStorageSizeInTbs,
+        allocatedStorageSizeInTbs: row.properties.allocatedStorageSizeInTbs,
+        backupRententionPeriodInDays: row.properties.backupRetentionPeriodInDays,
+        characterSet: row.properties.characterSet,
+        databaseType: row.properties.dataBaseType, // Note: property name in ARM is "dataBaseType" with a capital B
+        dbVersion: row.properties.dbVersion,
+        displayName: row.properties.displayName,
+        isLocalDataGuardEnabled: row.properties.isLocalDataGuardEnabled,
+        isMtlsConnectionRequired: row.properties.isMtlsConnectionRequired,
+        isRemoteDataGuardEnabled: row.properties.isRemoteDataGuardEnabled,
+        localDisasterRecoveryType: row.properties.localDisasterRecoveryType,
+        ociUrl: row.properties.ociUrl,
+        ocid: row.properties.ocid,
+        openMode: row.properties.openMode,
+        permissionLevel: row.properties.permissionLevel,
+        privateEndpoint: row.properties.privateEndpoint,
+        privateEndpointIp: row.properties.privateEndpointIp,
+        privateEndpointLabel: row.properties.privateEndpointLabel,
+        timeCreated: row.properties.timeCreated,
+        timeLocalDataGuardEnabled: row.properties.timeLocalDataGuardEnabled,
+
+        highConnectionString: row.properties.connectionStrings.high,
+        mediumConnectionString: row.properties.connectionStrings.medium,
+        lowConnectionString: row.properties.connectionStrings.low
+    }
+
+    // Connection URLs. Not sure of all values so adding them dynamically
+    FOREACH (k IN coalesce(keys(row.properties.connectionUrls), []) |
+      SET obj[k] = row.properties.connectionUrls[k]
+    )
+
+    MERGE (sub: {{ LABELS.ArmResource }} {id: toLower(row.properties.subnetId)})
+    MERGE (sub)-[:{{ REL.HAS_ORACLE_RESOURCE }}]->(obj)
+    RETURN count(*) AS _
