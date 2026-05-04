@@ -1,0 +1,16 @@
+name: "Syntex Document Processors"
+label: "{{ LABELS.SyntexDocumentProcessor }}"
+table_name: "resources"
+resource_type: "microsoft.syntex/documentprocessors"
+properties:
+  - "/id"
+  - "/properties"
+cypher: |
+    UNWIND $batch AS row
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+    SET obj:{{ LABELS.SyntexDocumentProcessor }}
+
+    SET obj += {
+        spoTenantId: row.properties.spoTenantId,
+        spoTenantUrl: row.properties.spoTenantUrl
+    }
