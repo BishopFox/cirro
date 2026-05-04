@@ -226,6 +226,9 @@ nav = [
       { "Machine Learning" = [
         "analysis/arm-nodes/machinelearning/ml-workspace.md",
       ] },
+      { "Oracle" = [
+        "analysis/arm-nodes/oracle/oracle-autonomous-db.md",
+      ] },
       { "Palo Alto" = [
         "analysis/arm-nodes/paloalto/pan-cloudngfw-firewall.md",
         "analysis/arm-nodes/paloalto/pan-cloudngfw-localrulestack.md",
@@ -321,6 +324,7 @@ nav = [
       "analysis/edges/has-nic.md",
       "analysis/edges/has-nsg.md",
       "analysis/edges/has-oauth-grant.md",
+      "analysis/edges/has-oracle-resource.md",
       "analysis/edges/has-parameter.md",
       "analysis/edges/has-peering.md",
       "analysis/edges/has-policy.md",
