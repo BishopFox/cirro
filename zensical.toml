@@ -98,6 +98,10 @@ nav = [
         "analysis/arm-nodes/azure-core/resource-group.md",
         "analysis/arm-nodes/azure-core/management-group.md",
       ] },
+      { "Azure Stack" = [
+        "analysis/arm-nodes/azurestack/azure-stack-edge-machine.md",
+        "analysis/arm-nodes/azurestack/azure-stack-registration.md",
+      ] },
       { "CDN" = [
         "analysis/arm-nodes/cdn/cdn-profile.md",
         "analysis/arm-nodes/cdn/afd-endpoint.md",
@@ -252,6 +256,7 @@ nav = [
     { "Additional Nodes" = [
       "analysis/additional-nodes.md",
       "analysis/additional-nodes/analysis-service-firewall-rule.md",
+      "analysis/additional-nodes/azure-stack-edge-machine-nic.md",
       "analysis/additional-nodes/bastion-ip-config.md",
       "analysis/additional-nodes/certificate.md",
       "analysis/additional-nodes/client-secret.md",
@@ -357,6 +362,7 @@ nav = [
       "analysis/edges/deploys.md",
       "analysis/edges/peers-with.md",
       "analysis/edges/references-package.md",
+      "analysis/edges/registered-by.md",
       "analysis/edges/registered-owner.md",
       "analysis/edges/registered-user.md",
       "analysis/edges/represented-by.md",

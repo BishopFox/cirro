@@ -1,0 +1,21 @@
+name: "Azure Stack Registration"
+label: "{{ LABELS.AzureStackRegistration }}"
+table_name: "resources"
+resource_type: "microsoft.azurestack/registrations"
+properties:
+  - "/id"
+  - "/properties"
+cypher: |
+   UNWIND $batch AS row
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+    SET obj:{{ LABELS.AzureStackRegistration }}
+    SET obj += {
+        cloudId: row.properties.cloudId
+    }
+
+    CALL (obj, row) {
+        WITH obj, row
+        WHERE row.properties.objectId IS NOT NULL
+        MERGE (s:{{ LABELS.GraphObject }} {id: toLower(row.properties.objectId)})
+        MERGE (obj)-[:{{ REL.REGISTERED_BY }}]->(s)
+    }
