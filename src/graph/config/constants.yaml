@@ -180,6 +180,7 @@ LABELS:
   StorageAccountDFS: "StorageAccountDFS"
   Subscription: "Subscription"
   SynapseWorkspace: "SynapseWorkspace"
+  SyntexDocumentProcessor: "SyntexDocumentProcessor"
   Tenant: "Tenant"
   UserAssignedIdentity: "UserAssignedIdentity"
   VirtualMachine: "VirtualMachine"

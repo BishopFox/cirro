@@ -246,6 +246,9 @@ nav = [
       { "SignalR" = [
         "analysis/arm-nodes/signalr/signalr.md",
       ] },
+      { "Syntex" = [
+        "analysis/arm-nodes/syntex/syntex-document-processor.md",
+      ] },
       { "Web" = [
         "analysis/arm-nodes/web/server-farm.md",
         "analysis/arm-nodes/web/web-site.md",
