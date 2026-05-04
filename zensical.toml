@@ -227,6 +227,9 @@ nav = [
       { "CosmosDB" = [
         "analysis/arm-nodes/documentdb/cosmosdb-account.md",
       ] },
+      { "Kusto" = [
+        "analysis/arm-nodes/kusto/kusto-cluster.md",
+      ] },
       { "Machine Learning" = [
         "analysis/arm-nodes/machinelearning/ml-workspace.md",
       ] },

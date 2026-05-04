@@ -1,0 +1,31 @@
+name: "Kusto Clusters"
+label: "{{ LABELS.KustoCluster }}"
+table_name: "resources"
+resource_type: "microsoft.kusto/clusters"
+properties:
+  - "/id"
+  - "/properties"
+cypher: |
+    UNWIND $batch AS row
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+    SET obj:{{ LABELS.KustoCluster }}
+
+    SET obj += {
+        acceptedAudiences: row.properties.acceptedAudiences,
+        allowedFqdnList: row.properties.allowedFqdnList,
+        allowedIpRangeList: row.properties.allowedIpRangeList,
+        dataIngestionUri: row.properties.dataIngestionUri,
+        enableAutoStop: row.properties.enableAutoStop,
+        enableDiskEncryption: row.properties.enableDiskEncryption,
+        enableDoubleEncryption: row.properties.enableDoubleEncryption,
+        enablePurge: row.properties.enablePurge,
+        enableStreamingIngest: row.properties.enableStreamingIngest,
+        engineType: row.properties.engineType,
+        publicIpType: row.properties.publicIPType,
+        publicNetworkAccess: row.properties.publicNetworkAccess,
+        restrictOutboundNetworkAccess: row.properties.restrictOutboundNetworkAccess,
+        state: row.properties.state,
+        stateReason: row.properties.stateReason,
+        trustedExternalTenants: [x IN row.properties.trustedExternalTenants | x.value],
+        uri: row.properties.uri
+    }
