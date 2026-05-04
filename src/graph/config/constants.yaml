@@ -143,6 +143,7 @@ LABELS:
   KeyVaultSecretValue: "KeyVaultSecretValue"
   KeyVaultCertificate: "KeyVaultCertificate"
   KeyVaultCertificateValue: "KeyVaultCertificateValue"
+  KustoCluster: "KustoCluster"
   ManagementGroup: "ManagementGroup"
   ManagedHSM: "ManagedHSM"
   MLWorkspace: "MLWorkspace"
