@@ -6,7 +6,8 @@ Represents a parameter for a virtual machine run command.
 
 **Properties:**
 
-- `name` - Parameter name (primary key)
+- `name` - Parameter name (composite key with `commandId`)
+- `commandId` - Parent run command ID (composite key)
 - `value` - Parameter value
 
 ## Relationships

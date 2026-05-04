@@ -2,7 +2,7 @@
 
 Represents an extension attached to an Azure virtual machine.
 
-**Labels:** `:VMExtension`
+**Labels:** `:ArmResource:VMExtension`
 
 **Properties:**
 
