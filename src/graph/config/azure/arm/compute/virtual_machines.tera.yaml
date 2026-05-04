@@ -38,7 +38,8 @@ cypher: |
             WITH obj, row
             UNWIND coalesce(row.resources, []) AS resource
             WITH obj, resource WHERE toLower(resource.type) = "microsoft.compute/virtualmachines/extensions"
-                MERGE (e:{{ LABELS.VMExtension }} {id: toLower(resource.id)})
+                MERGE (e:{{ LABELS.ArmResource }} {id: toLower(resource.id)})
+                SET e:{{ LABELS.VMExtension }}
                 SET e += {
                     name: resource.name,
                     type: toLower(resource.type),

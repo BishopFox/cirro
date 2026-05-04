@@ -60,11 +60,13 @@ cypher: |
             WITH obj, row
             UNWIND coalesce(row.resources, []) AS resource
             WITH obj, resource WHERE toLower(resource.type) = "microsoft.hybridcompute/machines/extensions"
-                MERGE (e:{{ LABELS.HybridExtension }} {id: toLower(resource.id)})
+                MERGE (e:{{ LABELS.ArmResource }} {id: toLower(resource.id)})
+                SET e:{{ LABELS.HybridExtension }}
                 SET e += {
                     name: resource.name,
                     type: resource.type,
                     location: resource.location,
+                    extType: resource.properties.type,
                     typeHandlerVersion: resource.properties.typeHandlerVersion,
                     autoUpgradeMinorVersion: resource.properties.autoUpgradeMinorVersion,
                     enableAutomaticUpgrade: resource.properties.enableAutomaticUpgrade,

@@ -1,0 +1,20 @@
+name: "Hybrid Machine Gateways"
+label: "{{ LABELS.HybridGateway }}"
+table_name: "resources"
+resource_type: "microsoft.hybridcompute/gateways"
+properties:
+  - "/id"
+  - "/properties"
+cypher: |
+    UNWIND $batch AS row
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+    SET obj:{{ LABELS.HybridGateway }}
+
+    SET obj += {
+        allowedFeatures: row.properties.allowedFeatures,
+        gatewayEndpoint: row.properties.gatewayEndpoint,
+        gatewayId: row.properties.gatewayId,
+        gatewayType: row.properties.gatewayType,
+        lastUpdateTime: row.properties.lastUpdateTime,
+        provisioningState: row.properties.provisioningState
+    }

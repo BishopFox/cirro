@@ -1,0 +1,17 @@
+name: "Hybrid Private Link Scopes"
+label: "{{ LABELS.HybridPrivateLinkScope }}"
+table_name: "resources"
+resource_type: "microsoft.hybridcompute/privatelinkscopes"
+properties:
+  - "/id"
+  - "/properties"
+cypher: |
+    UNWIND $batch AS row
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+    SET obj:{{ LABELS.HybridPrivateLinkScope }}
+
+    SET obj += {
+        privateLinkScopeId: row.properties.privateLinkScopeId,
+        provisioningState: row.properties.provisioningState,
+        publicNetworkAccess: row.properties.publicNetworkAccess
+    }
