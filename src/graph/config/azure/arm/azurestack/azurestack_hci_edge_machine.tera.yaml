@@ -1,0 +1,53 @@
+name: "Azure Stack HCI Edge Machine"
+label: "{{ LABELS.AzureStackEdgeMachine }}"
+table_name: "resources"
+resource_type: "microsoft.azurestackhci/edgemachines"
+properties:
+  - "/id"
+  - "/properties"
+index_properties:
+  - "{{ LABELS.AzureStackEdgeMachine }}:cloudId"
+  - "{{ LABELS.AzureStackEdgeMachineNic }}:machineId+adapterName"
+cypher: |
+   UNWIND $batch AS row
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+    SET obj:{{ LABELS.AzureStackEdgeMachine }}
+    SET obj += {
+
+        // Not sure how to link these to other resources, so just storing the IDs for now
+        arcMachineResourceGroupId: row.properties.arcMachineResourceGroupId,
+        arcMachineResourceId: row.properties.arcMachineResourceId,
+
+        // The Cloud ID is a reference to the cloud this edge machine is registered with
+        // It looks like it's a HybridMachine name but unsure of how to link it so just storing the ID for now
+        cloudId: row.properties.cloudId,
+
+
+        connectivityStatus: row.properties.connectivityStatus,
+        devicePoolResourceId: row.properties.devicePoolResourceId,
+        edgeMachineKind: row.properties.edgeMachineKind,
+        lastUpdated: row.properties.lastUpdated,
+        lastSyncTimestamp: row.properties.lastSyncTimestamp,
+        machineState: row.properties.machineState
+    }
+
+    CALL (obj, row) {
+        WITH obj, row
+        WHERE row.properties.objectId IS NOT NULL
+        MERGE (s:{{ LABELS.GraphObject }} {id: toLower(row.properties.objectId)})
+        MERGE (obj)-[:{{ REL.REGISTERED_BY }}]->(s)
+    }
+
+    CALL (obj, row) {
+        UNWIND coalesce(row.properties.networkProfile.nicDetails, []) AS nic
+        MERGE (n:{{ LABELS.AzureStackEdgeMachineNic }} {machineId: toLower(row.id), adapterName: nic.adapterName})
+        SET n += {
+            adapterName: nic.adapterName,
+            dnsServers: nic.dnsServers,
+            ip4Address: nic.ip4Address,
+            macAddress: nic.macAddress,
+            rdmaCapability: nic.rdmaCapability,
+            subnetMask: nic.subnetMask
+        }
+        MERGE (obj)-[:{{ REL.HAS_NIC }}]->(n)
+    }

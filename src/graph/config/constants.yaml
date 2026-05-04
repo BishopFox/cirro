@@ -72,6 +72,7 @@ REL:
   OWNS: "OWNS"
   PEERS_WITH: "PEERS_WITH"
   REFERENCES_PACKAGE: "REFERENCES_PACKAGE"
+  REGISTERED_BY: "REGISTERED_BY"
   REGISTERED_OWNER: "REGISTERED_OWNER"
   REGISTERED_USER: "REGISTERED_USER"
   REPRESENTED_BY: "REPRESENTED_BY"
@@ -98,6 +99,8 @@ LABELS:
   AvailabilitySet: "AvailabilitySet"
   ArcSqlServer: "ArcSqlServer"
   ArcSqlDB: "ArcSqlDB"
+  AzureStackEdgeMachine: "AzureStackEdgeMachine"
+  AzureStackRegistration: "AzureStackRegistration"
   BastionHost: "BastionHost"
   B2CDirectory: "B2CDirectory"
   CAPNamedLocation: "CAPNamedLocation"
@@ -201,6 +204,7 @@ LABELS:
 
   # Specialized Azure node types. These are not ARM resources or Graph objects but are created from properties of those.
   AnalysisServiceFirewallRule: "AnalysisServiceFirewallRule"
+  AzureStackEdgeMachineNic: "AzureStackEdgeMachineNic"
   BastionIPConfig: "BastionIPConfig"
   Certificate: "Certificate"
   ClientSecret: "ClientSecret"
