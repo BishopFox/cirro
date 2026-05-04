@@ -15,7 +15,7 @@ Primary sources of truth:
 
 Primary documentation targets:
 - `docs/analysis/**`
-- `mkdocs.yml` nav entries
+- `zensical.toml` nav entries
 
 ## When To Use
 
@@ -37,7 +37,7 @@ Trigger examples:
 	- `docs/analysis/tailscale-nodes/*.md`
 	- `docs/analysis/edges/*.md`
 	- `docs/analysis/post-processing/*.md`
-	- Also inspect the `nav:` section in `mkdocs.yml`.
+	- Also inspect the `nav:` section in `zensical.toml`.
 
 3. Scan config YAML.
 	- `src/graph/config/azure/arm/**/*.tera.yaml`
@@ -50,13 +50,13 @@ Trigger examples:
 	- Missing node docs from `LABELS.*`
 	- Missing edge docs from `REL.*` (convert `UPPER_SNAKE` to `lower-kebab`)
 	- Missing post-processing docs from files in `src/graph/config/post_processing/`
-	- Missing `mkdocs.yml` nav entries for all docs under `docs/analysis/`
+	- Missing `zensical.toml` nav entries for all docs under `docs/analysis/`
 
 5. Create or update docs.
 	- Prefer minimal edits and keep style consistent with nearby files.
 	- Create missing directories before creating files.
 
-6. Update `mkdocs.yml` nav.
+6. Update `zensical.toml` nav.
 	- Place docs in the correct analysis sections.
 	- Keep entries alphabetically sorted within each section.
 	- Preserve existing indentation and structure.
