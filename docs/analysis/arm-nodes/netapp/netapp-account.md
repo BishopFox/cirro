@@ -15,4 +15,5 @@ Represents an Azure NetApp Files account for managing file storage pools and vol
 
 - **IS_DEPLOYED** → **NetAppAccountADDomain** - Links to Active Directory domain configurations
 - **CONTAINS** → **NetAppCapacityPool** - Contains capacity pools
+- **HAS_BACKUP_VAULT** → **NetAppBackupVault** - Associated backup vaults
 - **HAS_POLICY** → **NetAppSnapshotPolicy** - Associated snapshot policies

@@ -10,8 +10,11 @@ Represents an Active Directory domain configuration for an Azure NetApp Files ac
 - `administrators` - List of administrator accounts
 - `aesEncryption` - Whether AES encryption is enabled
 - `allowLocalNfsUsersWithLdap` - Whether local NFS users are allowed with LDAP
+- `backupOperators` - Backup operator accounts for the AD domain
 - `dns` - DNS server configuration
+- `domain` - Active Directory domain name
 - `encryptDCConnections` - Whether domain controller connections are encrypted
+- `kdcIP` - Kerberos KDC IP address
 - `ldapOverTLS` - Whether LDAP over TLS is enabled
 - `ldapSigning` - LDAP signing configuration
 - `organizationalUnit` - Organizational unit for computer accounts

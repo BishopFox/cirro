@@ -13,6 +13,7 @@ cypher: |
         baremetalTenantId: row.properties.baremetalTenantId,
         coolAccess: row.properties.coolAccess,
         creationToken: row.properties.creationToken,
+        enableSubvolumes: row.properties.enableSubvolumes,
         encryptionKeySource: row.properties.encryptionKeySource,
         fileSystemId: row.properties.fileSystemId,
         isDefaultQuotaEnabled: row.properties.isDefaultQuotaEnabled,

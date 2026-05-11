@@ -190,9 +190,10 @@ nav = [
       ] },
       { "NetApp" = [
         "analysis/arm-nodes/netapp/netapp-account.md",
+        "analysis/arm-nodes/netapp/netapp-backup-vault.md",
         "analysis/arm-nodes/netapp/netapp-capacity-pool.md",
-        "analysis/arm-nodes/netapp/netapp-volume.md",
         "analysis/arm-nodes/netapp/netapp-snapshot-policy.md",
+        "analysis/arm-nodes/netapp/netapp-volume.md",
       ] },
       { "Recovery Services" = [
         "analysis/arm-nodes/recoveryservices/recovery-vault.md",
@@ -318,6 +319,7 @@ nav = [
       "analysis/edges/has-alert.md",
       "analysis/edges/has-application.md",
       "analysis/edges/has-approle.md",
+      "analysis/edges/has-backup-vault.md",
       "analysis/edges/has-config.md",
       "analysis/edges/has-container.md",
       "analysis/edges/has-db.md",

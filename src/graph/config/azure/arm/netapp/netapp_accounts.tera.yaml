@@ -16,22 +16,27 @@ cypher: |
     }
 
     // Iterate over Active Directories and create relationships
-    WITH obj, row, row.properties.activeDirectories AS activeDirectories
-    UNWIND activeDirectories AS ad
-    MERGE (adNode:{{ LABELS.NetAppAccountADDomain }} {activeDirectoryId: toLower(ad.activeDirectoryId)})
-    SET adNode += {
-        administrators: ad.administrators,
-        aesEncryption: ad.aesEncryption,
-        allowLocalNfsUsersWithLdap: ad.allowLocalNfsUsersWithLdap,
-        dns: ad.dns,
-        encryptDCConnections: ad.encryptDCConnections,
-        ldapOverTLS: ad.ldapOverTLS,
-        ldapSigning: ad.ldapSigning,
-        organizationalUnit: ad.organizationalUnit,
-        site: ad.site,
-        smbServerName: ad.smbServerName,
-        status: ad.status,
-        username: ad.username
+    CALL (obj, row) {
+        WITH obj, row, row.properties.activeDirectories AS activeDirectories
+        UNWIND activeDirectories AS ad
+        MERGE (adNode:{{ LABELS.NetAppAccountADDomain }} {activeDirectoryId: toLower(ad.activeDirectoryId)})
+        SET adNode += {
+            administrators: ad.administrators,
+            aesEncryption: ad.aesEncryption,
+            allowLocalNfsUsersWithLdap: ad.allowLocalNfsUsersWithLdap,
+            backupOperators: ad.backupOperators,
+            dns: ad.dns,
+            domain: ad.domain,
+            encryptDCConnections: ad.encryptDCConnections,
+            kdcIP: ad.kdcIP,
+            ldapOverTLS: ad.ldapOverTLS,
+            ldapSigning: ad.ldapSigning,
+            organizationalUnit: ad.organizationalUnit,
+            site: ad.site,
+            smbServerName: ad.smbServerName,
+            status: ad.status,
+            username: ad.username
+        }
+        MERGE (obj)-[:{{ REL.IS_DEPLOYED }}]->(adNode)
     }
-    MERGE (obj)-[:{{ REL.IS_DEPLOYED }}]->(adNode)
     RETURN count(*) AS _
