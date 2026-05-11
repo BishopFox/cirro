@@ -29,10 +29,8 @@ cypher: |
     }
 
     // Handling FileStorage kind
-    WITH obj, row
     CALL (obj, row){
-        WITH obj, row
-        WHERE toLower(row.kind) = 'filestorage'
+        WITH obj, row WHERE toLower(row.kind) = 'filestorage'
         SET obj += {
           defaultSharePermission: row.properties.azureFilesIdentityBasedAuthentication.defaultSharePermission,
           directoryServiceOptions: row.properties.azureFilesIdentityBasedAuthentication.directoryServiceOptions,
@@ -43,6 +41,4 @@ cypher: |
           netBiosDomainName: row.properties.azureFilesIdentityBasedAuthentication.activeDirectoryProperties.netBiosDomainName,
           samAccountName: row.properties.azureFilesIdentityBasedAuthentication.activeDirectoryProperties.samAccountName
         }
-        RETURN count(*) AS _
     }
-    RETURN count(*) AS _

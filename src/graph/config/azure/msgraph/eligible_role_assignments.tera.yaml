@@ -12,28 +12,21 @@ properties:
   - "/scheduleInfo"
 cypher: |
     UNWIND $batch as row
-    CALL (row) {
 
-        // Both a GraphObject and GraphRole will be created here
-        MERGE (p:{{ LABELS.GraphObject }} {id: toLower(row.principalId)})
+    // Both a GraphObject and GraphRole will be created here
+    MERGE (p:{{ LABELS.GraphObject }} {id: toLower(row.principalId)})
+    MERGE (r:{{ LABELS.GraphObject }} {roleTemplateId: toLower(row.roleDefinitionId)})
+    SET r:{{ LABELS.GraphRole }}
 
-        MERGE (r:{{ LABELS.GraphObject }} {roleTemplateId: toLower(row.roleDefinitionId)})
-        SET r:{{ LABELS.GraphRole }}
+    MERGE (p)-[rel: {{ REL.IS_ROLE_ELIGIBLE }}]->(r)
 
-        MERGE (p)-[rel: {{ REL.IS_ROLE_ELIGIBLE }}]->(r)
-
-        SET rel += {
-            createdDateTime: row.createdDateTime,
-            directoryScopeId: row.directoryScopeId,
-            memberType: row.memberType,
-            modifiedDateTime: row.modifiedDateTime,
-            expirationType: row.scheduleInfo.expiration.type,
-            startDateTime: row.scheduleInfo.startDateTime,
-            endDateTime: row.scheduleInfo.expiration.endDateTime,
-            recurrence: row.scheduleInfo.recurrence
-        }
-
-        RETURN count(*) AS _
-    } IN TRANSACTIONS OF 5000 ROWS
-
-    RETURN count(*) AS _
+    SET rel += {
+        createdDateTime: row.createdDateTime,
+        directoryScopeId: row.directoryScopeId,
+        memberType: row.memberType,
+        modifiedDateTime: row.modifiedDateTime,
+        expirationType: row.scheduleInfo.expiration.type,
+        startDateTime: row.scheduleInfo.startDateTime,
+        endDateTime: row.scheduleInfo.expiration.endDateTime,
+        recurrence: row.scheduleInfo.recurrence
+    }

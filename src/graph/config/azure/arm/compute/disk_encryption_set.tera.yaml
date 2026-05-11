@@ -17,17 +17,12 @@ cypher: |
         rotationToLatestKeyVersionEnabled: row.properties.rotationToLatestKeyVersionEnabled
     }
 
-    WITH obj, row
     CALL (obj, row) {
-        WITH obj, row
-        WHERE row.properties.activeKey.sourceVault.id IS NOT NULL
+        WITH obj, row WHERE row.properties.activeKey.sourceVault.id IS NOT NULL
         MERGE (kv:{{ LABELS.ArmResource }} {id: toLower(row.properties.activeKey.sourceVault.id)})
         SET kv:{{ LABELS.KeyVault }}
         MERGE (obj)-[r:{{ REL.USES_KEY_VAULT }}]->(kv)
         SET r += {
             target: obj.activeKey
         }
-        RETURN count(*) AS _
     }
-
-    RETURN count(*) AS _

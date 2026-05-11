@@ -32,6 +32,3 @@ cypher: |
     MERGE (n:{{ LABELS.ArmResource }} {id: toLower(netappAccountId)})
     SET n:{{ LABELS.NetAppAccount }}
     MERGE (n)-[:{{ REL.HAS_POLICY }}]->(obj)
-
-
-    RETURN count(*) AS _

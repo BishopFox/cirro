@@ -40,40 +40,33 @@ cypher: |
         totalPhysicalMemoryInGb: row.properties.detectedProperties.totalPhysicalMemoryInGb
     }
 
-    WITH obj, row
-        CALL {
-            WITH obj, row
-            UNWIND coalesce(row.properties.networkProfile.networkInterfaces, []) AS nic
-            WITH obj, row, nic
-                UNWIND coalesce(nic.ipAddresses, []) AS ipAddress
-                MERGE (ip:{{ LABELS.HybridIPAddress }} {address: ipAddress.address})
-                SET ip += {
-                    ipAddressVersion: ipAddress.ipAddressVersion,
-                    subnet: ipAddress.subnet.addressPrefix
-                }
-                MERGE (obj)-[:{{ REL.HAS_IP }}]->(ip)
-            RETURN count(*) AS _
-        }
+    CALL (obj, row) {
+        UNWIND coalesce(row.properties.networkProfile.networkInterfaces, []) AS nic
+        WITH obj, row, nic
+            UNWIND coalesce(nic.ipAddresses, []) AS ipAddress
+            MERGE (ip:{{ LABELS.HybridIPAddress }} {address: ipAddress.address})
+            SET ip += {
+                ipAddressVersion: ipAddress.ipAddressVersion,
+                subnet: ipAddress.subnet.addressPrefix
+            }
+            MERGE (obj)-[:{{ REL.HAS_IP }}]->(ip)
+    }
     
-    WITH obj, row
-        CALL {
-            WITH obj, row
-            UNWIND coalesce(row.resources, []) AS resource
-            WITH obj, resource WHERE toLower(resource.type) = "microsoft.hybridcompute/machines/extensions"
-                MERGE (e:{{ LABELS.ArmResource }} {id: toLower(resource.id)})
-                SET e:{{ LABELS.HybridExtension }}
-                SET e += {
-                    name: resource.name,
-                    type: resource.type,
-                    location: resource.location,
-                    extType: resource.properties.type,
-                    typeHandlerVersion: resource.properties.typeHandlerVersion,
-                    autoUpgradeMinorVersion: resource.properties.autoUpgradeMinorVersion,
-                    enableAutomaticUpgrade: resource.properties.enableAutomaticUpgrade,
-                    statusMessage: resource.properties.instanceView.status.message,
-                    provisioningState: resource.properties.provisioningState
-                }
-                MERGE (obj)-[:{{ REL.HAS_EXTENSION }}]->(e)
-            RETURN count(*) AS _
-        }
-    RETURN count(*) AS _
+    CALL (obj, row) {
+        UNWIND coalesce(row.resources, []) AS resource
+        WITH obj, resource WHERE toLower(resource.type) = "microsoft.hybridcompute/machines/extensions"
+            MERGE (e:{{ LABELS.ArmResource }} {id: toLower(resource.id)})
+            SET e:{{ LABELS.HybridExtension }}
+            SET e += {
+                name: resource.name,
+                type: resource.type,
+                location: resource.location,
+                extType: resource.properties.type,
+                typeHandlerVersion: resource.properties.typeHandlerVersion,
+                autoUpgradeMinorVersion: resource.properties.autoUpgradeMinorVersion,
+                enableAutomaticUpgrade: resource.properties.enableAutomaticUpgrade,
+                statusMessage: resource.properties.instanceView.status.message,
+                provisioningState: resource.properties.provisioningState
+            }
+            MERGE (obj)-[:{{ REL.HAS_EXTENSION }}]->(e)
+    }

@@ -23,7 +23,11 @@ cypher: |
     }
 
 
-    FOREACH (_ IN CASE WHEN row.properties.creationData.sourceResourceId IS NOT NULL THEN [1] ELSE [] END |
-        MERGE (h:{{ LABELS.ArmResource }} {id: toLower(row.properties.creationData.sourceResourceId)})
-        MERGE (h)-[:{{ REL.HAS_SNAPSHOT }}]->(obj)
-    )
+    CALL (obj, row) {
+        WHEN row.properties.creationData.sourceResourceId IS NOT NULL THEN {
+            MERGE (h:{{ LABELS.ArmResource }} {
+                id: toLower(row.properties.creationData.sourceResourceId)
+            })
+            MERGE (h)-[:{{ REL.HAS_SNAPSHOT }}]->(obj)
+        }
+    }

@@ -23,18 +23,15 @@ cypher: |
         allowedIps: [rule IN row.properties.networkAcls.ipRules | rule.value]
     }
 
-    WITH obj, row
-        CALL {
-            WITH obj, row
-            UNWIND coalesce(row.properties.accessPolicies, []) AS policy
-            MERGE (p:{{ LABELS.GraphObject }} {id: toLower(policy.objectId)})
-            MERGE (p)-[r:{{ REL.HAS_POLICY }}]->(obj)
+    
+    CALL (obj, row) {
+        UNWIND coalesce(row.properties.accessPolicies, []) AS policy
+        MERGE (p:{{ LABELS.GraphObject }} {id: toLower(policy.objectId)})
+        MERGE (p)-[r:{{ REL.HAS_POLICY }}]->(obj)
 
-            SET r += {
-                certificates: policy.permissions.certificates,
-                keys: policy.permissions.keys,
-                secrets: policy.permissions.secrets
-            }
-            RETURN count(*) AS _
+        SET r += {
+            certificates: policy.permissions.certificates,
+            keys: policy.permissions.keys,
+            secrets: policy.permissions.secrets
         }
-    RETURN count(*) AS _
+    }

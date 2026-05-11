@@ -39,4 +39,3 @@ cypher: |
         }
         MERGE (obj)-[:{{ REL.IS_DEPLOYED }}]->(adNode)
     }
-    RETURN count(*) AS _

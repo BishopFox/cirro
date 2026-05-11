@@ -13,29 +13,22 @@ cypher: |
         disableBgpRoutePropagation: row.properties.disableBgpRoutePropagation
     }
 
-    WITH obj, row
-        CALL {
-            WITH obj, row
-            UNWIND coalesce(row.properties.routes, []) AS route
-            MERGE (r:{{ LABELS.NetworkRoute }} {id: toLower(route.id)})
-            SET r += {
-                name: route.name,
-                type: route.type,
-                addressPrefix: route.properties.addressPrefix,
-                nextHopType: route.properties.nextHopType,
-                nextHopIpAddress: route.properties.nextHopIpAddress,
-                hasBgpOverride: route.properties.hasBgpOverride
-            }
-            MERGE (obj)-[:{{ REL.HAS_ROUTE }}]->(r)
-            RETURN count(*) AS _
+    CALL (obj, row) {
+        UNWIND coalesce(row.properties.routes, []) AS route
+        MERGE (r:{{ LABELS.NetworkRoute }} {id: toLower(route.id)})
+        SET r += {
+            name: route.name,
+            type: route.type,
+            addressPrefix: route.properties.addressPrefix,
+            nextHopType: route.properties.nextHopType,
+            nextHopIpAddress: route.properties.nextHopIpAddress,
+            hasBgpOverride: route.properties.hasBgpOverride
         }
+        MERGE (obj)-[:{{ REL.HAS_ROUTE }}]->(r)
+    }
 
-    WITH obj, row
-        CALL {
-            WITH obj, row
-            UNWIND coalesce(row.properties.subnets, []) AS subnet
-            MERGE (s:{{ LABELS.Subnet }} {id: toLower(subnet.id)})
-            MERGE (s)-[:{{ REL.HAS_ROUTE_TABLE }}]->(obj)
-            RETURN count(*) AS _
-        }
-    RETURN count(*) AS _
+    CALL (obj, row) {
+        UNWIND coalesce(row.properties.subnets, []) AS subnet
+        MERGE (s:{{ LABELS.Subnet }} {id: toLower(subnet.id)})
+        MERGE (s)-[:{{ REL.HAS_ROUTE_TABLE }}]->(obj)
+    }

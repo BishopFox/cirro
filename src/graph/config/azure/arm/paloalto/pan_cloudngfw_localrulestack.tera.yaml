@@ -22,4 +22,3 @@ cypher: |
       urlFilteringProfile: row.properties.urlFilteringProfile,
       vulnerabilityProfile: row.properties.vulnerabilityProfile
   }
-  RETURN count(*) AS _

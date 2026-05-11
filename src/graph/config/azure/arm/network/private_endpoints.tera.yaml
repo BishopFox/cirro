@@ -18,39 +18,28 @@ cypher: |
         ipVersionType: row.properties.ipVersionType
     }
 
-    WITH obj, row
-    CALL {
-        WITH obj, row
+    CALL (obj, row) {
         UNWIND coalesce(row.properties.customDnsConfigs, []) AS config
         MERGE (d:{{ LABELS.CustomDnsConfig }} {fqdn: config.fqdn})
         SET d += {
             ipAddresses: config.properties.ipAddresses
         }
         MERGE (obj)-[:{{ REL.HAS_DNS_CONFIG }}]->(d)
-        RETURN count(*) AS _
     }
 
-    WITH obj, row
-    CALL {
-        WITH obj, row
+    CALL (obj, row) {
         UNWIND coalesce(row.properties.networkInterfaces, []) AS interface
         MERGE (n:{{ LABELS.ArmResource }} {id: toLower(interface.id)})
         SET n:{{ LABELS.NetworkInterface }}
-        RETURN count(*) AS _
     }
 
-    WITH obj, row
-    CALL {
-        WITH obj, row 
+    CALL (obj, row) {
         WITH obj, row WHERE row.properties.subnet.id IS NOT NULL
         MERGE (s:{{ LABELS.Subnet }} {id: toLower(row.properties.subnet.id)})
         MERGE (s)-[:{{ REL.CONTAINS }}]->(obj)
-        RETURN count(*) AS _
     }
 
-    WITH obj, row
-    CALL {
-        WITH obj, row
+    CALL (obj, row) {
         UNWIND coalesce(row.properties.privateLinkServiceConnections, []) AS conn
         MERGE (p:{{ LABELS.PrivateLinkServiceConnection }} {id: toLower(conn.id)})
         SET p += {
@@ -60,6 +49,4 @@ cypher: |
         }
         MERGE (r:{{ LABELS.ArmResource }} {id: toLower(conn.properties.privateLinkServiceId)})
         MERGE (r)-[:{{ REL.HAS_PRIVATE_ENDPOINT }}]->(obj)
-        RETURN count(*) AS _
     }
-    RETURN count(*) AS _

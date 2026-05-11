@@ -79,4 +79,3 @@ cypher: |
         }
         MERGE (s)-[:{{ REL.HAS_RULE }}]->(f)
     }
-    RETURN count(*) AS _

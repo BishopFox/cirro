@@ -15,12 +15,8 @@ cypher: |
         condition: apoc.convert.toJson(row.properties.condition)
     }
 
-    WITH obj, row
-        CALL {
-            WITH obj, row
-            UNWIND coalesce(row.properties.scopes, []) AS scope
-            MERGE (t:{{ LABELS.ArmResource }} {id: toLower(scope)})
-            MERGE (t)-[r:{{ REL.HAS_ALERT }}]->(obj)
-            RETURN count(*) AS _
-        }
-    RETURN count(*) AS _
+    CALL (obj, row) {
+        UNWIND coalesce(row.properties.scopes, []) AS scope
+        MERGE (t:{{ LABELS.ArmResource }} {id: toLower(scope)})
+        MERGE (t)-[r:{{ REL.HAS_ALERT }}]->(obj)
+    }

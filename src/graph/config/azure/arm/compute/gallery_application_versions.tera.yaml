@@ -19,8 +19,9 @@ cypher: |
         source: row.properties.publishingProfile.settings.source.mediaLink
     }
 
-    WITH obj, row
-    WITH obj, row, split(row.id, '/versions/')[0] AS galleryAppId
-    MERGE (g:{{ LABELS.ArmResource }} {id: toLower(galleryAppId)})
-    SET g:{{ LABELS.GalleryApp }}
-    MERGE (g)-[:{{ REL.HAS_VERSION }}]->(obj)
+    CALL (obj, row) {
+      WITH obj, row, split(row.id, '/versions/')[0] AS galleryAppId
+      MERGE (g:{{ LABELS.ArmResource }} {id: toLower(galleryAppId)})
+      SET g:{{ LABELS.GalleryApp }}
+      MERGE (g)-[:{{ REL.HAS_VERSION }}]->(obj)
+    }

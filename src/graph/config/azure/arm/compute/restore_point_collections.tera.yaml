@@ -26,8 +26,7 @@ cypher: |
 
     // If the source is an object with an 'id' property, link to the source VM
     CALL (obj, row) {
-        WITH obj, row
-        WHERE row.properties.source IS NOT NULL AND row.properties.source.id IS NOT NULL
+        WITH obj, row WHERE row.properties.source IS NOT NULL AND row.properties.source.id IS NOT NULL
         SET obj.restorePointCollectionId =  row.properties.restorePointCollectionId
         MERGE (vm:{{ LABELS.ArmResource }} {id: toLower(row.properties.source.id)})
         MERGE (vm)-[:{{ REL.HAS_RESTOREPOINTS }}]->(obj)
@@ -35,8 +34,7 @@ cypher: |
 
     // Or the RPC may have a `source` property that is a bag
     CALL (obj, row) {
-        WITH obj, row
-        WHERE row.source IS NOT NULL AND row.source.id IS NOT NULL
+        WITH obj, row WHERE row.source IS NOT NULL AND row.source.id IS NOT NULL
         MERGE (vm:{{ LABELS.ArmResource }} {id: toLower(row.source.id)})
         MERGE (vm)-[:{{ REL.HAS_RESTOREPOINTS }}]->(obj)
     }
@@ -47,7 +45,6 @@ cypher: |
     // Linking to disks might be more confusing, since an RPC can be linked to multiple disks
     // So we use the vmId to link the RPC to the VM, and then link the restore points to the RPC, which is a more direct relationship
     CALL (obj, row) {
-        WITH obj, row
         UNWIND coalesce(row.restorePoints, []) AS restorePoint
         MERGE (rp:{{ LABELS.ArmResource }} {id: toLower(restorePoint.id)})
         SET rp:{{ LABELS.RestorePoint }}

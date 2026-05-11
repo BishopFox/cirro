@@ -20,8 +20,9 @@ cypher: |
         provisioningState: row.properties.provisioningState
     }
 
-    WITH obj, split(toLower(obj.id), '/images/')[0] AS galleryId
-    MERGE (g:{{ LABELS.ArmResource }} {id: toLower(galleryId)})
-    SET g:{{ LABELS.Gallery }}
-    MERGE (g)-[:{{ REL.HAS_GALLERY_IMAGE }}]->(obj)
-    RETURN count(*) AS _
+    CALL (obj, row) {
+      WITH obj, split(toLower(obj.id), '/images/')[0] AS galleryId
+      MERGE (g:{{ LABELS.ArmResource }} {id: toLower(galleryId)})
+      SET g:{{ LABELS.Gallery }}
+      MERGE (g)-[:{{ REL.HAS_GALLERY_IMAGE }}]->(obj)
+    }

@@ -24,5 +24,3 @@ cypher: |
     MERGE (n:{{ LABELS.ArmResource }} {id: toLower(netappAccountId)})
     SET n:{{ LABELS.NetAppAccount }}
     MERGE (n)-[:{{ REL.CONTAINS }}]->(obj)
-    
-    RETURN count(*) AS _

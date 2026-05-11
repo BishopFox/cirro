@@ -10,4 +10,3 @@ cypher: |
     UNWIND $batch AS row
     MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
     SET obj:{{ LABELS.AppBuilder }}
-    RETURN count(*) AS _

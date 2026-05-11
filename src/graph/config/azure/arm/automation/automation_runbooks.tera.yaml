@@ -24,23 +24,19 @@ cypher: |
         SET a:{{ LABELS.AutomationAccount }}
         MERGE (a)-[:{{ REL.HAS_RUNBOOK }}]->(obj)
 
-    WITH obj, row
-        CALL {
-            WITH obj, row
-            WITH obj, row, coalesce(row.properties.parameters, {}) AS parameters
-            UNWIND keys(parameters) AS paramName
-                WITH obj, paramName, parameters[paramName] AS paramMap
+    CALL (obj, row) {
+        WITH obj, row, coalesce(row.properties.parameters, {}) AS parameters
+        UNWIND keys(parameters) AS paramName
+            WITH obj, paramName, parameters[paramName] AS paramMap
 
-                // Create a unique identifier for the parameter to avoid name collisions
-                MERGE (p:RunbookParameter {id: toLower(obj.id + "/param/" + paramName)})
-                SET p += {
-                    name: paramName,
-                    defaultValue: paramMap.defaultValue,
-                    isMandatory: paramMap.isMandatory,
-                    position: paramMap.position,
-                    type: paramMap.type
-                }
-                MERGE (obj)-[:{{ REL.HAS_PARAMETER }}]->(p)
-            RETURN count(*) AS _
-        }
-    RETURN count(*) AS _
+            // Create a unique identifier for the parameter to avoid name collisions
+            MERGE (p:RunbookParameter {id: toLower(obj.id + "/param/" + paramName)})
+            SET p += {
+                name: paramName,
+                defaultValue: paramMap.defaultValue,
+                isMandatory: paramMap.isMandatory,
+                position: paramMap.position,
+                type: paramMap.type
+            }
+            MERGE (obj)-[:{{ REL.HAS_PARAMETER }}]->(p)
+    }

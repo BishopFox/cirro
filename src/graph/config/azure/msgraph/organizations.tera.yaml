@@ -12,36 +12,28 @@ properties:
   - "/tenantType"
   - "/verifiedDomains"
 cypher: |
-  UNWIND $batch as row
-  CALL (row) {
-      MERGE (obj:{{ LABELS.GraphOrg }} {id: toLower(row.id)})
-      SET obj += {
-          businessPhones: row.businessPhones,
-          createdDateTime: row.createdDateTime,
-          displayName: row.displayName,
-          modifiedDateTime: row.modifiedDateTime,
-          onPremisesLastSyncDateTime: row.onPremisesLastSyncDateTime,
-          onPremisesSyncEnabled: row.onPremisesSyncEnabled,
-          tenantType: row.tenantType
-      }
-      MERGE (tenant:{{ LABELS.Tenant }} {id: toLower('/tenants/' + row.id)})
-      MERGE (obj)-[:{{ REL.ASSOCIATED_WITH }}]->(tenant)
+    UNWIND $batch as row
+    MERGE (obj:{{ LABELS.GraphOrg }} {id: toLower(row.id)})
+    SET obj += {
+        businessPhones: row.businessPhones,
+        createdDateTime: row.createdDateTime,
+        displayName: row.displayName,
+        modifiedDateTime: row.modifiedDateTime,
+        onPremisesLastSyncDateTime: row.onPremisesLastSyncDateTime,
+        onPremisesSyncEnabled: row.onPremisesSyncEnabled,
+        tenantType: row.tenantType
+    }
+    MERGE (tenant:{{ LABELS.Tenant }} {id: toLower('/tenants/' + row.id)})
+    MERGE (obj)-[:{{ REL.ASSOCIATED_WITH }}]->(tenant)
 
-      WITH row, obj
-      CALL {
-          WITH row, obj
-          UNWIND coalesce(row.verifiedDomains, []) AS verifiedDomain
-          MERGE (vd:{{ LABELS.VerifiedDomain }} {name: verifiedDomain.name})
-          SET vd += {
-              capabilities: verifiedDomain.capabilities,
-              isDefault: verifiedDomain.isDefault,
-              isInitial: verifiedDomain.isInitial,
-              type: verifiedDomain.type
-          }
-          MERGE (obj)-[:{{ REL.VERIFIED_DOMAIN }}]->(vd)
-      }
-
-      RETURN count(*) AS _
-  } IN TRANSACTIONS OF 5000 ROWS
-
-  RETURN count(*) AS _
+    CALL (obj, row) {
+        UNWIND coalesce(row.verifiedDomains, []) AS verifiedDomain
+        MERGE (vd:{{ LABELS.VerifiedDomain }} {name: verifiedDomain.name})
+        SET vd += {
+            capabilities: verifiedDomain.capabilities,
+            isDefault: verifiedDomain.isDefault,
+            isInitial: verifiedDomain.isInitial,
+            type: verifiedDomain.type
+        }
+        MERGE (obj)-[:{{ REL.VERIFIED_DOMAIN }}]->(vd)
+    }
