@@ -36,49 +36,41 @@ index_properties:
   - "{{ LABELS.GraphUser }}:userPrincipalName"
 cypher: |
   UNWIND $batch as row
-  CALL (row) {
-      MERGE (obj:{{ LABELS.GraphObject }} {id: toLower(row.id)})
-      SET obj:{{ LABELS.GraphUser }}
-      SET obj += {
-          accountEnabled: row.accountEnabled,
-          city: row.city,
-          companyName: row.companyName,
-          country: row.country,
-          creationType: row.creationType,
-          department: row.department,
-          displayName: row.displayName,
-          givenName: row.givenName,
-          jobTitle: row.jobTitle,
-          mail: row.mail,
-          mailNickname: row.mailNickname,
-          mobilePhone: row.mobilePhone,
-          officeLocation: row.officeLocation,
-          onPremisesDomainName: row.onPremisesDomainName,
-          onPremisesDistinguishedName: row.onPremisesDistinguishedName,
-          onPremisesImmutableId: row.onPremisesImmutableId,
-          onPremisesLastSyncDateTime: row.onPremisesLastSyncDateTime,
-          onPremisesSyncEnabled: row.onPremisesSyncEnabled,
-          onPremisesSamAccountName: row.onPremisesSamAccountName,
-          onPremisesSecurityIdentifier: row.onPremisesSecurityIdentifier,
-          onPremisesUserPrincipalName: row.onPremisesUserPrincipalName,
-          passwordPolicies: row.passwordPolicies,
-          refreshTokensValidFromDateTime: row.refreshTokensValidFromDateTime,
-          securityIdentifier: row.securityIdentifier,
-          state: row.state,
-          surname: row.surname,
-          userPrincipalName: row.userPrincipalName,
-          userType: row.userType
-      }
-  
-      WITH row, obj
-      CALL {
-          WITH row, obj
-          UNWIND coalesce(row.memberOf, []) AS memberOf
-          MERGE (m:{{ LABELS.GraphObject }} {id: toLower(memberOf)})
-          MERGE (obj)-[:{{ REL.MEMBER_OF }}]->(m)
-      }
+  MERGE (obj:{{ LABELS.GraphObject }} {id: toLower(row.id)})
+  SET obj:{{ LABELS.GraphUser }}
+  SET obj += {
+      accountEnabled: row.accountEnabled,
+      city: row.city,
+      companyName: row.companyName,
+      country: row.country,
+      creationType: row.creationType,
+      department: row.department,
+      displayName: row.displayName,
+      givenName: row.givenName,
+      jobTitle: row.jobTitle,
+      mail: row.mail,
+      mailNickname: row.mailNickname,
+      mobilePhone: row.mobilePhone,
+      officeLocation: row.officeLocation,
+      onPremisesDomainName: row.onPremisesDomainName,
+      onPremisesDistinguishedName: row.onPremisesDistinguishedName,
+      onPremisesImmutableId: row.onPremisesImmutableId,
+      onPremisesLastSyncDateTime: row.onPremisesLastSyncDateTime,
+      onPremisesSyncEnabled: row.onPremisesSyncEnabled,
+      onPremisesSamAccountName: row.onPremisesSamAccountName,
+      onPremisesSecurityIdentifier: row.onPremisesSecurityIdentifier,
+      onPremisesUserPrincipalName: row.onPremisesUserPrincipalName,
+      passwordPolicies: row.passwordPolicies,
+      refreshTokensValidFromDateTime: row.refreshTokensValidFromDateTime,
+      securityIdentifier: row.securityIdentifier,
+      state: row.state,
+      surname: row.surname,
+      userPrincipalName: row.userPrincipalName,
+      userType: row.userType
+  }
 
-      RETURN count(*) AS _
-  } IN TRANSACTIONS OF 5000 ROWS
-
-  RETURN count(*) AS _
+  CALL (obj, row) {
+      UNWIND coalesce(row.memberOf, []) AS memberOf
+      MERGE (m:{{ LABELS.GraphObject }} {id: toLower(memberOf)})
+      MERGE (obj)-[:{{ REL.MEMBER_OF }}]->(m)
+  }

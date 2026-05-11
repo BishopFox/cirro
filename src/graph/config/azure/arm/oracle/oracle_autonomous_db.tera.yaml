@@ -38,10 +38,10 @@ cypher: |
     }
 
     // Connection URLs. Not sure of all values so adding them dynamically
+    // Appropriate use of FOREACH here
     FOREACH (k IN coalesce(keys(row.properties.connectionUrls), []) |
       SET obj[k] = row.properties.connectionUrls[k]
     )
 
     MERGE (sub: {{ LABELS.ArmResource }} {id: toLower(row.properties.subnetId)})
     MERGE (sub)-[:{{ REL.HAS_ORACLE_RESOURCE }}]->(obj)
-    RETURN count(*) AS _

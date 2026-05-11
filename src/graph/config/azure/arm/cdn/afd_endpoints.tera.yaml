@@ -20,4 +20,4 @@ cypher: |
     WITH obj, row, split(toLower(obj.id), '/afdendpoints/')[0] AS profileId
       MERGE (a:{{ LABELS.ArmResource }} {id: toLower(profileId)})
       SET a:{{ LABELS.CdnProfile }}
-      MERGE (a)-[:{{ REL.HAS_ENDPOINT }}]->(obj) 
+      MERGE (a)-[:{{ REL.HAS_ENDPOINT }}]->(obj)

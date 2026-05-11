@@ -22,4 +22,3 @@ cypher: |
        softDeleteEnabled: row.properties.softDeleteEnabled,
        tenantId: row.properties.tenantId
     }
-    RETURN count(*) AS _

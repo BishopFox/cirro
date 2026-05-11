@@ -49,5 +49,3 @@ cypher: |
         smbServerFqdn: mt.smbServerFqdn
     }
     MERGE (obj)-[:{{ REL.MOUNTS }}]->(mtNode)
-    
-    RETURN count(*) AS _

@@ -23,20 +23,15 @@ cypher: |
         imageVersion: row.properties.storageProfile.imageReference.exactVersion
     }
 
-    WITH obj, row
-        CALL {
-            WITH obj, row
-            UNWIND coalesce(row.properties.networkProfile.networkInterfaces, []) AS nic
-            MERGE (n:{{ LABELS.ArmResource }} {id: toLower(nic.id)})
-            SET n:{{ LABELS.NetworkInterface }}
-            MERGE (obj)-[:{{ REL.HAS_NIC }}]->(n)
-            RETURN count(*) AS _
-        }
+    CALL (obj, row) {
+        UNWIND coalesce(row.properties.networkProfile.networkInterfaces, []) AS nic
+        MERGE (n:{{ LABELS.ArmResource }} {id: toLower(nic.id)})
+        SET n:{{ LABELS.NetworkInterface }}
+        MERGE (obj)-[:{{ REL.HAS_NIC }}]->(n)
+    }
     
-    WITH obj, row
-        CALL {
-            WITH obj, row
-            UNWIND coalesce(row.resources, []) AS resource
+    CALL (obj, row) {
+        UNWIND coalesce(row.resources, []) AS resource
             WITH obj, resource WHERE toLower(resource.type) = "microsoft.compute/virtualmachines/extensions"
                 MERGE (e:{{ LABELS.ArmResource }} {id: toLower(resource.id)})
                 SET e:{{ LABELS.VMExtension }}
@@ -47,6 +42,4 @@ cypher: |
                     provisioningState: resource.properties.provisioningState
                 }
                 MERGE (obj)-[:{{ REL.HAS_EXTENSION }}]->(e)
-            RETURN count(*) AS _
-        }
-    RETURN count(*) AS _
+    }

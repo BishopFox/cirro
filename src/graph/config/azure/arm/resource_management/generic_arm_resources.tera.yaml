@@ -36,29 +36,23 @@ cypher: |
     MERGE (rg)-[:{{ REL.CONTAINS }}]->(obj)
 
 
-    WITH obj, row
-    CALL {
-        WITH obj, row
-        WITH obj, row WHERE row.managedBy IS NOT NULL 
-        MERGE (h:{{ LABELS.ArmResource }} {id: toLower(row.managedBy)})
-        MERGE (h)-[:{{ REL.MANAGES }}]->(obj)
-        RETURN count(*) AS _
+    CALL (obj, row) {
+        WHEN row.managedBy IS NOT NULL THEN {
+            MERGE (h:{{ LABELS.ArmResource }} {id: toLower(row.managedBy)})
+            MERGE (h)-[:{{ REL.MANAGES }}]->(obj)
+        }
     }
 
-    WITH obj, row
-    CALL {
-        WITH obj, row
-        WITH obj, row WHERE row.identity IS NOT NULL AND toLower(row.identity.type) CONTAINS 'systemassigned' AND row.identity.principalId IS NOT NULL
+    CALL (obj, row) {
+        WHEN row.identity IS NOT NULL AND toLower(row.identity.type) CONTAINS 'systemassigned' AND row.identity.principalId IS NOT NULL THEN {
             MERGE (i:{{ LABELS.GraphObject }} {id: toLower(row.identity.principalId)})
             SET i:{{ LABELS.GraphServicePrincipal }}
             MERGE (obj)-[:{{ REL.HAS_IDENTITY }}]->(i)
-        RETURN count(*) AS _
+        }
     }
 
-    WITH obj, row
-    CALL {
-        WITH obj, row
-        WITH obj, row WHERE row.identity IS NOT NULL AND toLower(row.identity.type) CONTAINS 'userassigned'
+    CALL (obj, row) {
+        WHEN row.identity IS NOT NULL AND toLower(row.identity.type) CONTAINS 'userassigned' THEN {
             UNWIND keys(row.identity.userAssignedIdentities) AS subKey
             WITH obj, subKey, row.identity.userAssignedIdentities[subKey] AS ident
                 MERGE (i:{{ LABELS.ArmResource }} {id: toLower(subKey)})
@@ -68,12 +62,10 @@ cypher: |
                 WITH obj, i, ident WHERE ident.clientId IS NOT NULL
                 MERGE (o:{{ LABELS.GraphServicePrincipal }} {appId: ident.clientId})
                 MERGE (i)-[:{{ REL.REPRESENTED_BY }}]->(o)
-        RETURN count(*) AS _
+        }
     }
 
-    WITH obj, row
-    CALL {
-        WITH obj, row
+    CALL (obj, row) {
         UNWIND coalesce(row.properties.privateEndpointConnections, []) AS conn
         MERGE (p:{{ LABELS.ArmResource }} {id: toLower(conn.id)})
         SET p:{{ LABELS.PrivateEndpointConnection }}
@@ -83,6 +75,4 @@ cypher: |
             groupIds: conn.properties.groupIds
         }
         MERGE (obj)-[:{{ REL.HAS_PRIVATE_ENDPOINT }}]->(p)
-        RETURN count(*) AS _
     }
-    RETURN count(*) AS _

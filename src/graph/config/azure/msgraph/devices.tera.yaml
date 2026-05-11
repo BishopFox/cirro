@@ -20,8 +20,7 @@ properties:
   - "/registeredUsers"
   - "/registeredOwners"
 cypher: |
-  UNWIND $batch as row
-  CALL (row) {
+    UNWIND $batch as row
     MERGE (obj:{{ LABELS.GraphObject }} {id: toLower(row.id)})
     SET obj:{{ LABELS.GraphDevice }}
     SET obj += {
@@ -39,34 +38,24 @@ cypher: |
         profileType: row.profileType,
         trustType: row.trustType
     }
-    
+
     // Unwind memberOf
-    WITH row, obj
-    CALL {
-        WITH row, obj
+    CALL (obj, row) {
         UNWIND coalesce(row.memberOf, []) AS memberOf
         MERGE (m:{{ LABELS.GraphObject }} {id: toLower(memberOf)})
         MERGE (obj)-[:{{ REL.MEMBER_OF }}]->(m)
     }
 
     // Unwind registered users
-    WITH row, obj
-    CALL {
-        WITH row, obj
+    CALL (obj, row) {
         UNWIND coalesce(row.registeredUsers, []) AS registeredUser
         MERGE (u:{{ LABELS.GraphObject }} {id: toLower(registeredUser)})
         MERGE (u)-[:{{ REL.REGISTERED_USER }}]->(obj)
     }
 
     // Unwind registered owners
-    WITH row, obj
-    CALL {
-        WITH row, obj
+    CALL (obj, row) {
         UNWIND coalesce(row.registeredOwners, []) AS registeredOwner
         MERGE (o:{{ LABELS.GraphObject }} {id: toLower(registeredOwner)})
         MERGE (o)-[:{{ REL.REGISTERED_OWNER }}]->(obj)
     }
-
-  } IN TRANSACTIONS OF 5000 ROWS
-
-  RETURN count(*) AS _

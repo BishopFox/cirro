@@ -17,4 +17,3 @@ cypher: |
 
     MERGE (sub: {{ LABELS.ArmResource }} {id: toLower(row.properties.subnetId)})
     MERGE (sub)-[:{{ REL.HAS_GITHUB_SETTING }}]->(obj)
-    RETURN count(*) AS _

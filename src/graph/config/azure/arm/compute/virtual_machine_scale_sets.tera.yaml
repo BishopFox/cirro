@@ -19,4 +19,3 @@ cypher: |
         adminUsername: row.properties.virtualMachineProfile.osProfile.adminUsername,
         computerNamePrefix: row.properties.virtualMachineProfile.osProfile.computerNamePrefix
     }
-    RETURN count(*) AS _

@@ -21,11 +21,10 @@ cypher: |
         publicNetworkAccess: row.properties.publicNetworkAccess
     }
 
-    WITH obj, row
-    CALL {
-      WITH obj, row
-      WITH obj, row WHERE row.properties.ingestionStorage.id IS NOT NULL
-      MERGE (sa: {{ LABELS.ArmResource }} {id:row.properties.ingestionStorage.id})
-      SET sa:{{ LABELS.StorageAccount }}
-      MERGE (obj)-[:{{ REL.USES_STORAGE }}]->(sa)
+    CALL (obj, row) {
+      WHEN row.properties.ingestionStorage.id IS NOT NULL THEN {
+        MERGE (sa: {{ LABELS.ArmResource }} {id:row.properties.ingestionStorage.id})
+        SET sa:{{ LABELS.StorageAccount }}
+        MERGE (obj)-[:{{ REL.USES_STORAGE }}]->(sa)
+      }
     }

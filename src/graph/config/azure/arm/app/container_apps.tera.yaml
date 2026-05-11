@@ -27,7 +27,6 @@ cypher: |
 
     // Link to ContainerRegistry
     // Link by name since name since it's a unique domain and ContainerApps only reference the registry server, not the full resource ID
-    WITH obj, row
     CALL (obj, row) {
         UNWIND coalesce(row.properties.configuration.registries, []) AS registry
         MERGE (r:{{ LABELS.ContainerRegistry }} {loginServer: toLower(registry.server)})
@@ -37,11 +36,9 @@ cypher: |
             username: registry.username,
             passwordSecretRef: registry.passwordSecretRef
         }
-        RETURN count(*) AS _
     }
 
     // Iterate over container templates to link to ContainerRegistry by registry server in image reference
-     WITH obj, row
     CALL (obj, row) {
         UNWIND coalesce(row.properties.template.containers, []) AS container
         WITH obj, container WHERE container.image IS NOT NULL
@@ -63,7 +60,4 @@ cypher: |
             value: envVar.value,
             secretRef: envVar.secretRef
         }
-      
-        RETURN count(*) AS _
     }
-    RETURN count(*) AS _

@@ -21,19 +21,21 @@ cypher: |
     }
 
     // Handle disk creation source based on createOption
-    WITH obj, row
-    SET obj.fromImage = CASE 
-        WHEN row.properties.creationData.createOption = 'FromImage' AND row.properties.creationData.imageReference.id IS NOT NULL
-        THEN toLower(row.properties.creationData.imageReference.id)
-        ELSE null
-    END
-    SET obj.sourceUri = CASE
-        WHEN row.properties.creationData.createOption = 'Import' AND row.properties.creationData.sourceUri IS NOT NULL
-        THEN row.properties.creationData.sourceUri
-        WHEN row.properties.creationData.createOption = 'Copy' AND row.properties.creationData.sourceResourceId IS NOT NULL
-        THEN row.properties.creationData.sourceResourceId
-        ELSE null
-    END
+    CALL (obj, row) {
+        SET obj.fromImage = CASE 
+            WHEN row.properties.creationData.createOption = 'FromImage' AND row.properties.creationData.imageReference.id IS NOT NULL
+            THEN toLower(row.properties.creationData.imageReference.id)
+            ELSE null
+        END
+        SET obj.sourceUri = CASE
+            WHEN row.properties.creationData.createOption = 'Import' AND row.properties.creationData.sourceUri IS NOT NULL
+            THEN row.properties.creationData.sourceUri
+            WHEN row.properties.creationData.createOption = 'Copy' AND row.properties.creationData.sourceResourceId IS NOT NULL
+            THEN row.properties.creationData.sourceResourceId
+            ELSE null
+        END
+    }
+    
 
     // Create source relationships for Import and Copy operations
     // TODO: Revisit this and prevent Disks/Snapshot/StorageAccount mislabeling
@@ -50,12 +52,9 @@ cypher: |
     //    MERGE (obj)-[:{{ REL.HAS_SOURCE }}]->(s)
     // }
 
-    WITH obj, row
     CALL (obj, row) {
         WITH obj, row WHERE row.properties.encryption.diskEncryptionSetId IS NOT NULL
         MERGE (des:{{ LABELS.ArmResource }} {id: toLower(row.properties.encryption.diskEncryptionSetId)})
         SET des:{{ LABELS.DiskEncryptionSet }}
         MERGE (obj)-[:{{ REL.ENCRYPTED_BY }}]->(des)
     }
-
-    RETURN count(*) AS _

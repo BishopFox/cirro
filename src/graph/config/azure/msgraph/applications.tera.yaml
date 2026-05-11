@@ -23,102 +23,86 @@ constraint_properties:
     - "{{ LABELS.ClientSecret }}:keyId"
     - "{{ LABELS.Certificate }}:thumbprint"
 cypher: |
-  UNWIND $batch as row
-  CALL (row) {
-      MERGE (obj:{{ LABELS.GraphObject }} {id: toLower(row.id)})
-      SET obj:{{ LABELS.GraphApplication }}
-      SET obj += {
-          displayName: row.displayName,
-          appId: row.appId,
-          publisherDomain: row.publisherDomain,
-          signInAudience: row.signInAudience,
-          identifierUris: row.identifierUris,
-          redirectUris: row.web.redirectUris + row.spa.redirectUris + row.publicClient.redirectUris,
-          publicClientRedirectUris: row.publicClient.redirectUris,
-          spaRedirectUris: row.spa.redirectUris,
-          webRedirectUris: row.web.redirectUris,
-          implicitAccessToken: row.web.implicitGrantSettings.enableAccessTokenIssuance,
-            implicitIdToken: row.web.implicitGrantSettings.enableIdTokenIssuance
-      }
+    UNWIND $batch as row
+    MERGE (obj:{{ LABELS.GraphObject }} {id: toLower(row.id)})
+    SET obj:{{ LABELS.GraphApplication }}
+    SET obj += {
+        displayName: row.displayName,
+        appId: row.appId,
+        publisherDomain: row.publisherDomain,
+        signInAudience: row.signInAudience,
+        identifierUris: row.identifierUris,
+        redirectUris: row.web.redirectUris + row.spa.redirectUris + row.publicClient.redirectUris,
+        publicClientRedirectUris: row.publicClient.redirectUris,
+        spaRedirectUris: row.spa.redirectUris,
+        webRedirectUris: row.web.redirectUris,
+        implicitAccessToken: row.web.implicitGrantSettings.enableAccessTokenIssuance,
+        implicitIdToken: row.web.implicitGrantSettings.enableIdTokenIssuance
+    }
 
-      // App Roles
-      WITH row, obj
-      CALL {
-          WITH row, obj
-          UNWIND coalesce(row.appRoles, []) AS appRole
-          MERGE (ar:{{ LABELS.GraphObject }} {id: toLower(appRole.id)})
-          SET ar:{{ LABELS.GraphAppRole }}    
-          SET ar += {
-              allowedMemberTypes: appRole.allowedMemberTypes,
-              description: appRole.description,
-              displayName: appRole.displayName,
-              isEnabled: appRole.isEnabled,
-              isPreAuthorizationRequired: appRole.isPreAuthorizationRequired,
-              isPrivate: appRole.isPrivate,
-              origin: appRole.origin,
-              value: appRole.value
-          }
-          MERGE (obj)-[:{{ REL.HAS_APPROLE }}]->(ar)
-      }
+    // App Roles
+    CALL (obj, row) {
+        UNWIND coalesce(row.appRoles, []) AS appRole
+        MERGE (ar:{{ LABELS.GraphObject }} {id: toLower(appRole.id)})
+        SET ar:{{ LABELS.GraphAppRole }}    
+        SET ar += {
+            allowedMemberTypes: appRole.allowedMemberTypes,
+            description: appRole.description,
+            displayName: appRole.displayName,
+            isEnabled: appRole.isEnabled,
+            isPreAuthorizationRequired: appRole.isPreAuthorizationRequired,
+            isPrivate: appRole.isPrivate,
+            origin: appRole.origin,
+            value: appRole.value
+        }
+        MERGE (obj)-[:{{ REL.HAS_APPROLE }}]->(ar)
+    }
 
-      // Unwind owners
-      WITH row, obj
-      CALL {
-          WITH row, obj
-          UNWIND coalesce(row.owners, []) AS owner
-          MERGE (ow:{{ LABELS.GraphObject }} {id: toLower(owner)})
-          MERGE (ow)-[:{{ REL.OWNS }}]->(obj)
-      }
-  
-      // Federated credentials
-      WITH row, obj
-      CALL {
-          WITH row, obj
-          UNWIND coalesce(row.federatedIdentityCredentials, []) AS fidc
-          MERGE (f:{{ LABELS.FederatedIdentityCredential }} {id: toLower(fidc.id)})
-          SET f += {
-              audiences: fidc.audiences,
-              description: fidc.description,
-              issuer: fidc.issuer,
-              name: fidc.name,
-              subject: fidc.subject
-          }
-          MERGE (f)-[:{{ REL.AUTHENTICATES }}]->(obj)
-      }
+    // Unwind owners
+    CALL (obj, row) {
+        UNWIND coalesce(row.owners, []) AS owner
+        MERGE (ow:{{ LABELS.GraphObject }} {id: toLower(owner)})
+        MERGE (ow)-[:{{ REL.OWNS }}]->(obj)
+    }
 
-      // Unwind password credentials
-      WITH row, obj
-      CALL {
-          WITH row, obj
-          UNWIND coalesce(row.passwordCredentials, []) AS passwordCredential
-          MERGE (p:{{ LABELS.ClientSecret }} {keyId: passwordCredential.keyId})
-          SET p += {
-              customKeyIdentifier: passwordCredential.customKeyIdentifier,
-              displayName: passwordCredential.displayName,
-              endDateTime: passwordCredential.endDateTime,
-              hint: passwordCredential.hint,
-              startDateTime: passwordCredential.startDateTime
-          }
-          MERGE (p)-[:{{ REL.AUTHENTICATES }}]->(obj)
-      }
-      
-      // Unwind key credentials
-      WITH row, obj
-      CALL {
-          WITH row, obj
-          UNWIND coalesce([c IN coalesce(row.keyCredentials, []) WHERE c.customKeyIdentifier IS NOT NULL], []) AS keyCredential
-          MERGE (k:{{ LABELS.Certificate }} {thumbprint: keyCredential.customKeyIdentifier})
-          SET k += {
-              displayName: keyCredential.displayName,
-              endDateTime: keyCredential.endDateTime,
-              startDateTime: keyCredential.startDateTime,
-              type: keyCredential.type,
-              usage: keyCredential.usage
-          }
-          MERGE (k)-[:{{ REL.AUTHENTICATES }}]->(obj)
-      }
+    // Federated credentials
+    CALL (obj, row) {
+        UNWIND coalesce(row.federatedIdentityCredentials, []) AS fidc
+        MERGE (f:{{ LABELS.FederatedIdentityCredential }} {id: toLower(fidc.id)})
+        SET f += {
+            audiences: fidc.audiences,
+            description: fidc.description,
+            issuer: fidc.issuer,
+            name: fidc.name,
+            subject: fidc.subject
+        }
+        MERGE (f)-[:{{ REL.AUTHENTICATES }}]->(obj)
+    }
 
-      RETURN count(*) AS _
-  } IN TRANSACTIONS OF 5000 ROWS
+    // Unwind password credentials
+    CALL (obj, row) {
+        UNWIND coalesce(row.passwordCredentials, []) AS passwordCredential
+        MERGE (p:{{ LABELS.ClientSecret }} {keyId: passwordCredential.keyId})
+        SET p += {
+            customKeyIdentifier: passwordCredential.customKeyIdentifier,
+            displayName: passwordCredential.displayName,
+            endDateTime: passwordCredential.endDateTime,
+            hint: passwordCredential.hint,
+            startDateTime: passwordCredential.startDateTime
+        }
+        MERGE (p)-[:{{ REL.AUTHENTICATES }}]->(obj)
+    }
 
-  RETURN count(*) AS _
+    // Unwind key credentials
+    CALL (obj, row) {
+        UNWIND coalesce([c IN coalesce(row.keyCredentials, []) WHERE c.customKeyIdentifier IS NOT NULL], []) AS keyCredential
+        MERGE (k:{{ LABELS.Certificate }} {thumbprint: keyCredential.customKeyIdentifier})
+        SET k += {
+            displayName: keyCredential.displayName,
+            endDateTime: keyCredential.endDateTime,
+            startDateTime: keyCredential.startDateTime,
+            type: keyCredential.type,
+            usage: keyCredential.usage
+        }
+        MERGE (k)-[:{{ REL.AUTHENTICATES }}]->(obj)
+    }

@@ -18,7 +18,9 @@ cypher: |
     SET o:{{ LABELS.GalleryAppVersion }}
     MERGE (obj)-[:{{ REL.REFERENCES_PACKAGE }}]->(o)
 
-    WITH obj, row, split(toLower(obj.id), '/vmapplications/')[0] AS vmId
+    CALL (obj, row) {
+        WITH obj, row, split(toLower(obj.id), '/vmapplications/')[0] AS vmId
         MERGE (vm:{{ LABELS.ArmResource }} {id: toLower(vmId)})
         SET vm:{{ LABELS.VirtualMachine }}
         MERGE (vm)-[:{{ REL.HAS_VMAPP }}]->(obj)
+    }    

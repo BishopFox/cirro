@@ -28,14 +28,16 @@ cypher: |
   }
 
   // If the Key Vault ID is present, create a relationship to the Key Vault and Key Vault Secret
-  WITH obj, row WHERE row.properties.keyVaultId IS NOT NULL AND row.properties.keyVaultSecretName IS NOT NULL
-  MERGE (kv:{{ LABELS.ArmResource }} {id: toLower(row.properties.keyVaultId)})
-  SET kv:{{ LABELS.KeyVault }}
+  CALL (obj, row) { 
+    WHEN row.properties.keyVaultId IS NOT NULL AND row.properties.keyVaultSecretName IS NOT NULL THEN {
+      MERGE (kv:{{ LABELS.ArmResource }} {id: toLower(row.properties.keyVaultId)})
+      SET kv:{{ LABELS.KeyVault }}
+      MERGE (kvs:{{ LABELS.KeyVaultSecret }} {id: toLower(row.properties.keyVaultId + "/secrets/" + row.properties.keyVaultSecretName)})
 
-  MERGE (kvs:{{ LABELS.KeyVaultSecret }} {id: toLower(row.properties.keyVaultId + "/secrets/" + row.properties.keyVaultSecretName)})
+      // Create relationship from Key Vault to Key Vault Secret
+      MERGE (kv)-[:{{ REL.HAS_SECRET }}]->(kvs)
 
-  // Create relationship from Key Vault to Key Vault Secret
-  MERGE (kv)-[:{{ REL.HAS_SECRET }}]->(kvs)
-
-  // Create relationship from Web Certificate to Key Vault Secret
-  MERGE (kvs)-[:{{ REL.USED_BY }}]->(obj)
+      // Create relationship from Web Certificate to Key Vault Secret
+      MERGE (kvs)-[:{{ REL.USED_BY }}]->(obj)
+    }
+  }

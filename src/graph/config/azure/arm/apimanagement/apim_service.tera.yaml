@@ -27,9 +27,7 @@ cypher: |
         scmUrl: row.properties.scmUrl
     }
 
-    WITH s, row
-    CALL {
-        WITH s, row
+    CALL (s, row) {
         UNWIND coalesce(row.managedByTenants, []) AS tenant
         MERGE (t:{{ LABELS.Tenant }} {id: toLower(tenant.tenantId)})
         MERGE (t)-[:{{ REL.MANAGES }}]->(t)

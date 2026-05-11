@@ -19,5 +19,3 @@ cypher: |
         encryption: row.properties.peerTrafficConfiguration.encryption.enabled,
         staticIp: row.properties.staticIp
     }
-
-    RETURN count(*) AS _

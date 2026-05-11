@@ -29,5 +29,4 @@ cypher: |
         WITH obj, row WHERE row.properties.containerResourceId IS NOT NULL
           MERGE (h:{{ LABELS.ArmResource }} {id: toLower(row.properties.containerResourceId)})
           MERGE (h)-[:{{ REL.HOSTS }}]->(obj)
-    }
-   
+    }   
