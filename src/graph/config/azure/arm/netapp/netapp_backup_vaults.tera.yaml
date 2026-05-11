@@ -1,0 +1,20 @@
+name: "NetApp Backup Vaults"
+label: "{{ LABELS.NetAppBackupVault }}"
+table_name: "resources"
+resource_type: "microsoft.netapp/backupvaults"
+properties:
+  - "/id"
+  - "/properties"
+cypher: |
+    UNWIND $batch AS row
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+    SET obj:{{ LABELS.NetAppBackupVault }}
+    SET obj += {
+        provisioningState: row.properties.provisioningState
+    }
+
+    // Create relationship to NetApp Account
+    WITH obj, row, split(toLower(row.id), '/backupvaults/')[0] AS netappAccountId
+    MERGE (n:{{ LABELS.ArmResource }} {id: toLower(netappAccountId)})
+    SET n:{{ LABELS.NetAppAccount }}
+    MERGE (n)-[:{{ REL.HAS_BACKUP_VAULT }}]->(obj)

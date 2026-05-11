@@ -10,6 +10,7 @@ Represents a volume within an Azure NetApp Files capacity pool.
 - `baremetalTenantId` - Bare metal tenant identifier
 - `coolAccess` - Cool access configuration
 - `creationToken` - Unique creation token for the volume
+- `enableSubvolumes` - Whether subvolumes are enabled
 - `encryptionKeySource` - Source of encryption keys
 - `fileSystemId` - File system identifier
 - `isDefaultQuotaEnabled` - Whether default quota is enabled
