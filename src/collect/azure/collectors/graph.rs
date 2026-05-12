@@ -163,6 +163,7 @@ pub async fn enumerate_graph(
                         "/name".into(),
                         "/description".into(),
                         "/issuer".into(),
+                        "/subject".into(),
                         "/audiences".into(),
                     ],
                 ),
