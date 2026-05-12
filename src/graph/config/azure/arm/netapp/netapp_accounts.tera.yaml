@@ -16,6 +16,7 @@ cypher: |
     }
 
     // Iterate over Active Directories and create relationships
+    WITH obj, row
     CALL (obj, row) {
         WITH obj, row, row.properties.activeDirectories AS activeDirectories
         UNWIND activeDirectories AS ad

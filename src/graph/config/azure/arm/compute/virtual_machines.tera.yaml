@@ -23,6 +23,7 @@ cypher: |
         imageVersion: row.properties.storageProfile.imageReference.exactVersion
     }
 
+    WITH obj, row
     CALL (obj, row) {
         UNWIND coalesce(row.properties.networkProfile.networkInterfaces, []) AS nic
         MERGE (n:{{ LABELS.ArmResource }} {id: toLower(nic.id)})

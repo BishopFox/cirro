@@ -20,6 +20,7 @@ cypher: |
         tenantId : row.tenantId
     }
 
+    WITH obj, row
     CALL (obj, row) {
         UNWIND coalesce(row.managedByTenants, []) AS tenant
         MERGE (t:{{ LABELS.Tenant }} {id: toLower(tenant.tenantId)})

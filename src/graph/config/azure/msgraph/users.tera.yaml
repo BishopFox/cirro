@@ -69,6 +69,8 @@ cypher: |
       userType: row.userType
   }
 
+  WITH obj, row
+
   CALL (obj, row) {
       UNWIND coalesce(row.memberOf, []) AS memberOf
       MERGE (m:{{ LABELS.GraphObject }} {id: toLower(memberOf)})

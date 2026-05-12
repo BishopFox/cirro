@@ -13,6 +13,7 @@ cypher: |
         supportedOSType: row.properties.supportedOSType
     }
 
+    WITH obj, row
     CALL (obj, row) {
       WITH obj, row, split(row.id, '/applications/')[0] AS galleryId
       MERGE (g:{{ LABELS.ArmResource }} {id: toLower(galleryId)})

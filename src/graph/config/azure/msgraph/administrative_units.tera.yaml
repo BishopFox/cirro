@@ -26,6 +26,8 @@ cypher: |
       visibility: row.visibility
   }
 
+  WITH row, obj
+
   // Unwind members
   CALL (row, obj) {
     UNWIND coalesce(row.members, []) AS member

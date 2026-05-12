@@ -35,6 +35,7 @@ cypher: |
     SET rg:{{ LABELS.ResourceGroup }}
     MERGE (rg)-[:{{ REL.CONTAINS }}]->(obj)
 
+    WITH obj, row
 
     CALL (obj, row) {
         WHEN row.managedBy IS NOT NULL THEN {

@@ -18,6 +18,7 @@ cypher: |
         ipVersionType: row.properties.ipVersionType
     }
 
+    WITH obj, row
     CALL (obj, row) {
         UNWIND coalesce(row.properties.customDnsConfigs, []) AS config
         MERGE (d:{{ LABELS.CustomDnsConfig }} {fqdn: config.fqdn})

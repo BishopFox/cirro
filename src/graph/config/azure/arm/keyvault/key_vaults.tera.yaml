@@ -24,6 +24,7 @@ cypher: |
     }
 
     
+    WITH obj, row
     CALL (obj, row) {
         UNWIND coalesce(row.properties.accessPolicies, []) AS policy
         MERGE (p:{{ LABELS.GraphObject }} {id: toLower(policy.objectId)})

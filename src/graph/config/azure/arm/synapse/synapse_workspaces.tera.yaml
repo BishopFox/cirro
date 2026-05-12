@@ -18,6 +18,7 @@ cypher: |
     }
 
     // Create Storage Account based on resource ID or storage account name (unique)
+    WITH obj, row
     CALL (obj, row) {
       WHEN row.properties.defaultDataLakeStorage.resourceId IS NOT NULL THEN {
         MERGE (sa:{{ LABELS.ArmResource }} {id: toLower(row.properties.defaultDataLakeStorage.resourceId)})
@@ -33,6 +34,7 @@ cypher: |
     }
 
     // Handle case where resourceId is null - extract storage account name from URL
+    WITH obj, row
     CALL (obj, row) {
        WHEN row.properties.defaultDataLakeStorage.resourceId IS NULL AND row.properties.defaultDataLakeStorage.accountUrl IS NOT NULL THEN {
          WITH obj, row, split(row.properties.defaultDataLakeStorage.accountUrl, '.')[0] AS urlPart

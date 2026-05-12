@@ -22,6 +22,7 @@ cypher: |
     }
 
     // Iterate through containers in the container group
+    WITH obj, row
     CALL (obj, row) {
       UNWIND coalesce(row.properties.containers, []) AS container
       MERGE (c:{{ LABELS.Container}} {image: toLower(container.properties.image)})

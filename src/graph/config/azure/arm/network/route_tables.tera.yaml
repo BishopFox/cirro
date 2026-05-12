@@ -13,6 +13,7 @@ cypher: |
         disableBgpRoutePropagation: row.properties.disableBgpRoutePropagation
     }
 
+    WITH obj, row
     CALL (obj, row) {
         UNWIND coalesce(row.properties.routes, []) AS route
         MERGE (r:{{ LABELS.NetworkRoute }} {id: toLower(route.id)})

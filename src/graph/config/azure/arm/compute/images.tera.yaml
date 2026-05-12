@@ -15,6 +15,7 @@ cypher: |
     }
 
     // If there is a source virtual machine, link to it
+    WITH obj, row
     CALL (obj, row) {
       WITH obj, row WHERE row.properties.sourceVirtualMachine.id IS NOT NULL
       MERGE (vm:{{ LABELS.ArmResource }} {id: toLower(row.properties.sourceVirtualMachine.id)})

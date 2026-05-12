@@ -26,6 +26,8 @@ cypher: |
     MERGE (tenant:{{ LABELS.Tenant }} {id: toLower('/tenants/' + row.id)})
     MERGE (obj)-[:{{ REL.ASSOCIATED_WITH }}]->(tenant)
 
+    WITH obj, row
+
     CALL (obj, row) {
         UNWIND coalesce(row.verifiedDomains, []) AS verifiedDomain
         MERGE (vd:{{ LABELS.VerifiedDomain }} {name: verifiedDomain.name})

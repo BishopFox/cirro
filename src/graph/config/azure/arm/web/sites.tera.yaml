@@ -37,6 +37,8 @@ cypher: |
   SET sf:{{ LABELS.ServerFarm }}
   MERGE (sf)-[:HOSTS_SITE]->(obj)
 
+  WITH obj, row
+
   // Link to Web Certificates
   CALL (obj, row) {
     UNWIND coalesce(row.properties.hostNameSslStates, []) AS sslState

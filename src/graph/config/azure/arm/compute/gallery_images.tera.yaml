@@ -20,6 +20,7 @@ cypher: |
         provisioningState: row.properties.provisioningState
     }
 
+    WITH obj, row
     CALL (obj, row) {
       WITH obj, split(toLower(obj.id), '/images/')[0] AS galleryId
       MERGE (g:{{ LABELS.ArmResource }} {id: toLower(galleryId)})

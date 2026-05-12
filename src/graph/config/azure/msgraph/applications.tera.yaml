@@ -40,6 +40,8 @@ cypher: |
         implicitIdToken: row.web.implicitGrantSettings.enableIdTokenIssuance
     }
 
+    WITH obj, row
+
     // App Roles
     CALL (obj, row) {
         UNWIND coalesce(row.appRoles, []) AS appRole

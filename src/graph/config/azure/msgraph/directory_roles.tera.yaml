@@ -17,6 +17,8 @@ cypher: |
         roleTemplateId: row.roleTemplateId
     }
 
+    WITH obj, row
+
     // Unwind members
     CALL (obj, row) {
         UNWIND coalesce(row.members, []) AS member

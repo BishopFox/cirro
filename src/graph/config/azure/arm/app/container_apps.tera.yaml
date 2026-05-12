@@ -25,6 +25,8 @@ cypher: |
     SET env:{{ LABELS.AppManagedEnvironment }}
     MERGE (env)-[:{{ REL.DEPLOYS }}]->(obj)
 
+    WITH obj, row
+
     // Link to ContainerRegistry
     // Link by name since name since it's a unique domain and ContainerApps only reference the registry server, not the full resource ID
     CALL (obj, row) {

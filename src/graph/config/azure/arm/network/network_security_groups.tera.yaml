@@ -12,6 +12,8 @@ cypher: |
     MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
     SET obj:{{ LABELS.NetworkSecurityGroup }}
 
+    WITH obj, row
+
     CALL (obj, row) {
         UNWIND coalesce(row.properties.defaultSecurityRules, []) + coalesce(row.properties.securityRules, []) AS rule
         MERGE (r:{{ LABELS.NSGRule }} {id: toLower(rule.id)})

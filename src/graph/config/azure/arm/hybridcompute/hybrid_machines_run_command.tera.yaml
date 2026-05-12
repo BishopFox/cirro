@@ -21,6 +21,7 @@ cypher: |
         output: row.properties.instanceView.output
     }
 
+    WITH obj, row
     CALL (obj, row) {
       WITH obj, row, split(toLower(obj.id), '/runcommands/')[0] AS vmId
       MERGE (vm:{{ LABELS.ArmResource }} {id: toLower(vmId)})

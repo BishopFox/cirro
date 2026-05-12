@@ -25,6 +25,7 @@ cypher: |
         version: row.properties.version
     }
 
+    WITH obj, row
     CALL (obj, row) {
         WITH obj, row WHERE row.properties.containerResourceId IS NOT NULL
           MERGE (h:{{ LABELS.ArmResource }} {id: toLower(row.properties.containerResourceId)})

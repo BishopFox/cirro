@@ -16,6 +16,7 @@ cypher: |
         storageAccountType: row.properties.publishingProfile.storageAccountType
     }
 
+    WITH obj, row
     CALL (obj, row) {
         WITH obj, row WHERE row.properties.storageProfile.osDiskImage.source.id IS NOT NULL
         MERGE (ci:{{ LABELS.ArmResource }} {id: toLower(row.properties.storageProfile.osDiskImage.source.id)})

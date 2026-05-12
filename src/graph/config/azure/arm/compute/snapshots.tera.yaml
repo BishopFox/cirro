@@ -23,6 +23,7 @@ cypher: |
     }
 
 
+    WITH obj, row
     CALL (obj, row) {
         WHEN row.properties.creationData.sourceResourceId IS NOT NULL THEN {
             MERGE (h:{{ LABELS.ArmResource }} {

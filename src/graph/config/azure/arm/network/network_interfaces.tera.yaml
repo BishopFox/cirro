@@ -17,6 +17,8 @@ cypher: |
         dnsServers: row.properties.dnsSettings.dnsServers
     }
 
+    WITH obj, row
+
     CALL (obj, row) {
         UNWIND coalesce(row.properties.ipConfigurations, []) AS ipconfig
         MERGE (ipconnode:{{ LABELS.IPConfiguration }} {id: toLower(ipconfig.id)})
@@ -31,6 +33,8 @@ cypher: |
         
         MERGE (subnet:{{ LABELS.Subnet }} {id: toLower(ipconfig.properties.subnet.id)})
         MERGE (subnet)-[:{{ REL.CONTAINS }}]->(ipconnode)
+
+        WITH ipconnode, ipconfig
 
         CALL (ipconnode, ipconfig) {
             WHEN ipconfig.properties.publicIPAddress IS NOT NULL THEN {
