@@ -5,6 +5,40 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-05-12
+
+### Added
+
+- Add network LoadBalancer nodes and VirtualHub by @daddycocoaman in [#30](https://github.com/bishopfox/cirro/pull/30)
+- Add subject for FIC collection by @daddycocoaman in [#28](https://github.com/bishopfox/cirro/pull/28)
+- Add KustoCluster node by @daddycocoaman in [#25](https://github.com/bishopfox/cirro/pull/25)
+- Add SyntexDocumentProcessor by @daddycocoaman in [#24](https://github.com/bishopfox/cirro/pull/24)
+- Add azure stack nodes and edges by @daddycocoaman in [#23](https://github.com/bishopfox/cirro/pull/23)
+- Add oracle autonomous db by @daddycocoaman in [#22](https://github.com/bishopfox/cirro/pull/22)
+- Add multiple Hybrid nodes and parity with virtual machines by @daddycocoaman in [#21](https://github.com/bishopfox/cirro/pull/21)
+- Add ManagedHSM by @daddycocoaman in [#15](https://github.com/bishopfox/cirro/pull/15)
+- Add AnalysisServiceServer and AnalysisServiceFirewallRule by @daddycocoaman in [#14](https://github.com/bishopfox/cirro/pull/14)
+- Add composite index and constraints syntax by @daddycocoaman in [#13](https://github.com/bishopfox/cirro/pull/13)
+- Add GithubNetworkSettings by @daddycocoaman in [#12](https://github.com/bishopfox/cirro/pull/12)
+- Add dry run switch for ingest by @daddycocoaman in [#11](https://github.com/bishopfox/cirro/pull/11)
+- Add argument validation to applicable arguments by @daddycocoaman in [#10](https://github.com/bishopfox/cirro/pull/10)
+
+### Changed
+
+- Update docs by @daddycocoaman in [#31](https://github.com/bishopfox/cirro/pull/31)
+- Update cypher to Cypher 25 syntax by @daddycocoaman in [#27](https://github.com/bishopfox/cirro/pull/27)
+- Update netapp nodes by @daddycocoaman in [#26](https://github.com/bishopfox/cirro/pull/26)
+- Update docs skill for zensical by @daddycocoaman in [#20](https://github.com/bishopfox/cirro/pull/20)
+- Migrate docs to zensical by @daddycocoaman in [#19](https://github.com/bishopfox/cirro/pull/19)
+- Turn off git AI CoAuthor setting by @daddycocoaman in [#16](https://github.com/bishopfox/cirro/pull/16)
+- Update restore point changes by @daddycocoaman in [#9](https://github.com/bishopfox/cirro/pull/9)
+- Improve restorepointcollections by @daddycocoaman in [#8](https://github.com/bishopfox/cirro/pull/8)
+
+### Fixed
+
+- Re-add WITH before CALLs in Cypher  and minor bugs by @daddycocoaman in [#29](https://github.com/bishopfox/cirro/pull/29)
+- Change generic resource MI checks to CONTAINS by @daddycocoaman in [#17](https://github.com/bishopfox/cirro/pull/17)
+
 ## [1.1.0] - 2026-04-13
 
 ### Added
