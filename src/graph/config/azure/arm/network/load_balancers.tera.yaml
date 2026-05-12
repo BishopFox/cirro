@@ -1,0 +1,82 @@
+name: "Network Load Balancers"
+label: "{{ LABELS.LoadBalancer }}"
+table_name: "resources"
+resource_type: "microsoft.network/loadbalancers"
+properties:
+  - "/id"
+  - "/properties"
+index_properties:
+  - "{{ LABELS.LoadBalancerRule }}:id"
+  - "{{ LABELS.LoadBalancerFrontendIPConfiguration }}:id"
+cypher: |
+  UNWIND $batch AS row  
+  MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+  SET obj:{{ LABELS.LoadBalancer }}
+  SET obj += {
+      resourceGuid: row.properties.resourceGuid,
+      provisioningState: row.properties.provisioningState
+  }
+
+  // Create LoadBalancerRule nodes and relationships
+  CALL (obj, row) {
+    UNWIND row.properties.loadBalancingRules AS rule
+    MERGE (ruleNode:{{ LABELS.LoadBalancerRule }} {id: toLower(rule.id)})
+    SET ruleNode += {
+        name: rule.name,
+        protocol: rule.properties.protocol,
+        frontendPort: rule.properties.frontendPort,
+        backendPort: rule.properties.backendPort,
+        allowBackendPortConflict: rule.properties.allowBackendPortConflict,
+        disableConnectionTracking: rule.properties.disableConnectionTracking,
+        disableOutboundSnat: rule.properties.disableOutboundSnat,
+        enableConnectionTracking: rule.properties.enableConnectionTracking,
+        enableDestinationServiceEndpoint: rule.properties.enableDestinationServiceEndpoint,
+        enableFloatingIP: rule.properties.enableFloatingIP,
+        enableTcpReset: rule.properties.enableTcpReset,
+        idleTimeoutInMinutes: rule.properties.idleTimeoutInMinutes,
+        provisioningState: rule.properties.provisioningState,
+        type: rule.type
+    }
+    MERGE (obj)-[: {{ REL.HAS_RULE }}]->(ruleNode)
+  }
+
+  // Create relationships to Frontend IP Configurations
+  CALL (obj, row) {
+    UNWIND row.properties.frontendIPConfigurations AS frontend
+    MERGE (fe:{{ LABELS.LoadBalancerFrontendIPConfiguration }} {id: toLower(frontend.id)})
+    SET fe += {
+        name: frontend.name,
+        privateIPAllocationMethod: frontend.properties.privateIPAllocationMethod,
+        provisioningState: frontend.properties.provisioningState,
+        type: frontend.type
+    }
+    MERGE (obj)-[: {{ REL.HAS_LB_FRONTEND }}]->(fe)
+
+    // Frontend to Public IP
+    WITH fe, frontend
+    CALL (fe, frontend) {
+        WITH fe, frontend WHERE frontend.properties.publicIPAddress.id IS NOT NULL
+        MERGE (pip:{{ LABELS.PublicIPAddress }} {id: toLower(frontend.properties.publicIPAddress.id)})
+        MERGE (fe)-[: {{ REL.HAS_IP }}]->(pip)
+    }
+  }
+
+  // Create relationships to Backend Address Pools
+  CALL (obj, row) {
+    UNWIND row.properties.backendAddressPools AS backend
+    MERGE (be:{{ LABELS.LoadBalancerBackendAddressPool }} {id: toLower(backend.id)})
+    SET be += {
+        name: backend.name,
+        provisioningState: backend.properties.provisioningState,
+        type: backend.type
+    }
+    MERGE (obj)-[: {{ REL.HAS_BACKEND_POOL }}]->(be)
+
+    // Backend Pool to Network Interfaces
+    WITH be, backend
+    CALL {
+        WITH be, backend UNWIND backend.properties.backendIPConfigurations AS nic
+        MERGE (n:{{ LABELS.NetworkInterface }} {id: toLower(nic.id)})
+        MERGE (be)-[: {{ REL.ASSOCIATED_WITH }}]->(n)
+    }
+  }

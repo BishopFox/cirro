@@ -1,0 +1,19 @@
+name: "Virtual Hubs"
+label: "{{ LABELS.VirtualHub }}"
+table_name: "resources"
+resource_type: "microsoft.network/virtualhubs"
+properties:
+  - "/id"
+  - "/properties"
+cypher: |
+    UNWIND $batch AS row
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+    SET obj:{{ LABELS.VirtualHub }}
+    SET obj += {
+        allowBranchToBranchTraffic: row.properties.allowBranchToBranchTraffic,
+        hubRoutingPreference: row.properties.hubRoutingPreference,
+        provisioningState: row.properties.provisioningState,
+        routingState: row.properties.routingState,
+        virtualRouterAsn: row.properties.virtualRouterAsn,
+        virtualRouterIps: row.properties.virtualRouterIps
+    }
