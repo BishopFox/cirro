@@ -12,6 +12,8 @@ cypher: |
         MERGE (obj:{{ LABELS.ManagementGroup }} {id: toLower(row.id)})
         SET obj.displayName = row.properties.displayName
 
+        WITH obj, row
+
         // If parent is null -> Tenant
         CALL (obj, row) {
             WITH row, obj WHERE row.properties.parent.id IS NULL

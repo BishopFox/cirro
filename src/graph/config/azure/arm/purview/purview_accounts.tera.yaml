@@ -21,6 +21,7 @@ cypher: |
         publicNetworkAccess: row.properties.publicNetworkAccess
     }
 
+    WITH obj, row
     CALL (obj, row) {
       WHEN row.properties.ingestionStorage.id IS NOT NULL THEN {
         MERGE (sa: {{ LABELS.ArmResource }} {id:row.properties.ingestionStorage.id})

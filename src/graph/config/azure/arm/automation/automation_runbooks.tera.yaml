@@ -24,6 +24,8 @@ cypher: |
         SET a:{{ LABELS.AutomationAccount }}
         MERGE (a)-[:{{ REL.HAS_RUNBOOK }}]->(obj)
 
+    WITH obj, row
+
     CALL (obj, row) {
         WITH obj, row, coalesce(row.properties.parameters, {}) AS parameters
         UNWIND keys(parameters) AS paramName

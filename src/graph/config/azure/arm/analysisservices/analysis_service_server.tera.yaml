@@ -20,6 +20,8 @@ cypher: |
         enablePowerBIService: row.properties.ipV4FirewallSettings.enablePowerBIService
     }
 
+    WITH s, row
+
     // Members is a list of strings that refer to users, groups, or service principals in the format:
     // Users use UPN
     // Service principals use app:<appId>@<tenantId>

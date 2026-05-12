@@ -17,6 +17,8 @@ cypher: |
         addressSpace: row.properties.addressSpace.addressPrefixes
     }
 
+    WITH obj, row
+
     CALL (obj, row) {
         UNWIND coalesce(row.properties.subnets, []) AS subnet
         MERGE (s:{{ LABELS.Subnet }} {id: toLower(subnet.id)})
@@ -27,6 +29,8 @@ cypher: |
             privateLinkServiceNetworkPolicies: subnet.properties.privateLinkServiceNetworkPolicies
         }
         MERGE (obj)-[:{{ REL.CONTAINS }}]->(s)
+
+        WITH *
 
         CALL (*) {
             WITH s, subnet WHERE subnet.properties.routeTable IS NOT NULL
@@ -53,6 +57,8 @@ cypher: |
             peeringState: peering.properties.peeringState
         }
         MERGE (obj)-[:{{ REL.HAS_PEERING }}]->(p)
+
+        WITH *
 
         CALL (*) {
             WITH p, peering WHERE peering.properties.remoteVirtualNetwork IS NOT NULL

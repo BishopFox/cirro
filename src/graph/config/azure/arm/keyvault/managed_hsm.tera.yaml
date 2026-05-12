@@ -21,6 +21,7 @@ cypher: |
       statusMessage: row.properties.statusMessage
   }
 
+  WITH obj, row
   CALL (obj, row) {
     UNWIND coalesce(row.properties.initialAdminObjectIds, []) AS adminId
     MERGE (go:{{ LABELS.GraphObject }} {id: toLower(adminId)})

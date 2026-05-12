@@ -18,6 +18,7 @@ cypher: |
     }
 
     // Create Storage Account based on resource ID or storage account name (unique)
+    WITH obj, row
     CALL (obj, row) {
       WHEN row.properties.defaultDataLakeStorage.resourceId IS NOT NULL THEN {
         MERGE (sa:{{ LABELS.ArmResource }} {id: toLower(row.properties.defaultDataLakeStorage.resourceId)})
@@ -30,6 +31,7 @@ cypher: |
         }
         MERGE (sa)-[:{{ REL.HAS_DFS_FILESYSTEM }}]->(dfs)
         MERGE (obj)-[:{{ REL.USES_STORAGE_DFS }}]->(dfs)
+      }
     }
 
     // Handle case where resourceId is null - extract storage account name from URL

@@ -13,6 +13,7 @@ cypher: |
         cloudId: row.properties.cloudId
     }
 
+    WITH obj, row
     CALL (obj, row) {
         WITH obj, row
         WHERE row.properties.objectId IS NOT NULL

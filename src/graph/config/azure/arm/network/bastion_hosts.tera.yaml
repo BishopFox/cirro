@@ -21,6 +21,7 @@ cypher: |
       scaleUnits: row.properties.scaleUnits
   }
 
+  WITH obj, row
   CALL (obj, row) {
       UNWIND coalesce(row.properties.ipConfigurations, []) AS ipconfig
       MERGE (b:{{ LABELS.BastionIPConfig }} {id: toLower(ipconfig.id)})

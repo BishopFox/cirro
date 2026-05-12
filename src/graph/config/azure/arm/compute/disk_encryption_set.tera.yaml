@@ -17,6 +17,7 @@ cypher: |
         rotationToLatestKeyVersionEnabled: row.properties.rotationToLatestKeyVersionEnabled
     }
 
+    WITH obj, row
     CALL (obj, row) {
         WITH obj, row WHERE row.properties.activeKey.sourceVault.id IS NOT NULL
         MERGE (kv:{{ LABELS.ArmResource }} {id: toLower(row.properties.activeKey.sourceVault.id)})

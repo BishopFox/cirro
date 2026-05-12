@@ -21,6 +21,7 @@ cypher: |
   }
 
   // Create relationships to Peerings
+  WITH obj, row
   CALL (obj, row) {
       UNWIND coalesce(row.properties.peerings, []) AS peering
       MERGE (p:{{ LABELS.ExpressRouteCircuitPeering }} {id: toLower(peering.id)})

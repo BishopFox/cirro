@@ -29,6 +29,7 @@ cypher: |
     }
 
     // Handling FileStorage kind
+    WITH obj, row
     CALL (obj, row){
         WITH obj, row WHERE toLower(row.kind) = 'filestorage'
         SET obj += {

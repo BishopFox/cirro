@@ -28,6 +28,7 @@ cypher: |
   }
 
   // If the Key Vault ID is present, create a relationship to the Key Vault and Key Vault Secret
+  WITH obj, row
   CALL (obj, row) { 
     WHEN row.properties.keyVaultId IS NOT NULL AND row.properties.keyVaultSecretName IS NOT NULL THEN {
       MERGE (kv:{{ LABELS.ArmResource }} {id: toLower(row.properties.keyVaultId)})

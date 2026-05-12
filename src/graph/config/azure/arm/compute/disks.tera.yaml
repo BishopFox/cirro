@@ -21,6 +21,7 @@ cypher: |
     }
 
     // Handle disk creation source based on createOption
+    WITH obj, row
     CALL (obj, row) {
         SET obj.fromImage = CASE 
             WHEN row.properties.creationData.createOption = 'FromImage' AND row.properties.creationData.imageReference.id IS NOT NULL

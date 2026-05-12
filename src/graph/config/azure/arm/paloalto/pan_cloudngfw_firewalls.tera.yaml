@@ -18,6 +18,7 @@ cypher: |
       networkType: row.properties.networkProfile.networkType
   }
 
+  WITH obj, row
   CALL (obj, row) {
     WHEN row.properties.associatedRulestack.resourceId IS NOT NULL THEN {
         MERGE (rs:{{ LABELS.ArmResource }} {id: toLower(row.properties.associatedRulestack.resourceId)})

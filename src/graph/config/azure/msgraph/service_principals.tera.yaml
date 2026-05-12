@@ -50,6 +50,8 @@ cypher: |
     MERGE (a:{{ LABELS.GraphApplication }} {appId: row.appId})
     MERGE (a)-[:{{ REL.REPRESENTED_BY }}]->(obj)
 
+    WITH obj, row
+
     // Unwind memberOf
     CALL (obj, row) {
         UNWIND coalesce(row.memberOf, []) AS memberOf

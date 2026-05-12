@@ -50,6 +50,7 @@ cypher: |
   // We can merge on KeyVault.vaultUri since the certificate metadata doesn't include a direct reference to the vault ARM resource ID
   // KeyVault.vaultUri format: https://{vault-name}.vault.azure.net/
   // Certificate id format: https://{vault-name}.vault.azure.net/certificates/{certificate-name}
+  WITH obj, row
   CALL (obj, row, toLower(apoc.text.replace(row.id, '/[^/]+$', '')) AS certId) {
       MERGE (cert:{{ LABELS.KeyVaultCertificate }} {id: certId})
       MERGE (cert)-[:{{ REL.HAS_VERSION }}]->(obj)

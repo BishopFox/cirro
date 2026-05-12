@@ -7,9 +7,9 @@ properties:
   - "/properties"
 cypher: |
     UNWIND $batch AS row
-    MERGE (s:{{ LABELS.ArmResource }} {id: toLower(row.id)})
-    SET s:{{ LABELS.ApimService }}
-    SET s += {
+    MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})
+    SET obj:{{ LABELS.ApimService }}
+    SET obj += {
         createdAt: row.properties.createdAt,
         developerPortalStatus: row.properties.developerPortalStatus,
         developerPortalUrl: row.properties.developerPortalUrl,
@@ -27,8 +27,9 @@ cypher: |
         scmUrl: row.properties.scmUrl
     }
 
-    CALL (s, row) {
+    WITH obj, row
+    CALL (obj, row) {
         UNWIND coalesce(row.managedByTenants, []) AS tenant
         MERGE (t:{{ LABELS.Tenant }} {id: toLower(tenant.tenantId)})
-        MERGE (t)-[:{{ REL.MANAGES }}]->(t)
+        MERGE (t)-[:{{ REL.MANAGES }}]->(obj)
     }

@@ -40,6 +40,7 @@ cypher: |
         totalPhysicalMemoryInGb: row.properties.detectedProperties.totalPhysicalMemoryInGb
     }
 
+    WITH obj, row
     CALL (obj, row) {
         UNWIND coalesce(row.properties.networkProfile.networkInterfaces, []) AS nic
         WITH obj, row, nic

@@ -6,7 +6,7 @@ properties:
   - "/id"
   - "/properties"
 index_properties:
-  - "{{ LABELS.NetAppCapacityPool }}.poolId"
+  - "{{ LABELS.NetAppCapacityPool }}:poolId"
 cypher: |
     UNWIND $batch AS row
     MERGE (obj:{{ LABELS.ArmResource }} {id: toLower(row.id)})

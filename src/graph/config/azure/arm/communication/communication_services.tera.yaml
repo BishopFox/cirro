@@ -15,6 +15,7 @@ cypher: |
         immutableResourceId: row.properties.immutableResourceId
     }
 
+    WITH obj, row
     CALL (obj, row) {
       UNWIND coalesce(row.properties.linkedDomains, []) AS linkedDomain
       MERGE (ld:{{ LABELS.ArmResource }} {id: toLower(linkedDomain)})

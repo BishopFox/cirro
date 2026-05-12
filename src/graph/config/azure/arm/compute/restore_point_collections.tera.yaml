@@ -24,6 +24,8 @@ cypher: |
     // So a user can collect the restore points, without collecting the properties of the restore point collection.
     // And the `source` property contains the id of the source VM, which is what we want to link to.
 
+    WITH obj, row
+
     // If the source is an object with an 'id' property, link to the source VM
     CALL (obj, row) {
         WITH obj, row WHERE row.properties.source IS NOT NULL AND row.properties.source.id IS NOT NULL
