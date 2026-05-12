@@ -19,6 +19,9 @@ These nodes are not direct objects in Entra ID or Azure but are created as a res
 - **[KeyVaultCertificateValue](additional-nodes/key-vault-certificate-value.md)** - Versioned Key Vault certificate data and policy details
 - **[KeyVaultSecret](additional-nodes/key-vault-secret.md)** - Key Vault secret metadata
 - **[KeyVaultSecretValue](additional-nodes/key-vault-secret-value.md)** - Versioned Key Vault secret values
+- **[LoadBalancerBackendAddressPool](additional-nodes/load-balancer-backend-address-pool.md)** - Backend address pools attached to load balancers
+- **[LoadBalancerFrontendIPConfiguration](additional-nodes/load-balancer-frontend-ip-configuration.md)** - Frontend IP configurations for load balancers
+- **[LoadBalancerRule](additional-nodes/load-balancer-rule.md)** - Rule definitions attached to load balancers
 - **[NetworkGateway](additional-nodes/network-gateway.md)** - Virtual network gateways
 - **[NetworkPeering](additional-nodes/network-peering.md)** - Virtual network peering connections
 - **[NetworkRoute](additional-nodes/network-route.md)** - Individual routes within route tables
