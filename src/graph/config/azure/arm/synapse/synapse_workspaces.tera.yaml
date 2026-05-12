@@ -31,10 +31,10 @@ cypher: |
         }
         MERGE (sa)-[:{{ REL.HAS_DFS_FILESYSTEM }}]->(dfs)
         MERGE (obj)-[:{{ REL.USES_STORAGE_DFS }}]->(dfs)
+      }
     }
 
     // Handle case where resourceId is null - extract storage account name from URL
-    WITH obj, row
     CALL (obj, row) {
        WHEN row.properties.defaultDataLakeStorage.resourceId IS NULL AND row.properties.defaultDataLakeStorage.accountUrl IS NOT NULL THEN {
          WITH obj, row, split(row.properties.defaultDataLakeStorage.accountUrl, '.')[0] AS urlPart
