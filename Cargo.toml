@@ -2,7 +2,7 @@
 edition = "2024"
 name = "cirro"
 repository = "https://github.com/bishopfox/cirro"
-version = "1.2.0"
+version = "1.2.1"
 
 [features]
 azure = ["collector"]
