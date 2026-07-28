@@ -5,11 +5,23 @@ properties:
   - "/appId"
   - "/appRoleAssignedTo"
   - "/appRoles"
+  - "/applicationTemplateId"
+  - "/description"
+  - "/createdByAppId"
+  - "/createdDateTime"
+  - "/defaultRedirectUri"
   - "/displayName"
   - "/federatedIdentityCredentials"
   - "/identifierUris"
   - "/id"
+  - "/isAuthorizationServiceEnabled"
+  - "/isDeviceOnlyAuthSupported"
+  - "/isDisabled"
+  - "/isFallbackPublicClient"
+  - "/isManagementRestricted"
   - "/keyCredentials"
+  - "/nativeAuthenticationApisEnabled"
+  - "/notes"
   - "/owners"
   - "/publicClient"
   - "/publisherDomain"
@@ -29,9 +41,21 @@ cypher: |
     SET obj += {
         displayName: row.displayName,
         appId: row.appId,
+        description: row.description,
+        notes: row.notes,
+        createdDateTime: row.createdDateTime,
+        createdByAppId: row.createdByAppId,
+        applicationTemplateId: row.applicationTemplateId,
+        isAuthorizationServiceEnabled: row.isAuthorizationServiceEnabled,
+        isDeviceOnlyAuthSupported: row.isDeviceOnlyAuthSupported,
+        isDisabled: row.isDisabled,
+        isFallbackPublicClient: row.isFallbackPublicClient,
+        isManagementRestricted: row.isManagementRestricted,
+        nativeAuthenticationApisEnabled: row.nativeAuthenticationApisEnabled,
         publisherDomain: row.publisherDomain,
         signInAudience: row.signInAudience,
         identifierUris: row.identifierUris,
+        defaultRedirectUri: row.web.redirectUris[0],
         redirectUris: row.web.redirectUris + row.spa.redirectUris + row.publicClient.redirectUris,
         publicClientRedirectUris: row.publicClient.redirectUris,
         spaRedirectUris: row.spa.redirectUris,
@@ -108,3 +132,13 @@ cypher: |
         }
         MERGE (k)-[:{{ REL.AUTHENTICATES }}]->(obj)
     }
+
+    // If createdByAppId exists, add created relationship to app that created this app
+    // Assume it exists so MERGE
+    CALL (obj, row) {
+        WITH obj, row
+        WHERE row.createdByAppId IS NOT NULL
+        MERGE (creator:{{ LABELS.GraphObject }} {appId: toLower(row.createdByAppId)})
+        MERGE (creator)-[:{{ REL.CREATED }}]->(obj)
+    }
+        
