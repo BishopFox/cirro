@@ -1,6 +1,7 @@
 use crate::collect::azure::cli::{AzureCloud, EnumerationMode, OptionEnumFlags};
 use crate::collect::azure::collectors::arm;
 use crate::collect::azure::collectors::graph;
+use crate::collect::azure::collectors::restricted_guest;
 use crate::collect::azure::context::CloudEndpoints;
 use crate::collect::azure::context::CollectorContext;
 use crate::collect::azure::credentials::azcli::AzureCliCredential;
@@ -10,7 +11,8 @@ use crate::errors::CirroError;
 
 use futures;
 use log::{debug, error, info, warn};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
+use std::io::{self, Write};
 use std::ops::{Deref, DerefMut};
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -34,14 +36,59 @@ impl DerefMut for Collector {
     }
 }
 
+fn confirm_restricted_guest_msapps() -> Result<bool, CirroError> {
+    let application_count = restricted_guest::microsoft_application_count();
+    warn!(
+        "--restricted-guest-msapps will enumerate the full catalog of {} Microsoft applications and may generate many Graph requests",
+        application_count
+    );
+    print!("Continue with Microsoft application enumeration? [y/N]: ");
+    io::stdout().flush()?;
+
+    let mut response = String::new();
+    io::stdin().read_line(&mut response)?;
+
+    Ok(matches!(
+        response.trim().to_ascii_lowercase().as_str(),
+        "y" | "yes"
+    ))
+}
+
 /// Runs the collector, performing the actual data collection
 async fn run_collector(mut collector: Collector, new_state: bool) -> Result<(), CirroError> {
+    let mut seen_restricted_appids = HashSet::new();
+    collector.option_enum_flags.restricted_appids =
+        std::mem::take(&mut collector.option_enum_flags.restricted_appids)
+            .into_iter()
+            .map(|app_id| app_id.to_ascii_lowercase())
+            .filter(|app_id| seen_restricted_appids.insert(app_id.clone()))
+            .collect();
+
+    let restricted_graph_enabled = collector.option_enum_flags.restricted_guest
+        && (collector.mode == EnumerationMode::Graph || collector.mode == EnumerationMode::Both);
+
     info!("Using cloud: {:?}", collector.cloud);
     info!("Using mode: {:?}", collector.mode);
     info!(
         "Using output: {:?}",
         collector.output_path.to_path_buf().as_path()
     );
+
+    if collector.mode == EnumerationMode::Arm {
+        if collector.option_enum_flags.restricted_guest_msapps {
+            warn!("--restricted-guest-msapps is ignored because ARM-only mode is active");
+        } else if collector.option_enum_flags.restricted_guest {
+            info!("Restricted-guest application IDs are unused because ARM-only mode is active");
+        }
+    }
+
+    if restricted_graph_enabled
+        && collector.option_enum_flags.restricted_guest_msapps
+        && !confirm_restricted_guest_msapps()?
+    {
+        info!("Microsoft application enumeration cancelled");
+        return Ok(());
+    }
 
     // Create the database writer with bounded channel for backpressure
     const DB_CHANNEL_CAPACITY: usize = 16_384;
@@ -59,7 +106,7 @@ async fn run_collector(mut collector: Collector, new_state: bool) -> Result<(), 
     let (graph_state, arm_state) = {
         let db = SqliteDb::new(collector.output_path.clone());
         if new_state {
-            info!("--new-state: clearing saved enumeration state");
+            info!("Clearing saved enumeration state");
             db.clear_state(None)
                 .map_err(|e| CirroError::DatabaseError(format!("Failed to clear state: {}", e)))?;
             (HashMap::new(), HashMap::new())
@@ -72,7 +119,7 @@ async fn run_collector(mut collector: Collector, new_state: bool) -> Result<(), 
                         .filter(|(k, _)| !k.starts_with("arm:"))
                         .map(|(k, v)| (k.clone(), v.clone()))
                         .collect();
-                    if !graph.is_empty() {
+                    if !graph.is_empty() && !restricted_graph_enabled {
                         info!(
                             "Resuming graph enumeration for {} resource type(s)",
                             graph.len()
@@ -83,6 +130,11 @@ async fn run_collector(mut collector: Collector, new_state: bool) -> Result<(), 
                                 rt, count, elapsed
                             );
                         }
+                    } else if !graph.is_empty() && restricted_graph_enabled {
+                        debug!(
+                            "Restricted-guest Graph enumeration starts fresh; ignoring {} normal Graph state record(s)",
+                            graph.len()
+                        );
                     }
                     let arm: HashMap<_, _> = all_state
                         .into_iter()
@@ -130,12 +182,19 @@ async fn run_collector(mut collector: Collector, new_state: bool) -> Result<(), 
                 // Create a task for Graph enumeration
                 let graph_collector_clone = Arc::clone(&graph_collector);
                 let graph_task = tokio::spawn(async move {
-                    debug!("Starting Graph API enumeration task");
-                    if let Err(e) = graph::enumerate_graph(graph_collector_clone, graph_state).await
-                    {
+                    let result = if graph_collector_clone.option_enum_flags.restricted_guest {
+                        debug!("Starting restricted-guest Graph API enumeration task");
+                        restricted_guest::enumerate_restricted_guest(graph_collector_clone).await
+                    } else {
+                        debug!("Starting Graph API enumeration task");
+                        graph::enumerate_graph(graph_collector_clone, graph_state).await
+                    };
+
+                    if let Err(e) = &result {
                         error!("Error collecting Graph data: {}", e);
                     }
                     debug!("Graph API enumeration task completed");
+                    result
                 });
 
                 tasks.push(graph_task);
@@ -162,10 +221,12 @@ async fn run_collector(mut collector: Collector, new_state: bool) -> Result<(), 
                 let arm_collector_clone = Arc::clone(&arm_collector);
                 let arm_task = tokio::spawn(async move {
                     debug!("Starting ARM API enumeration task");
-                    if let Err(e) = arm::enumerate_arm(arm_collector_clone, arm_state).await {
+                    let result = arm::enumerate_arm(arm_collector_clone, arm_state).await;
+                    if let Err(e) = &result {
                         error!("Error collecting ARM data: {}", e);
                     }
                     debug!("ARM API enumeration task completed");
+                    result
                 });
 
                 tasks.push(arm_task);
@@ -179,10 +240,21 @@ async fn run_collector(mut collector: Collector, new_state: bool) -> Result<(), 
         }
     }
 
-    // Wait for all tasks to complete
+    // Wait for all tasks to complete, but keep the DB writer alive until every
+    // collector has flushed its messages.
+    let mut collection_errors = Vec::new();
     if !tasks.is_empty() {
         debug!("Waiting for {} enumeration tasks to complete", tasks.len());
-        futures::future::join_all(tasks).await;
+        for result in futures::future::join_all(tasks).await {
+            match result {
+                Ok(Ok(())) => {}
+                Ok(Err(error)) => collection_errors.push(error),
+                Err(error) => collection_errors.push(CirroError::ProcessingError(format!(
+                    "Enumeration task failed: {}",
+                    error
+                ))),
+            }
+        }
         info!("All enumeration tasks completed");
     }
 
@@ -198,7 +270,11 @@ async fn run_collector(mut collector: Collector, new_state: bool) -> Result<(), 
         .map_err(|e| CirroError::DatabaseError(e.to_string()))?;
 
     info!("Done");
-    Ok(())
+    match collection_errors.len() {
+        0 => Ok(()),
+        1 => Err(collection_errors.remove(0)),
+        _ => Err(CirroError::MultipleErrors(collection_errors)),
+    }
 }
 
 /// Collects data using Access Token credentials

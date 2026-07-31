@@ -87,6 +87,38 @@ struct BatchOutcome {
     failures: Vec<BatchFailure>,
 }
 
+/// Returns a valid cached Graph access token, refreshing it when necessary.
+async fn cached_graph_token(collector: &Collector) -> Result<Arc<String>, CirroError> {
+    let mut cache = TOKEN_CACHE.lock().await;
+    let needs_refresh = cache
+        .as_ref()
+        .is_none_or(|cached_token| cached_token.is_expired_or_not_set());
+
+    if needs_refresh {
+        debug!("Fetching new Graph API token");
+        let token = collector.msgraph_credential.get_token().await?;
+
+        if let Some(expires) = token.expires_on {
+            let now = chrono::Utc::now();
+            let time_until_expiry = expires.signed_duration_since(now);
+            debug!(
+                "New token expires at {} (valid for {} minutes)",
+                expires,
+                time_until_expiry.num_minutes()
+            );
+        } else {
+            debug!("New token has no expiration time set");
+        }
+
+        *cache = Some(token);
+    }
+
+    cache
+        .as_ref()
+        .map(|token| Arc::clone(&token.access_token))
+        .ok_or_else(|| CirroError::AuthError("Graph token cache was not initialized".to_string()))
+}
+
 /// Represents a Graph object with its resource type, query parameters, and optional expand properties
 #[derive(Clone)]
 struct GraphObject {
@@ -163,25 +195,15 @@ pub async fn enumerate_graph(
     info!("Starting Graph enumeration");
 
     // Initialize our token cache with a valid token
-    {
-        let mut cache = TOKEN_CACHE.lock().await;
-        if cache.is_none() || cache.as_ref().unwrap().is_expired_or_not_set() {
-            debug!("Pre-fetching initial Graph API token");
-            match collector.msgraph_credential.get_token().await {
-                Ok(token) => {
-                    *cache = Some(token);
-                    info!("MS Graph token retrieved successfully");
-                }
-                Err(e) => {
-                    warn!(
-                        "Failed to acquire MS Graph token - ending Graph enumeration: {}",
-                        e
-                    );
-                    return Ok(());
-                }
-            }
-        }
+    debug!("Pre-fetching initial Graph API token");
+    if let Err(e) = cached_graph_token(&collector).await {
+        warn!(
+            "Failed to acquire MS Graph token - ending Graph enumeration: {}",
+            e
+        );
+        return Ok(());
     }
+    info!("MS Graph token retrieved successfully");
 
     // Create all enumerators with their configurations.
     // `inline_expand` identifies the primary navigation property to fetch for
@@ -399,7 +421,7 @@ async fn query_objects(
     );
 
     // Resume from saved state if available (uri, previously collected count, prior elapsed time)
-    let (mut next_uri, mut total_fetched, prior_elapsed) =
+    let (initial_uri, mut total_fetched, prior_elapsed) =
         if let Some((uri, count, elapsed)) = resume {
             info!(
                 "Resuming {} from saved state ({} objects, {:.1}s prior)",
@@ -443,25 +465,30 @@ async fn query_objects(
     };
 
     // Process each page as it arrives instead of accumulating all objects
+    let mut pager = GraphPager::new(initial_uri);
     loop {
-        debug!("Fetching data from: {}", next_uri);
+        let Some(request_uri) = pager.next_uri().map(str::to_owned) else {
+            break;
+        };
+        debug!("Fetching data from: {}", request_uri);
 
-        let response_data = paged_graph_request(&collector, &next_uri)
+        let response_data = pager
+            .next_page(&collector)
             .await
             .map_err(|e| {
-                error!("Failed to fetch data from Graph API: {} - {}", &next_uri, e);
+                error!(
+                    "Failed to fetch data from Graph API: {} - {}",
+                    request_uri, e
+                );
                 e
-            })?;
-
-        if let Some(error) = response_data.get("@odata.error") {
-            let error_message = error
-                .get("message")
-                .and_then(|m| m.get("value"))
-                .and_then(|v| v.as_str())
-                .unwrap_or("Unknown error");
-            error!("Graph API error: {}", error_message);
-            return Err(CirroError::ODataError(error_message.to_string()));
-        }
+            })?
+            .ok_or_else(|| {
+                CirroError::InvalidData(format!(
+                    "Graph pager stopped before returning {}",
+                    request_uri
+                ))
+            })?
+            .into_success()?;
 
         // Process this page immediately, then discard — memory stays bounded to page size
         if let Some(values) = response_data.get("value").and_then(|v| v.as_array()) {
@@ -661,19 +688,13 @@ async fn query_objects(
         }
         // response_data and page values are dropped here — memory freed each iteration
 
-        // Check for next link
-        if let Some(next_link) = response_data
-            .get("@odata.nextLink")
-            .and_then(|v| v.as_str())
-        {
-            next_uri = next_link.to_string();
-
+        if let Some(next_uri) = pager.next_uri().map(str::to_owned) {
             // Save pagination state so we can resume if interrupted
             if let Some(sender) = &collector.db_writer {
                 let _ = sender
                     .send(DBWriteMessage::SaveState {
                         resource_type: graph_object_name.to_string(),
-                        next_uri: next_uri.clone(),
+                        next_uri,
                         total_collected: total_fetched,
                         elapsed_secs: prior_elapsed + start_time.elapsed().as_secs_f64(),
                     })
@@ -976,20 +997,7 @@ async fn send_batch_graph_request(
     let batch_body = serde_json::json!({ "requests": batch_requests });
     let batch_url = format!("{}/beta/$batch", collector.cloud_endpoints.msgraph_url);
 
-    let token_str = {
-        let mut cache = TOKEN_CACHE.lock().await;
-        let need_new_token = match &*cache {
-            Some(cached_token) => cached_token.is_expired_or_not_set(),
-            None => true,
-        };
-        if need_new_token {
-            let token = collector.msgraph_credential.get_token().await?;
-            *cache = Some(token.clone());
-            Arc::clone(&token.access_token)
-        } else {
-            Arc::clone(&cache.as_ref().unwrap().access_token)
-        }
-    };
+    let token_str = cached_graph_token(collector).await?;
 
     let response = HTTP_CLIENT
         .post(&batch_url)
@@ -1025,21 +1033,12 @@ async fn send_batch_graph_request(
             .and_then(|v| v.as_array())
             .cloned()
             .unwrap_or_default();
-        let mut next_link = success
-            .body
-            .get("@odata.nextLink")
-            .and_then(|v| v.as_str())
-            .map(str::to_string);
-
-        while let Some(url) = next_link {
-            let next_page = paged_graph_request(collector, &url).await?;
-            if let Some(values) = next_page.get("value").and_then(|v| v.as_array()) {
+        let mut pager = GraphPager::from_next_link(&success.body);
+        while let Some(response) = pager.next_page(collector).await? {
+            let next_page = response.into_success()?;
+            if let Some(values) = next_page.get("value").and_then(Value::as_array) {
                 combined_values.extend(values.iter().cloned());
             }
-            next_link = next_page
-                .get("@odata.nextLink")
-                .and_then(|v| v.as_str())
-                .map(str::to_string);
         }
 
         if let Some(body) = success.body.as_object_mut() {
@@ -1148,56 +1147,99 @@ fn is_transient_batch_status(status: u16) -> bool {
     status == StatusCode::TOO_MANY_REQUESTS.as_u16() || (500..600).contains(&status)
 }
 
-/// Performs a paged request to the Graph API with optimized token caching
-pub async fn paged_graph_request(
-    collector: &Collector,
-    uri: &str,
-) -> Result<serde_json::Value, CirroError> {
-    // Build the full URL correctly
-    let graph_url = if uri.starts_with(&collector.cloud_endpoints.msgraph_url) {
-        uri.to_owned()
-    } else {
-        format!(
-            "{}/beta/{}",
-            collector.cloud_endpoints.msgraph_url,
-            uri.trim_start_matches('/')
-        )
-    };
+pub(super) struct GraphGetResponse {
+    pub(super) status: StatusCode,
+    pub(super) body: serde_json::Value,
+}
 
-    // Get the access token, using cache when possible
-    let token_str = {
-        let mut cache = TOKEN_CACHE.lock().await;
+impl GraphGetResponse {
+    /// Converts a status-aware response into the strict response shape used by
+    /// normal Graph enumeration.
+    pub(super) fn into_success(self) -> Result<Value, CirroError> {
+        if !self.status.is_success() {
+            let error_text = self
+                .body
+                .as_str()
+                .map(str::to_owned)
+                .unwrap_or_else(|| self.body.to_string());
+            return Err(CirroError::HttpError(format!(
+                "HTTP {} - {}",
+                self.status.as_u16(),
+                error_text
+            )));
+        }
 
-        // Check if we need a new token based on the token's actual expiration
-        let need_new_token = match &*cache {
-            Some(cached_token) => cached_token.is_expired_or_not_set(),
-            None => true,
+        if let Some(error) = self.body.get("@odata.error") {
+            let message = error
+                .pointer("/message/value")
+                .and_then(Value::as_str)
+                .or_else(|| error.get("message").and_then(Value::as_str))
+                .unwrap_or("unknown OData error");
+            return Err(CirroError::ODataError(message.to_string()));
+        }
+
+        Ok(self.body)
+    }
+}
+
+/// Iterates Graph pages without deciding how callers should handle HTTP
+/// statuses. Strict callers convert each page with `into_success`; restricted
+/// callers can inspect expected branch-local failures first.
+pub(super) struct GraphPager {
+    next_uri: Option<String>,
+}
+
+impl GraphPager {
+    pub(super) fn new(initial_uri: impl Into<String>) -> Self {
+        Self {
+            next_uri: Some(initial_uri.into()),
+        }
+    }
+
+    fn from_next_link(body: &Value) -> Self {
+        Self {
+            next_uri: graph_next_link(body),
+        }
+    }
+
+    pub(super) fn next_uri(&self) -> Option<&str> {
+        self.next_uri.as_deref()
+    }
+
+    pub(super) async fn next_page(
+        &mut self,
+        collector: &Collector,
+    ) -> Result<Option<GraphGetResponse>, CirroError> {
+        let Some(uri) = self.next_uri.take() else {
+            return Ok(None);
         };
 
-        if need_new_token {
-            debug!("Fetching new Graph API token");
-            let token = collector.msgraph_credential.get_token().await?;
-
-            // Log expiration information for debugging
-            if let Some(expires) = token.expires_on {
-                let now = chrono::Utc::now();
-                let time_until_expiry = expires.signed_duration_since(now);
-                debug!(
-                    "New token expires at {} (valid for {} minutes)",
-                    expires,
-                    time_until_expiry.num_minutes()
-                );
-            } else {
-                debug!("New token has no expiration time set");
-            }
-
-            *cache = Some(token.clone());
-            Arc::clone(&token.access_token)
-        } else {
-            // Return a clone of the cached token
-            Arc::clone(&cache.as_ref().unwrap().access_token)
+        let response = graph_get_response(collector, &uri).await?;
+        if response.status.is_success() {
+            self.next_uri = graph_next_link(&response.body);
         }
-    };
+
+        Ok(Some(response))
+    }
+}
+
+fn graph_next_link(body: &Value) -> Option<String> {
+    body.get("@odata.nextLink")
+        .and_then(Value::as_str)
+        .map(str::to_string)
+}
+
+/// Performs a GET request to the Graph API with optimized token caching.
+///
+/// Unlike [`paged_graph_request`], this returns non-success HTTP responses to
+/// the caller so collection strategies can handle expected statuses directly.
+pub(super) async fn graph_get_response(
+    collector: &Collector,
+    uri: &str,
+) -> Result<GraphGetResponse, CirroError> {
+    let graph_url = graph_request_url(collector, uri)?;
+
+    let token_str = cached_graph_token(collector).await?;
 
     let mut retries = 0;
     let max_retries = 5;
@@ -1281,27 +1323,56 @@ pub async fn paged_graph_request(
             retries += 1;
             continue; // Retry the request after waiting
         } else {
-            let error_text = response.text().await?;
-            return Err(CirroError::HttpError(format!(
-                "HTTP {} - {}",
-                status.as_u16(),
-                error_text
-            )));
+            break response;
         }
     };
 
-    // Parse the response data
-    let response_data: Value = response.json::<Value>().await?;
+    let status = response.status();
+    let response_bytes = response.bytes().await?;
+    let body = if status.is_success() {
+        serde_json::from_slice::<Value>(&response_bytes)?
+    } else {
+        serde_json::from_slice::<Value>(&response_bytes).unwrap_or_else(|_| {
+            Value::String(String::from_utf8_lossy(&response_bytes).into_owned())
+        })
+    };
 
-    // Check for OData error
-    if let Some(err) = response_data.get("@odata.error") {
-        let msg = err
-            .get("message")
-            .and_then(|m| m.get("value"))
-            .and_then(|v| v.as_str())
-            .unwrap_or("unknown odata.error");
-        return Err(CirroError::ODataError(msg.to_string()));
+    Ok(GraphGetResponse { status, body })
+}
+
+fn graph_request_url(collector: &Collector, uri: &str) -> Result<String, CirroError> {
+    if uri.starts_with("https://") || uri.starts_with("http://") {
+        let graph_endpoint =
+            reqwest::Url::parse(&collector.cloud_endpoints.msgraph_url).map_err(|error| {
+                CirroError::InvalidData(format!(
+                    "Configured Microsoft Graph endpoint is invalid: {}",
+                    error
+                ))
+            })?;
+        let absolute_uri = reqwest::Url::parse(uri).map_err(|error| {
+            CirroError::InvalidData(format!("Microsoft Graph URL is invalid: {}", error))
+        })?;
+
+        if absolute_uri.scheme() != "https" || absolute_uri.origin() != graph_endpoint.origin() {
+            return Err(CirroError::InvalidData(
+                "Microsoft Graph URL must use HTTPS and the configured Graph origin".to_string(),
+            ));
+        }
+
+        return Ok(uri.to_owned());
     }
 
-    Ok(response_data)
+    Ok(format!(
+        "{}/beta/{}",
+        collector.cloud_endpoints.msgraph_url,
+        uri.trim_start_matches('/')
+    ))
+}
+
+/// Performs a paged request to the Graph API with optimized token caching.
+pub async fn paged_graph_request(
+    collector: &Collector,
+    uri: &str,
+) -> Result<serde_json::Value, CirroError> {
+    graph_get_response(collector, uri).await?.into_success()
 }
