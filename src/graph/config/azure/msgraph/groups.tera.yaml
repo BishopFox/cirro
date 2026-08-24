@@ -2,6 +2,7 @@ name: "Graph Groups"
 label: "{{ LABELS.GraphGroup }}"
 table_name: "groups"
 properties:
+  - "/@odata.type"
   - "/classification"
   - "/createdByAppId"
   - "/createdDateTime"
@@ -32,6 +33,7 @@ cypher: |
     MERGE (obj:{{ LABELS.GraphObject }} {id: toLower(row.id)})
     SET obj:{{ LABELS.GraphGroup }}
     SET obj += {
+        odataType: lower(row["@odata.type"]),
         displayName: row.displayName,
         classification: row.classification,
         createdByAppId: row.createdByAppId,

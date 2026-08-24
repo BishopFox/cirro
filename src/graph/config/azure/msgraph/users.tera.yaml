@@ -2,7 +2,9 @@ name: "Graph Users"
 label: "{{ LABELS.GraphUser }}"
 table_name: "users"
 properties:
+  - "/@odata.type"
   - "/accountEnabled"
+  - "/agentIdentityBlueprintId"
   - "/city"
   - "/companyName"
   - "/country"
@@ -11,6 +13,8 @@ properties:
   - "/displayName"
   - "/givenName"
   - "/id"
+  - "/identityParentId"
+  - "/identityParentType"
   - "/jobTitle"
   - "/mail"
   - "/mailNickname"
@@ -39,6 +43,7 @@ cypher: |
   MERGE (obj:{{ LABELS.GraphObject }} {id: toLower(row.id)})
   SET obj:{{ LABELS.GraphUser }}
   SET obj += {
+      odataType: lower(row["@odata.type"]),
       accountEnabled: row.accountEnabled,
       city: row.city,
       companyName: row.companyName,
@@ -47,6 +52,9 @@ cypher: |
       department: row.department,
       displayName: row.displayName,
       givenName: row.givenName,
+      agentIdentityBlueprintId: row.agentIdentityBlueprintId,
+      identityParentId: row.identityParentId,
+      identityParentType: row.identityParentType,
       jobTitle: row.jobTitle,
       mail: row.mail,
       mailNickname: row.mailNickname,

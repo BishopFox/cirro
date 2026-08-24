@@ -43,6 +43,7 @@ REL:
   HAS_PEERING: "HAS_PEERING"
   HAS_POLICY: "HAS_POLICY"
   HAS_PRIVATE_ENDPOINT: "HAS_PRIVATE_ENDPOINT"
+  HAS_PUBLISHED_SCOPE: "HAS_PUBLISHED_SCOPE"
   HAS_RESOURCE: "HAS_RESOURCE"
   HAS_RESTOREPOINTS: "HAS_RESTOREPOINTS"
   HAS_ROLE: "HAS_ROLE"
@@ -202,6 +203,7 @@ LABELS:
   # Graph objects
   GraphObject: "GraphObject"
   GraphApplication: "GraphApplication"
+  GraphApplicationScope: "GraphApplicationScope"
   GraphDevice: "GraphDevice" 
   GraphGroup: "GraphGroup"
   GraphRole: "GraphRole"

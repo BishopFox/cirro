@@ -2,6 +2,9 @@ name: "Service Principals"
 label: "{{ LABELS.GraphServicePrincipal }}"
 table_name: "servicePrincipals"
 properties:
+  - "/@odata.type"
+  - "/agentAppId"
+  - "/agentIdentityBlueprintId"
   - "/accountEnabled"
   - "/alternativeNames"
   - "/appId"
@@ -9,6 +12,7 @@ properties:
   - "/appRoleAssignedTo"
   - "/appRoleAssignmentRequired"
   - "/appRoles"
+  - "/createdByAppId"
   - "/displayName"
   - "/endpoints"
   - "/id"
@@ -18,6 +22,7 @@ properties:
   - "/memberOf"
   - "/owners"
   - "/passwordCredentials"
+  - "/publishedPermissionScopes"
   - "/publisherName"
   - "/replyUrls"
   - "/servicePrincipalNames"
@@ -31,17 +36,24 @@ cypher: |
     MERGE (obj:{{ LABELS.GraphObject }} {id: toLower(row.id)})
     SET obj:{{ LABELS.GraphServicePrincipal }}
     SET obj += {
+        odataType: lower(row["@odata.type"]),
         displayName: row.displayName,
         accountEnabled: row.accountEnabled,
         alternativeNames: row.alternativeNames,
         appId: row.appId,
         appOwnerOrganizationId: row.appOwnerOrganizationId,
+        createdByAppId: row.createdByAppId,
         publisherName: row.publisherName,
         servicePrincipalType: row.servicePrincipalType,
         loginUrl: row.loginUrl,
         logoutUrl: row.logoutUrl,
         replyUrls: row.replyUrls,
-        servicePrincipalNames: row.servicePrincipalNames
+        servicePrincipalNames: row.servicePrincipalNames,
+
+        // Agent Identity properties
+        agentAppId: row.agentAppId,
+        agentIdentityBlueprintId: row.agentIdentityBlueprintId,
+        instanceMode: row.instanceMode
     }
 
     // This match needs to happen with GraphApplication instead of GraphObject to avoid accidental merging with ServicePrincipal later
@@ -64,6 +76,31 @@ cypher: |
         UNWIND coalesce(row.owners, []) AS owner
         MERGE (o:{{ LABELS.GraphObject }} {id: toLower(owner)})
         MERGE (o)-[:{{ REL.OWNS }}]->(obj)
+    }
+
+    // CreatedBy App
+    CALL (obj, row) {
+        WITH obj, row
+        WHERE row.createdByAppId IS NOT NULL
+        MERGE (a:{{ LABELS.GraphApplication }} {appId: row.createdByAppId})
+        MERGE (a)-[:{{ REL.CREATED }}]->(obj)
+    }
+
+    // Published Permission Scopes
+    CALL (obj, row) {
+        UNWIND coalesce(row.publishedPermissionScopes, []) AS publishedPermissionScope
+        MERGE (p:{{ LABELS.GraphApplicationScope }} {id: toLower(publishedPermissionScope.id)})
+        SET p += {
+            adminConsentDescription: publishedPermissionScope.adminConsentDescription,
+            adminConsentDisplayName: publishedPermissionScope.adminConsentDisplayName,
+            id: publishedPermissionScope.id,
+            isEnabled: publishedPermissionScope.isEnabled,
+            type: publishedPermissionScope.type,
+            userConsentDescription: publishedPermissionScope.userConsentDescription,
+            userConsentDisplayName: publishedPermissionScope.userConsentDisplayName,
+            value: publishedPermissionScope.value
+        }
+        MERGE (obj)-[:{{ REL.HAS_PUBLISHED_SCOPE }}]->(p)
     }
 
     // App Roles
