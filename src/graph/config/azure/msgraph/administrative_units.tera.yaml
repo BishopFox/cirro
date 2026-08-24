@@ -2,6 +2,7 @@ name: "Administrative Units"
 label: "{{ LABELS.GraphAdministrativeUnit }}"
 table_name: "administrativeUnits"
 properties:
+  - "/@odata.type"
   - "/id"
   - "/description"
   - "/displayName"
@@ -17,6 +18,7 @@ cypher: |
   MERGE (obj:{{ LABELS.GraphObject }} {id: toLower(row.id)})
   SET obj:{{ LABELS.GraphAdministrativeUnit }}
   SET obj += {
+      odataType: lower(row["@odata.type"]),
       description: row.description,
       displayName: row.displayName,
       isMemberManagementRestricted: row.isMemberManagementRestricted,

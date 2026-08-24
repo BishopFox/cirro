@@ -2,6 +2,7 @@ name: "Graph Applications"
 label: "{{ LABELS.GraphApplication }}"
 table_name: "applications"
 properties:
+  - "/@odata.type"
   - "/appId"
   - "/appRoleAssignedTo"
   - "/appRoles"
@@ -39,6 +40,7 @@ cypher: |
     MERGE (obj:{{ LABELS.GraphObject }} {id: toLower(row.id)})
     SET obj:{{ LABELS.GraphApplication }}
     SET obj += {
+        odataType: lower(row["@odata.type"]),
         displayName: row.displayName,
         appId: row.appId,
         description: row.description,
