@@ -9,6 +9,7 @@ use log::{debug, error, info, warn};
 use once_cell::sync::Lazy;
 use reqwest::{Client, StatusCode};
 use serde_json::Value;
+use std::collections::HashSet;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Instant;
@@ -37,6 +38,55 @@ static RATE_LIMIT_LOGGED: AtomicBool = AtomicBool::new(false);
 /// Maximum number of individual requests in a single Graph $batch call.
 const BATCH_MAX_REQUESTS: usize = 20;
 
+/// Maximum number of retries for transient individual Graph batch failures.
+const BATCH_MAX_RETRIES: usize = 5;
+
+/// Fallback delay when Graph throttles a batch subrequest without Retry-After.
+const DEFAULT_RETRY_AFTER_SECS: u64 = 25;
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+enum BatchRequestKind {
+    ExpandCollection {
+        property: String,
+        json_pointers: Vec<String>,
+    },
+    ExpandSingleton {
+        property: String,
+        json_pointers: Vec<String>,
+    },
+    Select {
+        properties: Vec<String>,
+    },
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct BatchRequest {
+    object_index: usize,
+    url: String,
+    kind: BatchRequestKind,
+}
+
+#[derive(Debug)]
+struct BatchSuccess {
+    object_index: usize,
+    kind: BatchRequestKind,
+    body: serde_json::Value,
+}
+
+#[derive(Debug)]
+struct BatchFailure {
+    request: BatchRequest,
+    status: u16,
+    retry_after_secs: Option<u64>,
+    message: String,
+}
+
+#[derive(Debug, Default)]
+struct BatchOutcome {
+    successes: Vec<BatchSuccess>,
+    failures: Vec<BatchFailure>,
+}
+
 /// Represents a Graph object with its resource type, query parameters, and optional expand properties
 #[derive(Clone)]
 struct GraphObject {
@@ -61,6 +111,13 @@ struct GraphObject {
     /// Properties that must always be fetched via individual per-object requests
     /// (or batched). Used for additional navigation properties beyond `inline_expand`.
     per_object_expand: HashMap<String, Vec<String>>,
+
+    /// Singleton navigation properties fetched via individual per-object requests.
+    per_object_singleton: HashMap<String, Vec<String>>,
+
+    /// Scalar properties fetched from an individual object using `$select` and
+    /// merged into the object returned by the collection query.
+    per_object_select: Vec<String>,
 }
 
 impl GraphObject {
@@ -81,7 +138,19 @@ impl GraphObject {
             query_params: query_params.into(),
             inline_expand,
             per_object_expand: per_object_expand.unwrap_or_default(),
+            per_object_singleton: HashMap::new(),
+            per_object_select: Vec::new(),
         }
+    }
+
+    pub fn with_per_object_singleton(mut self, properties: HashMap<String, Vec<String>>) -> Self {
+        self.per_object_singleton = properties;
+        self
+    }
+
+    pub fn with_per_object_select(mut self, properties: Vec<String>) -> Self {
+        self.per_object_select = properties;
+        self
     }
 }
 
@@ -119,6 +188,16 @@ pub async fn enumerate_graph(
     // every object, and any additional expand properties go into
     // `per_object_expand`. All expand calls are executed per object and batched
     // via `$batch` when possible.
+    let user_enumerator = GraphObject::new(
+        "users",
+        "users",
+        "$top=999",
+        None,
+        Some(HashMap::from([("memberOf".into(), vec!["/id".into()])])),
+    )
+    .with_per_object_singleton(HashMap::from([("manager".into(), vec!["/id".into()])]))
+    .with_per_object_select(vec!["lastPasswordChangeDateTime".into()]);
+
     let mut enumerators = vec![
         GraphObject::new("organization", "organization", "", None, None),
         GraphObject::new(
@@ -128,14 +207,8 @@ pub async fn enumerate_graph(
             None,
             None,
         ),
-        // users: all expands via $batch (no inline $expand — avoids $top=100 cap)
-        GraphObject::new(
-            "users",
-            "users",
-            "$top=999",
-            None,
-            Some(HashMap::from([("memberOf".into(), vec!["/id".into()])])),
-        ),
+        // users: all enrichment via $batch (no inline $expand — avoids $top=100 cap)
+        user_enumerator,
         // groups: all expands via $batch
         GraphObject::new(
             "groups",
@@ -309,8 +382,8 @@ pub async fn enumerate_graph(
 
 /// Queries objects from the Microsoft Graph API.
 /// Processes each page of results immediately and writes to the database incrementally.
-/// Uses inline `$expand` for one property per resource type (Option A), and batches
-/// the remaining per-object expand calls via `$batch` (Option B).
+/// Uses inline `$expand` for one property per resource type and batches the
+/// remaining per-object expansion and scalar selection calls via `$batch`.
 async fn query_objects(
     graph_object: GraphObject,
     collector: Arc<Collector>,
@@ -343,6 +416,8 @@ async fn query_objects(
 
     let inline_expand = &graph_object.inline_expand;
     let per_object_expand = &graph_object.per_object_expand;
+    let per_object_singleton = &graph_object.per_object_singleton;
+    let per_object_select = &graph_object.per_object_select;
 
     let table = if uri_path.starts_with("policies/") {
         "policies".to_string()
@@ -409,10 +484,10 @@ async fn query_objects(
                 }
             }
 
-            // Step 2: Collect all per-object expand requests and batch them.
-            // This includes the inline_expand property and all per_object_expand
-            // properties for every object.
-            let mut batch_requests: Vec<(usize, String, String, Vec<String>)> = Vec::new();
+            // Step 2: Collect all per-object enrichment requests and batch them.
+            // This includes the inline_expand property and all collection,
+            // singleton, and selected properties configured for every object.
+            let mut batch_requests: Vec<BatchRequest> = Vec::new();
 
             for (idx, value) in page_values.iter().enumerate() {
                 let object_id = value
@@ -423,22 +498,54 @@ async fn query_objects(
                 // Always expand the inline property explicitly so we are not
                 // relying on the partial inline response shape.
                 if let Some((property, json_pointers)) = inline_expand {
-                    batch_requests.push((
-                        idx,
-                        property.clone(),
-                        format!("/{}/{}/{}", uri_path, object_id, property),
-                        json_pointers.clone(),
-                    ));
+                    batch_requests.push(BatchRequest {
+                        object_index: idx,
+                        url: format!("/{}/{}/{}", uri_path, object_id, property),
+                        kind: BatchRequestKind::ExpandCollection {
+                            property: property.clone(),
+                            json_pointers: json_pointers.clone(),
+                        },
+                    });
                 }
 
                 // Add all per-object expand requests
                 for (property, json_pointers) in per_object_expand {
-                    batch_requests.push((
-                        idx,
-                        property.clone(),
-                        format!("/{}/{}/{}", uri_path, object_id, property),
-                        json_pointers.clone(),
-                    ));
+                    batch_requests.push(BatchRequest {
+                        object_index: idx,
+                        url: format!("/{}/{}/{}", uri_path, object_id, property),
+                        kind: BatchRequestKind::ExpandCollection {
+                            property: property.clone(),
+                            json_pointers: json_pointers.clone(),
+                        },
+                    });
+                }
+
+                // Add singleton navigation requests. Manager lookups are limited
+                // to enabled member users because guests and disabled accounts do
+                // not need this enrichment.
+                for (property, json_pointers) in per_object_singleton {
+                    if property == "manager" && !is_enabled_member_user(value) {
+                        continue;
+                    }
+
+                    batch_requests.push(BatchRequest {
+                        object_index: idx,
+                        url: format!("/{}/{}/{}", uri_path, object_id, property),
+                        kind: BatchRequestKind::ExpandSingleton {
+                            property: property.clone(),
+                            json_pointers: json_pointers.clone(),
+                        },
+                    });
+                }
+
+                if !per_object_select.is_empty() {
+                    batch_requests.push(BatchRequest {
+                        object_index: idx,
+                        url: build_object_select_url(uri_path, object_id, per_object_select),
+                        kind: BatchRequestKind::Select {
+                            properties: per_object_select.clone(),
+                        },
+                    });
                 }
             }
 
@@ -447,8 +554,11 @@ async fn query_objects(
                 let num_chunks =
                     (batch_requests.len() + BATCH_MAX_REQUESTS - 1) / BATCH_MAX_REQUESTS;
                 debug!(
-                    "Expanding {} properties across {} objects for {} ({} $batch calls of up to {})",
-                    per_object_expand.len() + usize::from(inline_expand.is_some()),
+                    "Enriching {} navigation and {} selected properties across {} objects for {} ({} $batch calls of up to {})",
+                    per_object_expand.len()
+                        + per_object_singleton.len()
+                        + usize::from(inline_expand.is_some()),
+                    per_object_select.len(),
                     page_count,
                     graph_object_name,
                     num_chunks,
@@ -456,12 +566,11 @@ async fn query_objects(
                 );
 
                 // Own each chunk so it can be moved into concurrent async tasks
-                let owned_chunks: Vec<(usize, Vec<(usize, String, String, Vec<String>)>)> =
-                    batch_requests
-                        .chunks(BATCH_MAX_REQUESTS)
-                        .enumerate()
-                        .map(|(i, c)| (i, c.to_vec()))
-                        .collect();
+                let owned_chunks: Vec<(usize, Vec<BatchRequest>)> = batch_requests
+                    .chunks(BATCH_MAX_REQUESTS)
+                    .enumerate()
+                    .map(|(i, c)| (i, c.to_vec()))
+                    .collect();
 
                 // Fire up to 10 $batch calls concurrently, then apply results
                 let mut batch_results: Vec<_> = stream::iter(owned_chunks)
@@ -481,55 +590,33 @@ async fn query_objects(
 
                 for (_chunk_idx, chunk, result) in batch_results {
                     match result {
-                        Ok(responses) => {
-                            for (idx, property, json_pointers, response_value) in responses {
-                                if let Some(value) = page_values.get_mut(idx) {
-                                    apply_expand_response(
-                                        value,
-                                        &property,
-                                        &json_pointers,
-                                        &response_value,
-                                    );
-                                }
-                            }
+                        Ok(outcome) => {
+                            apply_batch_outcome(&mut page_values, outcome, graph_object_name);
                         }
                         Err(e) => {
                             error!(
-                                "Batch expand failed for {}: {}. Retrying as single-request batches.",
+                                "Batch enrichment failed for {}: {}. Retrying as single-request batches.",
                                 graph_object_name, e
                             );
                             // Retry each request as its own $batch call so we stay on the
                             // batch code path while isolating failures.
-                            for (idx, property, url, json_pointers) in &chunk {
-                                let single_request = vec![(
-                                    *idx,
-                                    property.clone(),
-                                    url.clone(),
-                                    json_pointers.clone(),
-                                )];
+                            for request in &chunk {
+                                let single_request = vec![request.clone()];
                                 match batch_graph_request(&collector, &single_request).await {
-                                    Ok(responses) => {
-                                        for (
-                                            response_idx,
-                                            response_property,
-                                            response_json_pointers,
-                                            response_value,
-                                        ) in responses
-                                        {
-                                            if let Some(value) = page_values.get_mut(response_idx) {
-                                                apply_expand_response(
-                                                    value,
-                                                    &response_property,
-                                                    &response_json_pointers,
-                                                    &response_value,
-                                                );
-                                            }
-                                        }
+                                    Ok(outcome) => {
+                                        apply_batch_outcome(
+                                            &mut page_values,
+                                            outcome,
+                                            graph_object_name,
+                                        );
                                     }
                                     Err(single_err) => {
                                         warn!(
-                                            "Single-request batch expand failed for {}/{} (object index {}): {}",
-                                            graph_object_name, property, idx, single_err
+                                            "Single-request batch enrichment failed for {} at {} (object index {}): {}",
+                                            graph_object_name,
+                                            request.url,
+                                            request.object_index,
+                                            single_err
                                         );
                                     }
                                 }
@@ -614,9 +701,115 @@ async fn query_objects(
     Ok(())
 }
 
-/// Applies the response data from a single expand request to the object,
+fn is_enabled_member_user(value: &Value) -> bool {
+    let is_member = value
+        .get("userType")
+        .and_then(Value::as_str)
+        .is_some_and(|user_type| user_type.eq_ignore_ascii_case("Member"));
+    let is_enabled = value.get("accountEnabled").and_then(Value::as_bool) == Some(true);
+
+    is_member && is_enabled
+}
+
+fn build_object_select_url(uri_path: &str, object_id: &str, properties: &[String]) -> String {
+    format!(
+        "/{}/{}?$select={}",
+        uri_path.trim_matches('/'),
+        object_id,
+        properties.join(",")
+    )
+}
+
+fn apply_batch_outcome(
+    page_values: &mut [serde_json::Value],
+    outcome: BatchOutcome,
+    graph_object_name: &str,
+) {
+    for success in outcome.successes {
+        let Some(value) = page_values.get_mut(success.object_index) else {
+            debug!(
+                "Ignoring batch response for out-of-range {} object index {}",
+                graph_object_name, success.object_index
+            );
+            continue;
+        };
+
+        match success.kind {
+            BatchRequestKind::ExpandCollection {
+                property,
+                json_pointers,
+            } => apply_collection_expand_response(value, &property, &json_pointers, &success.body),
+            BatchRequestKind::ExpandSingleton {
+                property,
+                json_pointers,
+            } => apply_singleton_expand_response(value, &property, &json_pointers, &success.body),
+            BatchRequestKind::Select { properties } => {
+                if !apply_select_response(value, &properties, &success.body) {
+                    debug!(
+                        "Selected Graph properties were missing from {} object index {}",
+                        graph_object_name, success.object_index
+                    );
+                }
+            }
+        }
+    }
+
+    for failure in outcome.failures {
+        if failure.status == StatusCode::NOT_FOUND.as_u16()
+            && matches!(
+                &failure.request.kind,
+                BatchRequestKind::ExpandSingleton { .. }
+            )
+        {
+            continue;
+        }
+
+        debug!(
+            "Graph batch subrequest failed for {} at {} (object index {}, status {}): {}",
+            graph_object_name,
+            failure.request.url,
+            failure.request.object_index,
+            failure.status,
+            failure.message
+        );
+    }
+}
+
+/// Merges only the explicitly requested scalar properties into an existing object.
+/// A present JSON null is considered a successful enrichment and is preserved.
+fn apply_select_response(
+    object: &mut serde_json::Value,
+    properties: &[String],
+    response_data: &serde_json::Value,
+) -> bool {
+    let Some(response_object) = response_data.as_object() else {
+        return false;
+    };
+
+    let selected_values: Vec<_> = properties
+        .iter()
+        .filter_map(|property| {
+            response_object
+                .get(property)
+                .map(|value| (property.clone(), value.clone()))
+        })
+        .collect();
+    let complete = selected_values.len() == properties.len();
+
+    if let Some(object) = object.as_object_mut() {
+        for (property, value) in selected_values {
+            object.insert(property, value);
+        }
+    } else {
+        return false;
+    }
+
+    complete
+}
+
+/// Applies a collection navigation response to the object,
 /// extracting the specified fields via JSON pointers.
-fn apply_expand_response(
+fn apply_collection_expand_response(
     object: &mut serde_json::Value,
     property: &str,
     json_pointers: &[String],
@@ -659,29 +852,130 @@ fn apply_expand_response(
     }
 }
 
-/// Executes a batch of expand requests using the Graph `$batch` API endpoint.
+/// Applies a singleton navigation response to the object. A single JSON pointer
+/// is stored as a scalar; multiple pointers are stored as an object.
+fn apply_singleton_expand_response(
+    object: &mut serde_json::Value,
+    property: &str,
+    json_pointers: &[String],
+    response_data: &serde_json::Value,
+) {
+    let Some(object) = object.as_object_mut() else {
+        return;
+    };
+
+    if json_pointers.len() == 1 {
+        if let Some(value) = response_data.pointer(&json_pointers[0]) {
+            object.insert(property.to_string(), value.clone());
+        }
+        return;
+    }
+
+    let mut extracted = serde_json::Map::new();
+    for pointer in json_pointers {
+        if let Some(value) = response_data.pointer(pointer) {
+            extracted.insert(pointer.trim_start_matches('/').to_string(), value.clone());
+        }
+    }
+    if !extracted.is_empty() {
+        object.insert(property.to_string(), serde_json::Value::Object(extracted));
+    }
+}
+
+/// Executes Graph `$batch` requests and retries transient individual failures.
 async fn batch_graph_request(
     collector: &Collector,
-    requests: &[(usize, String, String, Vec<String>)],
-) -> Result<Vec<(usize, String, Vec<String>, serde_json::Value)>, CirroError> {
-    // Build the batch request body
+    requests: &[BatchRequest],
+) -> Result<BatchOutcome, CirroError> {
+    let mut pending = requests.to_vec();
+    let mut final_outcome = BatchOutcome::default();
+    let mut retry_count = 0usize;
+
+    while !pending.is_empty() {
+        let mut outcome = send_batch_graph_request(collector, &pending).await?;
+        final_outcome.successes.append(&mut outcome.successes);
+
+        let mut retry_requests = Vec::new();
+        let mut retry_after_secs = None;
+        let mut throttled = false;
+        let mut throttled_without_retry_after = false;
+
+        for failure in outcome.failures {
+            if is_transient_batch_status(failure.status) && retry_count < BATCH_MAX_RETRIES {
+                if failure.status == StatusCode::TOO_MANY_REQUESTS.as_u16() {
+                    throttled = true;
+                    throttled_without_retry_after |= failure.retry_after_secs.is_none();
+                }
+                if let Some(delay) = failure.retry_after_secs {
+                    retry_after_secs = Some(retry_after_secs.unwrap_or(0).max(delay));
+                }
+                retry_requests.push(failure.request);
+            } else {
+                final_outcome.failures.push(failure);
+            }
+        }
+
+        if retry_requests.is_empty() {
+            break;
+        }
+
+        if throttled_without_retry_after {
+            retry_after_secs = Some(retry_after_secs.unwrap_or(0).max(DEFAULT_RETRY_AFTER_SECS));
+        }
+        let retry_delay = retry_after_secs.unwrap_or_else(|| {
+            if throttled {
+                DEFAULT_RETRY_AFTER_SECS
+            } else {
+                5u64.saturating_mul(1u64 << retry_count.min(3))
+            }
+        });
+
+        if throttled && !RATE_LIMIT_LOGGED.swap(true, Ordering::Relaxed) {
+            info!(
+                "Graph API batch subrequest rate limit hit, backing off for {} seconds",
+                retry_delay
+            );
+            let reset_delay = retry_delay + 5;
+            tokio::spawn(async move {
+                tokio::time::sleep(std::time::Duration::from_secs(reset_delay)).await;
+                RATE_LIMIT_LOGGED.store(false, Ordering::Relaxed);
+            });
+        }
+
+        debug!(
+            "Retrying {} transient Graph batch subrequests after {} seconds (attempt {}/{})",
+            retry_requests.len(),
+            retry_delay,
+            retry_count + 1,
+            BATCH_MAX_RETRIES
+        );
+        tokio::time::sleep(std::time::Duration::from_secs(retry_delay)).await;
+        pending = retry_requests;
+        retry_count += 1;
+    }
+
+    Ok(final_outcome)
+}
+
+/// Sends one Graph batch and completes pagination for successful expansions.
+async fn send_batch_graph_request(
+    collector: &Collector,
+    requests: &[BatchRequest],
+) -> Result<BatchOutcome, CirroError> {
     let batch_requests: Vec<serde_json::Value> = requests
         .iter()
         .enumerate()
-        .map(|(i, (_idx, _property, url, _pointers))| {
+        .map(|(i, request)| {
             serde_json::json!({
                 "id": i.to_string(),
                 "method": "GET",
-                "url": url,
+                "url": request.url,
             })
         })
         .collect();
-
     let batch_body = serde_json::json!({ "requests": batch_requests });
-
     let batch_url = format!("{}/beta/$batch", collector.cloud_endpoints.msgraph_url);
 
-    // Get the access token
     let token_str = {
         let mut cache = TOKEN_CACHE.lock().await;
         let need_new_token = match &*cache {
@@ -718,60 +1012,140 @@ async fn batch_graph_request(
     }
 
     let batch_response: serde_json::Value = response.json().await?;
+    let mut outcome = parse_batch_response(requests, &batch_response);
 
-    let mut results = Vec::new();
-    if let Some(responses) = batch_response.get("responses").and_then(|v| v.as_array()) {
-        for resp in responses {
-            let id_str = resp.get("id").and_then(|v| v.as_str()).unwrap_or("");
-            let status = resp.get("status").and_then(|v| v.as_u64()).unwrap_or(500);
+    for success in &mut outcome.successes {
+        if !matches!(&success.kind, BatchRequestKind::ExpandCollection { .. }) {
+            continue;
+        }
 
-            if let Ok(batch_idx) = id_str.parse::<usize>() {
-                if status >= 200 && status < 300 {
-                    if let Some((obj_idx, property, _url, pointers)) = requests.get(batch_idx) {
-                        // Follow pagination for each successful sub-response so callers
-                        // receive one complete value set per requested expansion.
-                        let mut body = resp.get("body").cloned().unwrap_or(serde_json::Value::Null);
-                        let mut combined_values = body
-                            .get("value")
-                            .and_then(|v| v.as_array())
-                            .cloned()
-                            .unwrap_or_default();
+        let mut combined_values = success
+            .body
+            .get("value")
+            .and_then(|v| v.as_array())
+            .cloned()
+            .unwrap_or_default();
+        let mut next_link = success
+            .body
+            .get("@odata.nextLink")
+            .and_then(|v| v.as_str())
+            .map(str::to_string);
 
-                        let mut next_link = body
-                            .get("@odata.nextLink")
-                            .and_then(|v| v.as_str())
-                            .map(|s| s.to_string());
+        while let Some(url) = next_link {
+            let next_page = paged_graph_request(collector, &url).await?;
+            if let Some(values) = next_page.get("value").and_then(|v| v.as_array()) {
+                combined_values.extend(values.iter().cloned());
+            }
+            next_link = next_page
+                .get("@odata.nextLink")
+                .and_then(|v| v.as_str())
+                .map(str::to_string);
+        }
 
-                        while let Some(url) = next_link {
-                            let next_page = paged_graph_request(collector, &url).await?;
-                            if let Some(values) = next_page.get("value").and_then(|v| v.as_array())
-                            {
-                                combined_values.extend(values.iter().cloned());
-                            }
-                            next_link = next_page
-                                .get("@odata.nextLink")
-                                .and_then(|v| v.as_str())
-                                .map(|s| s.to_string());
-                        }
+        if let Some(body) = success.body.as_object_mut() {
+            body.insert(
+                "value".to_string(),
+                serde_json::Value::Array(combined_values),
+            );
+            body.remove("@odata.nextLink");
+        }
+    }
 
-                        if let Some(obj) = body.as_object_mut() {
-                            obj.insert(
-                                "value".to_string(),
-                                serde_json::Value::Array(combined_values),
-                            );
-                            obj.remove("@odata.nextLink");
-                        }
+    Ok(outcome)
+}
 
-                        results.push((*obj_idx, property.clone(), pointers.clone(), body));
-                    }
+fn parse_batch_response(requests: &[BatchRequest], batch_response: &Value) -> BatchOutcome {
+    let mut outcome = BatchOutcome::default();
+    let mut seen = HashSet::new();
+
+    if let Some(responses) = batch_response.get("responses").and_then(Value::as_array) {
+        for response in responses {
+            let Some(batch_index) = response
+                .get("id")
+                .and_then(Value::as_str)
+                .and_then(|id| id.parse::<usize>().ok())
+            else {
+                continue;
+            };
+            let Some(request) = requests.get(batch_index) else {
+                continue;
+            };
+            if !seen.insert(batch_index) {
+                continue;
+            }
+
+            let status = response
+                .get("status")
+                .and_then(Value::as_u64)
+                .and_then(|status| u16::try_from(status).ok())
+                .unwrap_or(500);
+            let body = response.get("body").cloned().unwrap_or(Value::Null);
+
+            if (200..300).contains(&status) && !body.is_null() {
+                outcome.successes.push(BatchSuccess {
+                    object_index: request.object_index,
+                    kind: request.kind.clone(),
+                    body,
+                });
+            } else {
+                let (failure_status, message) = if (200..300).contains(&status) {
+                    (
+                        502,
+                        "batch subrequest returned no response body".to_string(),
+                    )
                 } else {
-                    debug!("Batch sub-request {} returned status {}", batch_idx, status);
-                }
+                    (status, batch_error_message(&body, status))
+                };
+                outcome.failures.push(BatchFailure {
+                    request: request.clone(),
+                    status: failure_status,
+                    retry_after_secs: batch_retry_after_secs(response),
+                    message,
+                });
             }
         }
     }
 
-    Ok(results)
+    for (batch_index, request) in requests.iter().enumerate() {
+        if !seen.contains(&batch_index) {
+            outcome.failures.push(BatchFailure {
+                request: request.clone(),
+                status: 502,
+                retry_after_secs: None,
+                message: "Graph batch response omitted this subrequest".to_string(),
+            });
+        }
+    }
+
+    outcome
+}
+
+fn batch_retry_after_secs(response: &Value) -> Option<u64> {
+    response
+        .get("headers")
+        .and_then(Value::as_object)
+        .and_then(|headers| {
+            headers
+                .iter()
+                .find(|(name, _)| name.eq_ignore_ascii_case("retry-after"))
+                .map(|(_, value)| value)
+        })
+        .and_then(|value| {
+            value
+                .as_u64()
+                .or_else(|| value.as_str().and_then(|value| value.parse().ok()))
+        })
+}
+
+fn batch_error_message(body: &Value, status: u16) -> String {
+    body.pointer("/error/message")
+        .and_then(Value::as_str)
+        .map(str::to_string)
+        .unwrap_or_else(|| format!("batch subrequest returned HTTP {}", status))
+}
+
+fn is_transient_batch_status(status: u16) -> bool {
+    status == StatusCode::TOO_MANY_REQUESTS.as_u16() || (500..600).contains(&status)
 }
 
 /// Performs a paged request to the Graph API with optimized token caching

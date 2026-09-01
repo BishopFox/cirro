@@ -16,8 +16,10 @@ properties:
   - "/identityParentId"
   - "/identityParentType"
   - "/jobTitle"
+  - "/lastPasswordChangeDateTime"
   - "/mail"
   - "/mailNickname"
+  - "/manager"
   - "/memberOf"
   - "/mobilePhone"
   - "/officeLocation"
@@ -56,6 +58,7 @@ cypher: |
       identityParentId: row.identityParentId,
       identityParentType: row.identityParentType,
       jobTitle: row.jobTitle,
+      lastPasswordChangeDateTime: row.lastPasswordChangeDateTime,
       mail: row.mail,
       mailNickname: row.mailNickname,
       mobilePhone: row.mobilePhone,
@@ -83,4 +86,13 @@ cypher: |
       UNWIND coalesce(row.memberOf, []) AS memberOf
       MERGE (m:{{ LABELS.GraphObject }} {id: toLower(memberOf)})
       MERGE (obj)-[:{{ REL.MEMBER_OF }}]->(m)
+  }
+
+  // If manager is present, create a relationship from manager to the user
+  // Manager is a single value, not an array, so we don't need to unwind it
+  CALL (obj, row) {
+      WITH obj, row
+      WHERE row.manager IS NOT NULL
+      MERGE (m:{{ LABELS.GraphObject }} {id: toLower(row.manager)})
+      MERGE (m)-[:{{ REL.MANAGES }}]->(obj)
   }
