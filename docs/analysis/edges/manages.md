@@ -9,6 +9,7 @@ Represents management relationships between resources.
 **Common Patterns:**
 - Automation accounts manage runbooks
 - SQL servers manage databases
+- Entra ID managers manage enabled member users
 
 **Properties:** None
 
@@ -25,5 +26,9 @@ RETURN path
 
 // Find management relationships
 MATCH path=(manager)-[:MANAGES]->(managed)
+RETURN path
+
+// Find Entra ID users and their managers
+MATCH path=(manager:GraphUser)-[:MANAGES]->(user:GraphUser)
 RETURN path
 ```
