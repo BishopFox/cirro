@@ -33,11 +33,16 @@ cypher: |
       sku: row.properties.siteConfig.sku
   }
 
-  MERGE (sf:{{ LABELS.ArmResource }} {id: toLower(row.properties.serverFarmId)})
-  SET sf:{{ LABELS.ServerFarm }}
-  MERGE (sf)-[:HOSTS_SITE]->(obj)
-
   WITH obj, row
+
+  CALL (obj, row) {
+    // Link to ServerFarm. Need to perform a null check since ContainerApps don't have a serverFarmId
+    WITH obj, row
+    WHERE row.properties.serverFarmId IS NOT NULL
+    MERGE (sf:{{ LABELS.ArmResource }} {id: toLower(row.properties.serverFarmId)})
+    SET sf:{{ LABELS.ServerFarm }}
+    MERGE (sf)-[:HOSTS_SITE]->(obj)
+  }
 
   // Link to Web Certificates
   CALL (obj, row) {
