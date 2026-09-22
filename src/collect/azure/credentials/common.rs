@@ -71,10 +71,9 @@ impl Token {
             return Err(CirroError::AuthError("Invalid JWT token format".into()));
         }
 
-        let claims_json = base64::engine::general_purpose::STANDARD_NO_PAD
+        let claims_json = base64::engine::general_purpose::URL_SAFE_NO_PAD
             .decode(token_parts[1])
             .map_err(|e| CirroError::AuthError(format!("Failed to decode token: {}", e)))?;
-
         let claims: Claims = serde_json::from_slice(&claims_json)?;
         Ok(claims)
     }
