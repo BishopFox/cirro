@@ -6,6 +6,8 @@ Represents Entra ID administrative units collected from Microsoft Graph.
 
 **Properties:**
 
+- `odataType` - Lowercase `@odata.type`, when returned by Microsoft Graph
+
 - `description` - Administrative unit description
 - `displayName` - Administrative unit display name
 - `isMemberManagementRestricted` - Whether member management is restricted

@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-09-22
+
+### Added
+
+- Add user manager and password change datetime by @daddycocoaman in [#36](https://github.com/bishopfox/cirro/pull/36)
+- Add odata types and agent id relations by @daddycocoaman in [#35](https://github.com/bishopfox/cirro/pull/35)
+
+### Changed
+
+- Process createdByAppId by @daddycocoaman in [#34](https://github.com/bishopfox/cirro/pull/34)
+
+### Fixed
+
+- Use correct base64 decoding for tokens by @daddycocoaman in [#38](https://github.com/bishopfox/cirro/pull/38)
+- Check site serverfarmid for null by @daddycocoaman in [#37](https://github.com/bishopfox/cirro/pull/37)
+
 ## [1.2.1] - 2026-06-01
 
 ### Fixed

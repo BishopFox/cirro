@@ -6,6 +6,8 @@ Represents Entra ID devices collected from Microsoft Graph.
 
 **Properties:**
 
+- `odataType` - Lowercase `@odata.type`, when returned by Microsoft Graph
+
 - `displayName` - Device display name
 - `accountEnabled` - Whether the device account is enabled
 - `deviceId` - Device identifier

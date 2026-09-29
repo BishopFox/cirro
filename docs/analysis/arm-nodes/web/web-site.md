@@ -29,4 +29,7 @@ Represents Azure App Service web apps.
 - `inProgressOperationId` - In-progress operation ID
 
 **Relationships:**
-- `HOSTS_SITE` ← ServerFarm
+
+- `HOSTS_SITE` ← ServerFarm - Created only when `properties.serverFarmId` is non-null
+
+Sites without a `serverFarmId` are still ingested, without a hosting ServerFarm relationship.

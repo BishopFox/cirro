@@ -46,6 +46,14 @@ cirro collect ts <auth-method> --output-path cirro_ts_socket.json
 cirro collect az azcli --debug
 ```
 
+## Microsoft Graph User Enrichment
+
+User collection fetches `lastPasswordChangeDateTime` with a per-user `$select` request and merges it into the collected user record when returned. Manager lookups run only for enabled member users (`accountEnabled: true`, `userType: Member`). The collected `manager` value is the manager's object ID; graph ingestion creates a `MANAGES` edge from the manager to the user.
+
+An unassigned manager (HTTP 404) is skipped. Other failed enrichment requests can leave properties or relationships absent; use debug logs to investigate incomplete data.
+
+Graph enrichment uses batches of up to 20 requests. Individual requests returning HTTP 429 or 5xx are retried up to five times, honoring `Retry-After` when supplied. Throttled responses without that header use a 25-second fallback delay.
+
 ## Notes
 
 - Ensure you have appropriate permissions for your target environment.

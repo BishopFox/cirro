@@ -6,6 +6,8 @@ Represents Entra ID groups collected from Microsoft Graph.
 
 **Properties:**
 
+- `odataType` - Lowercase `@odata.type`, when returned by Microsoft Graph
+
 - `id` - Group object ID (primary key)
 - `displayName` - Group display name
 - `groupTypes` - Array of group types (e.g., ["DynamicMembership", "Unified"])

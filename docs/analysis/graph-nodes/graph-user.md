@@ -6,6 +6,12 @@ Represents Entra ID users collected from Microsoft Graph.
 
 **Properties:**
 
+- `agentIdentityBlueprintId` - Agent identity blueprint ID, when present
+- `identityParentId` - Parent identity ID, when present
+- `identityParentType` - Parent identity type, when present
+
+- `odataType` - Lowercase `@odata.type`, when returned by Microsoft Graph
+
 - `id` - User object ID (primary key)
 - `accountEnabled` - Whether the user account is enabled
 - `city` - User's city

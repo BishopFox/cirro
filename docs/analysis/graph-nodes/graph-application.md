@@ -6,6 +6,21 @@ Represents Entra ID applications collected from Microsoft Graph.
 
 **Properties:**
 
+- `description` - Application description
+- `notes` - Application notes
+- `createdDateTime` - Creation timestamp
+- `createdByAppId` - Application ID of the creator
+- `applicationTemplateId` - Application template ID
+- `isAuthorizationServiceEnabled` - Authorization service flag
+- `isDeviceOnlyAuthSupported` - Device-only authentication support flag
+- `isDisabled` - Whether the application is disabled
+- `isFallbackPublicClient` - Fallback public client flag
+- `isManagementRestricted` - Management restriction flag
+- `nativeAuthenticationApisEnabled` - Native authentication API configuration
+- `defaultRedirectUri` - First URI in `web.redirectUris`
+
+- `odataType` - Lowercase `@odata.type`, when returned by Microsoft Graph
+
 - `id` - Application object ID (primary key)
 - `displayName` - Application's display name
 - `appId` - Application ID (client ID)
@@ -23,12 +38,16 @@ Represents Entra ID applications collected from Microsoft Graph.
 
 ### Incoming
 
+- **GraphObject** → [`CREATED`](../edges/created.md) → **GraphApplication** - Creator identified by `createdByAppId`
+
 - **GraphObject** → `OWNS` → **GraphApplication** - Owners of the application
 - **GraphObject** → `APPROLE` → **GraphApplication** - Objects with app role assignments
 - **ClientSecret** → `AUTHENTICATES` → **GraphApplication** - Client secrets for authentication
 - **Certificate** → `AUTHENTICATES` → **GraphApplication** - Certificates for authentication
 
 ### Outgoing
+
+- **GraphApplication** → [`CREATED`](../edges/created.md) → **GraphServicePrincipal** - Service principals created by the application
 
 - **GraphApplication** → `HAS_APPROLE` → **GraphAppRole** - App roles defined by the application
 - **GraphApplication** → `FEDERATED_CREDENTIAL` → **FederatedIdentityCredential** - Federated identity credentials
