@@ -42,15 +42,11 @@ Represents Entra ID users collected from Microsoft Graph.
 - `userPrincipalName` - User principal name (UPN)
 - `userType` - Type of user (Member, Guest, etc.)
 
-Agent identity fields remain properties on `GraphUser`; ingestion does not create relationships from `identityParentId` or `agentIdentityBlueprintId`.
-
-Normal user collection retrieves `lastPasswordChangeDateTime` separately and looks up managers for enabled member users. Restricted guest collection does not fetch full user records.
-
 ## Relationships
 
 ### Incoming
 
-- **GraphUser** ← `MANAGES` ← **GraphObject** - The user's manager. Cirro collects this relationship only for enabled member users (`accountEnabled: true` and `userType: Member`). Users without an assigned or accessible manager have no `MANAGES` relationship.
+- **GraphUser** ← `MANAGES` ← **GraphObject** - The user's manager
 
 ### Outgoing
 

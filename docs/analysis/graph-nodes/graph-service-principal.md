@@ -25,8 +25,6 @@ Represents Entra ID service principals collected from Microsoft Graph.
 - `replyUrls` - Array of reply URLs
 - `servicePrincipalNames` - Array of service principal names
 
-Agent identity IDs are stored as properties; they do not create separate agent identity relationships.
-
 ## Relationships
 
 ### Incoming
@@ -40,10 +38,6 @@ Agent identity IDs are stored as properties; they do not create separate agent i
 
 - **GraphServicePrincipal** → [`HAS_PUBLISHED_SCOPE`](../edges/has-published-scope.md) → **GraphApplicationScope** - Scopes from `publishedPermissionScopes`
 - **GraphServicePrincipal** → [`HAS_APPROLE`](../edges/has-approle.md) → **GraphAppRole** - Roles defined by the service principal
-
-### Restricted guest collection
-
-[Restricted guest collection](../../usage/cirro.md#restricted-guest-collection) can populate these nodes through application ID lookups and relationship traversal. It records ownership and role assignments, and separately collects OAuth grants for [`HAS_OAUTH_GRANT`](../edges/has-oauth-grant.md), [`DELEGATED_TO_CLIENT`](../edges/delegated-to-client.md) and [`HAS_USER_GRANT`](../edges/has-user-grant.md) relationships. Referenced users, groups or unavailable service principals may remain `GraphObject` placeholders. Membership and endpoint expansion are not part of the restricted traversal.
 
 ## Examples
 

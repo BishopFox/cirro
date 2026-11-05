@@ -51,12 +51,6 @@ Represents Entra ID applications collected from Microsoft Graph.
 
 - **GraphApplication** → `HAS_APPROLE` → **GraphAppRole** - App roles defined by the application
 
-### Collection coverage
-
-Application metadata and [`CREATED`](../edges/created.md) relationships are populated when the source fields are present. Creator nodes may initially contain only an `appId`.
-
-Restricted guest collection probes backing applications by `appId` and saves accessible application objects. It does not separately expand application owners or federated identity credentials. A `GraphApplication` placeholder can still be introduced by service principal ingestion when the application lookup is forbidden or not found.
-
 ## Examples
 
 ```cypher
