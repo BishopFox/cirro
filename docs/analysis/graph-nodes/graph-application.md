@@ -41,7 +41,7 @@ Represents Entra ID applications collected from Microsoft Graph.
 - **GraphObject** → [`CREATED`](../edges/created.md) → **GraphApplication** - Creator identified by `createdByAppId`
 
 - **GraphObject** → `OWNS` → **GraphApplication** - Owners of the application
-- **GraphObject** → `APPROLE` → **GraphApplication** - Objects with app role assignments
+- **FederatedIdentityCredential** → `AUTHENTICATES` → **GraphApplication** - Federated identity credentials
 - **ClientSecret** → `AUTHENTICATES` → **GraphApplication** - Client secrets for authentication
 - **Certificate** → `AUTHENTICATES` → **GraphApplication** - Certificates for authentication
 
@@ -50,7 +50,6 @@ Represents Entra ID applications collected from Microsoft Graph.
 - **GraphApplication** → [`CREATED`](../edges/created.md) → **GraphServicePrincipal** - Service principals created by the application
 
 - **GraphApplication** → `HAS_APPROLE` → **GraphAppRole** - App roles defined by the application
-- **GraphApplication** → `FEDERATED_CREDENTIAL` → **FederatedIdentityCredential** - Federated identity credentials
 
 ## Examples
 
@@ -69,6 +68,12 @@ RETURN app.displayName, collect(owner.displayName) AS owners
 
 ```cypher
 // Find applications with federated credentials
-MATCH (app:GraphApplication)-[:FEDERATED_CREDENTIAL]->(cred:FederatedIdentityCredential)
+MATCH (cred:FederatedIdentityCredential)-[:AUTHENTICATES]->(app:GraphApplication)
 RETURN app.displayName, cred.issuer, cred.subject
+```
+
+```cypher
+// Find applications created by another application
+MATCH (creator:GraphObject)-[:CREATED]->(app:GraphApplication)
+RETURN creator.appId, app.displayName, app.createdDateTime, app.applicationTemplateId
 ```

@@ -12,6 +12,10 @@ You can check out the [Documentation](https://bishopfox.github.io/cirro) for mor
 - **Cross-platform**: Available for Windows, macOS, and Linux
 - **Modular Design**: Optional platform functionality through feature flags and extensible plugin architecture
 - **Network Topology Analysis**: Support for network infrastructure platforms like Tailscale
+- **Entra ID Enrichment**: User managers and password-change timestamps, application creators, agent identity properties, and published permission scopes
+- **Restricted Guest Collection**: Traverse accessible application relationships with built-in, custom, or Microsoft catalog seeds
+
+See the [collection guide](docs/usage/cirro.md) for usage examples and collection coverage.
 
 ## Architecture
 

@@ -88,6 +88,30 @@ pub struct AccessTokenAuthArgs {
 
 #[derive(Debug, Clone, Args)]
 pub struct OptionEnumFlags {
+    /// Replace normal Graph enumeration with restricted-guest application-role traversal
+    #[arg(long = "restricted-guest", action = clap::ArgAction::SetTrue)]
+    pub restricted_guest: bool,
+
+    /// Override restricted-guest application IDs (space/comma-separated or repeated)
+    #[arg(
+        long = "restricted-appids",
+        value_name = "GUID",
+        value_delimiter = ',',
+        num_args = 1..,
+        value_parser = validate_uuid,
+        requires = "restricted_guest"
+    )]
+    pub restricted_appids: Vec<String>,
+
+    /// Enumerate the full Microsoft application catalog (warning: large enumeration!)
+    #[arg(
+        long = "restricted-guest-msapps",
+        action = clap::ArgAction::SetTrue,
+        requires = "restricted_guest",
+        conflicts_with = "restricted_appids"
+    )]
+    pub restricted_guest_msapps: bool,
+
     /// Skip all default graph enumerations; only run explicitly enabled options (e.g. --pim, --caps)
     #[arg(long = "no-default", action = clap::ArgAction::SetTrue)]
     pub no_default: bool,

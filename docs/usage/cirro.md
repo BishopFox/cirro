@@ -46,13 +46,39 @@ cirro collect ts <auth-method> --output-path cirro_ts_socket.json
 cirro collect az azcli --debug
 ```
 
-## Microsoft Graph User Enrichment
+## Restricted Guest Collection
 
-User collection fetches `lastPasswordChangeDateTime` with a per-user `$select` request and merges it into the collected user record when returned. Manager lookups run only for enabled member users (`accountEnabled: true`, `userType: Member`). The collected `manager` value is the manager's object ID; graph ingestion creates a `MANAGES` edge from the manager to the user.
+Use `--restricted-guest` to collect Microsoft Graph data as a restricted Entra ID guest. These options are available with all Azure authentication commands:
 
-An unassigned manager (HTTP 404) is skipped. Other failed enrichment requests can leave properties or relationships absent; use debug logs to investigate incomplete data.
+| Option | Usage |
+| --- | --- |
+| `--restricted-guest` | Enable restricted guest collection using the default application IDs. |
+| `--restricted-appids <GUID> ...` | Replace the default application/client IDs. Accepts comma-separated, space-separated or repeated values. |
+| `--restricted-guest-msapps` | Use the Microsoft application catalog. Prompts for confirmation before collection. |
 
-Graph enrichment uses batches of up to 20 requests. Individual requests returning HTTP 429 or 5xx are retried up to five times, honoring `Retry-After` when supplied. Throttled responses without that header use a 25-second fallback delay.
+`--restricted-appids` and `--restricted-guest-msapps` both require `--restricted-guest` and cannot be combined.
+
+```bash
+# Use the default application IDs
+cirro collect az azcli --tenant-id <tenant-id> --mode graph --restricted-guest \
+  --output-path cirro_restricted.db
+
+# Use an existing Microsoft Graph token
+cirro collect az access-token --token <GRAPH_ACCESS_TOKEN> --restricted-guest \
+  --output-path cirro_restricted.db
+
+# Use a specific application ID
+cirro collect az azcli --tenant-id <tenant-id> --mode graph --restricted-guest \
+  --restricted-appids <APP_ID>
+
+# Use the Microsoft application catalog
+cirro collect az azcli --tenant-id <tenant-id> --mode graph \
+  --restricted-guest --restricted-guest-msapps
+```
+
+Use `--mode graph` for Graph-only collection or `--mode both` to include ARM. Restricted guest options are ignored in `--mode arm`. With `access-token`, supply a Microsoft Graph token and omit `--mode`.
+
+Normal Graph selection flags such as `--users`, `--no-default`, `--caps` and `--graph-pim` do not apply in restricted guest mode. Ingest the output using the normal [Azure ingestion command](cirro-graph.md#restricted-guest-results).
 
 ## Notes
 

@@ -46,7 +46,7 @@ Represents Entra ID users collected from Microsoft Graph.
 
 ### Incoming
 
-- **GraphUser** ← `MANAGES` ← **GraphObject** - The user's manager. Cirro collects this relationship only for enabled member users (`accountEnabled: true` and `userType: Member`). Users without an assigned or accessible manager have no `MANAGES` relationship.
+- **GraphUser** ← `MANAGES` ← **GraphObject** - The user's manager
 
 ### Outgoing
 
@@ -76,7 +76,23 @@ RETURN u.displayName, collect(g.displayName) AS groups
 
 ```cypher
 // Find enabled member users and their managers
-MATCH (manager:GraphUser)-[:MANAGES]->(user:GraphUser)
+MATCH (manager:GraphObject)-[:MANAGES]->(user:GraphUser)
 WHERE user.accountEnabled = true AND user.userType = "Member"
-RETURN user.displayName, manager.displayName
+RETURN user.displayName, coalesce(manager.displayName, manager.id) AS manager
+```
+
+```cypher
+// Review collected password-change timestamps
+MATCH (user:GraphUser)
+WHERE user.lastPasswordChangeDateTime IS NOT NULL
+RETURN user.userPrincipalName, user.lastPasswordChangeDateTime
+ORDER BY user.lastPasswordChangeDateTime
+```
+
+```cypher
+// Find users with agent identity metadata
+MATCH (user:GraphUser)
+WHERE user.agentIdentityBlueprintId IS NOT NULL OR user.identityParentId IS NOT NULL
+RETURN user.displayName, user.odataType, user.agentIdentityBlueprintId,
+       user.identityParentId, user.identityParentType
 ```

@@ -8,5 +8,3 @@ Microsoft Graph directory entities use the base `GraphObject` label. Fully colle
 
 - `id` - Unique object identifier (primary key)
 - `odataType` - Lowercase `@odata.type`, when present, on users, groups, applications, service principals, devices, and administrative units
-
-Permission scopes extracted from service principals use the standalone [`GraphApplicationScope`](graph-nodes/graph-application-scope.md) label.
