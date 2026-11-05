@@ -30,6 +30,8 @@ Get up and running with Cirro in minutes. Install, collect data, ingest into Neo
     
     - :material-cloud-outline: **Multi-source Inputs**: Collect from supported cloud, identity, and network APIs
     - :material-account-group: **Relationship Data**: Capture principals, resources, memberships, and trust links
+    - :material-account-search: **User Enrichment**: Collect user managers and password-change timestamps
+    - :material-account-key: **Restricted Guest Collection**: Discover accessible application relationships from selected application IDs
     - :material-puzzle: **Extensible Modules**: Add new collectors through feature-based platform modules
 
 === "Authentication"
@@ -47,6 +49,7 @@ Get up and running with Cirro in minutes. Install, collect data, ingest into Neo
     
     - :simple-neo4j: **Neo4j Ingestion**: Load collected data into a graph database for analysis
     - :material-graph-outline: **Schema Mapping**: Transform platform data into consistent nodes and edges
+    - :material-application: **Application Context**: Analyze creator relationships, agent identity properties, and published permission scopes
     - :material-export-variant: **Export Support**: Export graph data for downstream tooling
 
 === "Schema Extensibility"

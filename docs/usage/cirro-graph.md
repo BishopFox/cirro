@@ -67,6 +67,15 @@ cirro graph ingest --type az --file cirro_output.db --dry-run
 cirro graph ingest --type ts --file cirro_ts_socket.json --dry-run
 ```
 
+### Restricted guest results
+
+Ingest restricted guest output with the normal Azure ingestion command:
+
+```bash
+cirro graph ingest --type az --file cirro_restricted.db --dry-run
+cirro graph ingest --type az --file cirro_restricted.db
+```
+
 ### Dry-Run Mode
 
 The `--dry-run` flag lets you preview an ingestion without writing any data to the graph database.

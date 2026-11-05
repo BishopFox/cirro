@@ -42,6 +42,10 @@ Represents Entra ID users collected from Microsoft Graph.
 - `userPrincipalName` - User principal name (UPN)
 - `userType` - Type of user (Member, Guest, etc.)
 
+Agent identity fields remain properties on `GraphUser`; ingestion does not create relationships from `identityParentId` or `agentIdentityBlueprintId`.
+
+Normal user collection retrieves `lastPasswordChangeDateTime` separately and looks up managers for enabled member users. Restricted guest collection does not fetch full user records.
+
 ## Relationships
 
 ### Incoming
@@ -76,7 +80,23 @@ RETURN u.displayName, collect(g.displayName) AS groups
 
 ```cypher
 // Find enabled member users and their managers
-MATCH (manager:GraphUser)-[:MANAGES]->(user:GraphUser)
+MATCH (manager:GraphObject)-[:MANAGES]->(user:GraphUser)
 WHERE user.accountEnabled = true AND user.userType = "Member"
-RETURN user.displayName, manager.displayName
+RETURN user.displayName, coalesce(manager.displayName, manager.id) AS manager
+```
+
+```cypher
+// Review collected password-change timestamps
+MATCH (user:GraphUser)
+WHERE user.lastPasswordChangeDateTime IS NOT NULL
+RETURN user.userPrincipalName, user.lastPasswordChangeDateTime
+ORDER BY user.lastPasswordChangeDateTime
+```
+
+```cypher
+// Find users with agent identity metadata
+MATCH (user:GraphUser)
+WHERE user.agentIdentityBlueprintId IS NOT NULL OR user.identityParentId IS NOT NULL
+RETURN user.displayName, user.odataType, user.agentIdentityBlueprintId,
+       user.identityParentId, user.identityParentType
 ```
