@@ -134,3 +134,22 @@ pub(super) fn application_name(app_id: &str) -> Option<&'static str> {
         .copied()
         .or_else(|| MICROSOFT_GRAPH_APP_IDS.get(app_id).map(String::as_str))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn embedded_catalog_loads_and_default_seeds_have_valid_ids() {
+        // Loading the catalog validates its size, unique UUIDs and display names.
+        assert_eq!(microsoft_apps().len(), MICROSOFT_GRAPH_APP_COUNT);
+        for (app_id, name) in well_known_apps() {
+            assert!(Uuid::parse_str(app_id).is_ok());
+            assert!(!name.is_empty());
+        }
+        assert_eq!(
+            application_name("00000003-0000-0000-c000-000000000000"),
+            Some("Microsoft Graph")
+        );
+    }
+}

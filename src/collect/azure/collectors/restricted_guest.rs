@@ -614,3 +614,66 @@ fn push_unique_neighbor(
         neighbors.push(neighbor_id);
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn inbound_and_outbound_assignments_merge_into_ingestion_shape() {
+        let inbound = normalize_assignment(
+            &json!({
+                "principalId": "CLIENT", "appRoleId": "ROLE", "resourceId": "RESOURCE"
+            }),
+            None,
+        )
+        .unwrap();
+        let outbound = normalize_assignment(&json!({"appRoleId": "ROLE"}), Some("CLIENT")).unwrap();
+        let other_role =
+            normalize_assignment(&json!({"appRoleId": "OTHER-ROLE"}), Some("CLIENT")).unwrap();
+        let mut resource = json!({"id": "resource", "owners": ["owner"]});
+        merge_assignment_property(&mut resource, &[inbound]).unwrap();
+        merge_assignment_property(&mut resource, &[outbound, other_role]).unwrap();
+        assert_eq!(
+            resource,
+            json!({
+                "id": "resource", "owners": ["owner"], "appRoleAssignedTo": [
+                    {"principalId": "client", "appRoleId": "role"},
+                    {"principalId": "client", "appRoleId": "other-role"}
+                ]
+            })
+        );
+    }
+
+    #[test]
+    fn incomplete_assignments_do_not_create_graph_edges() {
+        assert!(normalize_assignment(&json!({"principalId": "client"}), None).is_none());
+        assert!(normalize_assignment(&json!({"appRoleId": "role"}), None).is_none());
+    }
+
+    #[test]
+    fn rediscovered_service_principal_preserves_collected_relationships() {
+        let mut state = CrawlState::default();
+        register_service_principal(
+            &mut state,
+            json!({
+                "id": "SERVICE-PRINCIPAL", "appId": "APPLICATION", "owners": ["owner"]
+            }),
+        )
+        .unwrap();
+        register_service_principal(
+            &mut state,
+            json!({
+                "id": "service-principal", "appId": "application"
+            }),
+        )
+        .unwrap();
+        assert_eq!(state.service_principals.len(), 1);
+        assert_eq!(state.app_id_to_sp_id["application"], "service-principal");
+        assert_eq!(
+            state.service_principals["service-principal"]["owners"],
+            json!(["owner"])
+        );
+        assert!(register_service_principal(&mut state, json!({"appId": "missing-id"})).is_err());
+    }
+}
